@@ -1,37 +1,501 @@
 import { firebaseConfig } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, orderBy, getDocs, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-const $=s=>document.querySelector(s),esc=(v="")=>String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-const fmt=ts=>{try{return ts?.toDate().toLocaleString("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})||""}catch{return""}};
-let db,auth,currentUser,displayName=localStorage.getItem("weddingDisplayName")||"",currentView="dashboard",tasks=[],categories=[],people=[],settings={coupleNames:"新人婚禮",weddingDate:"",initialized:false},selectedAssignees=new Set(),unsubs=[];
-const defaults={categories:[["文定準備","💍"],["迎娶與車隊","🚗"],["婚宴現場","🥂"],["攝影錄影","📸"],["新人隨身物品","🧳"]],people:[["新郎","新人"],["新娘","新人"],["伴郎","工作人員"],["伴娘","工作人員"],["主持人","廠商"]],tasks:[["十二禮與紅包確認完成","工作","文定準備","婚禮前二天"],["奉茶名單最終確認","工作","文定準備","婚禮前一天"],["禮車司機與集合時間確認","工作","迎娶與車隊","婚禮前一天"],["車隊路線傳送給所有司機","工作","迎娶與車隊","婚禮前一天"],["主持流程最終版","工作","婚宴現場","婚禮前一天"],["收禮與招待分工確認","工作","婚宴現場","婚禮前二天"],["攝影團隊抵達時間確認","工作","攝影錄影","婚禮前一天"],["婚戒","物品","新人隨身物品","婚禮當天"],["身分證、紅包袋、行動電源","物品","新人隨身物品","婚禮當天"]]};
-function setView(v){currentView=v;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===v));$('#fab').style.display=['tasks','people','categories'].includes(v)?'block':'none';renderAll()}
-$('#tabs').onclick=e=>{const b=e.target.closest('.tab');if(b)setView(b.dataset.view)};
-function askName(){$('#displayName').value=displayName;$('#nameDialog').showModal()}$('#changeName').onclick=askName;$('#nameForm').addEventListener('submit',e=>{if(e.submitter?.value!=='ok')return;const v=$('#displayName').value.trim();if(!v){e.preventDefault();return}displayName=v;localStorage.setItem('weddingDisplayName',v);renderHeader()});
-function renderHeader(){$('#who').textContent=displayName?`目前使用者：${displayName}`:'尚未設定姓名';$('#heroTitle').textContent=settings.coupleNames||'婚禮工作中心';$('#heroDate').textContent=settings.weddingDate?`婚禮日期：${settings.weddingDate}`:'多人即時同步・免安裝 App';const total=tasks.length,done=tasks.filter(x=>x.done).length,pct=total?Math.round(done/total*100):0;$('#progressBar').style.width=pct+'%';$('#progressText').textContent=pct+'%'}
-const categoryById=id=>categories.find(x=>x.id===id),personById=id=>people.find(x=>x.id===id),taskPeople=t=>(t.assigneeIds||[]).map(id=>personById(id)?.name).filter(Boolean);
-function taskCard(t){const c=categoryById(t.categoryId),names=taskPeople(t);return `<div class="item ${t.done?'done':''}"><input class="check" type="checkbox" data-action="toggle-task" data-id="${t.id}" ${t.done?'checked':''}><div class="main"><div class="name">${esc(t.title)}</div><div class="meta">${c?`${esc(c.icon||'📌')} ${esc(c.name)}・`:''}${esc(t.type||'工作')}${names.length?`<br>負責人：${esc(names.join('、'))}`:'<br>負責人：未指定'}${t.due?`・${esc(t.due)}`:''}${t.notes?`<br>備註：${esc(t.notes)}`:''}${t.updatedBy?`<br>最後更新：${esc(t.updatedBy)} ${fmt(t.updatedAt)}`:''}</div></div><div class="actions"><span class="badge">${t.done?'已完成':'待完成'}</span><button class="btn small" data-action="edit-task" data-id="${t.id}">修改</button><button class="btn small danger" data-action="delete-task" data-id="${t.id}">刪除</button></div></div>`}
-function renderDashboard(){const done=tasks.filter(x=>x.done).length,work=tasks.filter(x=>x.type==='工作').length,items=tasks.filter(x=>x.type==='物品').length,me=people.find(p=>p.name===displayName),mine=me?tasks.filter(t=>(t.assigneeIds||[]).includes(me.id)&&!t.done).length:0;$('#dashboard').innerHTML=`<div class="grid"><div class="stat"><strong>${done}/${tasks.length}</strong><span>整體完成</span></div><div class="stat"><strong>${mine}</strong><span>我的未完成</span></div><div class="stat"><strong>${work}</strong><span>工作內容</span></div><div class="stat"><strong>${items}</strong><span>準備物品</span></div></div>${categories.map(c=>{const a=tasks.filter(t=>t.categoryId===c.id);return `<section class="section"><div class="head"><div class="title">${esc(c.icon||'📌')} ${esc(c.name)}</div><div class="count">${a.filter(t=>t.done).length}/${a.length}</div></div>${a.filter(t=>!t.done).slice(0,3).map(taskCard).join('')||'<div class="empty">目前沒有未完成事項</div>'}</section>`}).join('')||'<div class="empty">尚未建立分類</div>'}`}
-function renderTasks(){const search=$('#taskSearch')?.value?.toLowerCase()||'',list=tasks.filter(t=>!search||[t.title,t.notes,t.due,...taskPeople(t)].join(' ').toLowerCase().includes(search)),grouped=categories.map(c=>({c,arr:list.filter(t=>t.categoryId===c.id)})).filter(x=>x.arr.length),unc=list.filter(t=>!categoryById(t.categoryId));$('#tasks').innerHTML=`<div class="toolbar"><input class="search" id="taskSearch" placeholder="搜尋任務、人員或備註" value="${esc(search)}"><button class="btn primary" data-action="new-task">新增任務</button></div>${grouped.map(x=>`<section class="section"><div class="head"><div class="title">${esc(x.c.icon||'📌')} ${esc(x.c.name)}</div><div class="count">${x.arr.filter(t=>t.done).length}/${x.arr.length}</div></div>${x.arr.map(taskCard).join('')}</section>`).join('')}${unc.length?`<section class="section"><div class="head"><div class="title">📌 未分類</div></div>${unc.map(taskCard).join('')}</section>`:''}${list.length?'':'<div class="empty">目前沒有任務</div>'}`;$('#taskSearch').oninput=renderTasks}
-function renderMine(){const me=people.find(p=>p.name===displayName);if(!me){$('#mine').innerHTML=`<div class="notice">目前姓名「${esc(displayName||'未設定')}」尚未在人員名單中。請先到「人員」新增同名人員。</div>`;return}const mine=tasks.filter(t=>(t.assigneeIds||[]).includes(me.id)),work=mine.filter(t=>t.type==='工作'),items=mine.filter(t=>t.type==='物品');$('#mine').innerHTML=`<section class="section"><div class="head"><div class="title">🧑‍💼 ${esc(me.name)}的工作內容</div><div class="count">${work.filter(t=>t.done).length}/${work.length}</div></div>${work.map(taskCard).join('')||'<div class="empty">目前沒有工作任務</div>'}</section><section class="section"><div class="head"><div class="title">🧳 ${esc(me.name)}要準備的物品</div><div class="count">${items.filter(t=>t.done).length}/${items.length}</div></div>${items.map(taskCard).join('')||'<div class="empty">目前沒有物品清單</div>'}</section>`}
-function renderPeople(){$('#people').innerHTML=`<div class="toolbar"><div></div><button class="btn primary" data-action="new-person">新增人員</button></div><div class="cardlist">${people.map(p=>{const a=tasks.filter(t=>(t.assigneeIds||[]).includes(p.id));return `<div class="person"><div class="person-info"><strong>${esc(p.name)}</strong><small>${esc(p.role||'未設定角色')}・任務 ${a.length} 項${p.phone?`・${esc(p.phone)}`:''}</small></div><div class="actions"><button class="btn small" data-action="show-person" data-id="${p.id}">查看</button><button class="btn small" data-action="edit-person" data-id="${p.id}">修改</button><button class="btn small danger" data-action="delete-person" data-id="${p.id}">刪除</button></div></div>`}).join('')||'<div class="empty">尚未建立人員</div>'}</div>`}
-function renderCategories(){$('#categories').innerHTML=`<div class="toolbar"><div></div><button class="btn primary" data-action="new-category">新增分類</button></div><div class="cardlist">${categories.map(c=>{const a=tasks.filter(t=>t.categoryId===c.id);return `<div class="category"><div class="category-info"><strong>${esc(c.icon||'📌')} ${esc(c.name)}</strong><small>任務 ${a.length} 項・完成 ${a.filter(t=>t.done).length} 項</small></div><div class="actions"><button class="btn small" data-action="edit-category" data-id="${c.id}">修改</button><button class="btn small danger" data-action="delete-category" data-id="${c.id}">刪除</button></div></div>`}).join('')||'<div class="empty">尚未建立分類</div>'}</div>`}
-function renderSettings(){$('#settings').innerHTML=`<section class="section"><div class="head"><div class="title">⚙️ 基本設定</div></div><div style="padding:16px"><div class="field"><label>首頁名稱</label><input id="settingNames" value="${esc(settings.coupleNames||'')}"></div><div class="field"><label>婚禮日期</label><input id="settingDate" type="date" value="${esc(settings.weddingDate||'')}"></div><button class="btn primary" data-action="save-settings">儲存設定</button></div></section><div class="notice">所有清單資料儲存在 Firebase Firestore；GitHub Pages 只負責顯示網站程式。</div>`}
-function renderAll(){renderHeader();if(currentView==='dashboard')renderDashboard();if(currentView==='tasks')renderTasks();if(currentView==='mine')renderMine();if(currentView==='people')renderPeople();if(currentView==='categories')renderCategories();if(currentView==='settings')renderSettings()}
-function fillTaskDialog(t=null){$('#taskDialogTitle').textContent=t?'修改任務':'新增任務';$('#taskId').value=t?.id||'';$('#taskTitle').value=t?.title||'';$('#taskType').value=t?.type||'工作';$('#taskCategory').innerHTML=categories.map(c=>`<option value="${c.id}">${esc(c.icon||'📌')} ${esc(c.name)}</option>`).join('');$('#taskCategory').value=t?.categoryId||categories[0]?.id||'';$('#taskDue').value=t?.due||'';$('#taskNotes').value=t?.notes||'';selectedAssignees=new Set(t?.assigneeIds||[]);renderAssigneePicker();$('#taskDialog').showModal()}
-function renderAssigneePicker(){$('#assigneePicker').innerHTML=people.map(p=>`<button type="button" class="person-chip ${selectedAssignees.has(p.id)?'selected':''}" data-person="${p.id}">${esc(p.name)}</button>`).join('')||'<span class="meta">請先建立人員</span>'}
-$('#assigneePicker').onclick=e=>{const b=e.target.closest('[data-person]');if(!b)return;selectedAssignees.has(b.dataset.person)?selectedAssignees.delete(b.dataset.person):selectedAssignees.add(b.dataset.person);renderAssigneePicker()};
-$('#taskForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='ok')return;e.preventDefault();const id=$('#taskId').value,p={title:$('#taskTitle').value.trim(),type:$('#taskType').value,categoryId:$('#taskCategory').value,assigneeIds:[...selectedAssignees],due:$('#taskDue').value.trim(),notes:$('#taskNotes').value.trim(),updatedAt:serverTimestamp(),updatedBy:displayName,updatedByUid:currentUser.uid};if(!p.title)return;id?await updateDoc(doc(db,'weddingTasks',id),p):await addDoc(collection(db,'weddingTasks'),{...p,done:false,createdAt:serverTimestamp()});$('#taskDialog').close()});
-function fillCategoryDialog(c=null){$('#categoryDialogTitle').textContent=c?'修改分類':'新增分類';$('#categoryId').value=c?.id||'';$('#categoryName').value=c?.name||'';$('#categoryIcon').value=c?.icon||'';$('#categoryDialog').showModal()}
-$('#categoryForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='ok')return;e.preventDefault();const id=$('#categoryId').value,p={name:$('#categoryName').value.trim(),icon:$('#categoryIcon').value.trim()||'📌',updatedAt:serverTimestamp()};if(!p.name)return;id?await updateDoc(doc(db,'weddingCategories',id),p):await addDoc(collection(db,'weddingCategories'),{...p,createdAt:serverTimestamp()});$('#categoryDialog').close()});
-function fillPersonDialog(p=null){$('#personDialogTitle').textContent=p?'修改人員':'新增人員';$('#personId').value=p?.id||'';$('#personName').value=p?.name||'';$('#personRole').value=p?.role||'';$('#personPhone').value=p?.phone||'';$('#personDialog').showModal()}
-$('#personForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='ok')return;e.preventDefault();const id=$('#personId').value,p={name:$('#personName').value.trim(),role:$('#personRole').value.trim(),phone:$('#personPhone').value.trim(),updatedAt:serverTimestamp()};if(!p.name)return;id?await updateDoc(doc(db,'weddingPeople',id),p):await addDoc(collection(db,'weddingPeople'),{...p,createdAt:serverTimestamp()});$('#personDialog').close()});
-async function deleteTask(id){const t=tasks.find(x=>x.id===id);if(t&&confirm(`確定刪除「${t.title}」嗎？`))await deleteDoc(doc(db,'weddingTasks',id))}
-async function deleteCategory(id){const c=categoryById(id);if(!c)return;const a=tasks.filter(t=>t.categoryId===id),msg=a.length?`分類內有 ${a.length} 個任務。刪除後會移到「未分類」，確定嗎？`:`確定刪除分類「${c.name}」嗎？`;if(!confirm(msg))return;const b=writeBatch(db);a.forEach(t=>b.update(doc(db,'weddingTasks',t.id),{categoryId:'',updatedAt:serverTimestamp(),updatedBy:displayName}));b.delete(doc(db,'weddingCategories',id));await b.commit()}
-async function deletePerson(id){const p=personById(id);if(!p||!confirm(`確定刪除人員「${p.name}」嗎？其任務不會刪除，只會移除負責人。`))return;const a=tasks.filter(t=>(t.assigneeIds||[]).includes(id)),b=writeBatch(db);a.forEach(t=>b.update(doc(db,'weddingTasks',t.id),{assigneeIds:(t.assigneeIds||[]).filter(x=>x!==id),updatedAt:serverTimestamp(),updatedBy:displayName}));b.delete(doc(db,'weddingPeople',id));await b.commit()}
-document.body.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action,id=b.dataset.id;try{if(a==='new-task')fillTaskDialog();if(a==='edit-task')fillTaskDialog(tasks.find(x=>x.id===id));if(a==='delete-task')await deleteTask(id);if(a==='toggle-task')await updateDoc(doc(db,'weddingTasks',id),{done:b.checked,updatedAt:serverTimestamp(),updatedBy:displayName,updatedByUid:currentUser.uid});if(a==='new-category')fillCategoryDialog();if(a==='edit-category')fillCategoryDialog(categoryById(id));if(a==='delete-category')await deleteCategory(id);if(a==='new-person')fillPersonDialog();if(a==='edit-person')fillPersonDialog(personById(id));if(a==='delete-person')await deletePerson(id);if(a==='show-person'){const p=personById(id);if(p){displayName=p.name;localStorage.setItem('weddingDisplayName',p.name);setView('mine')}}if(a==='save-settings')await setDoc(doc(db,'weddingSettings','main'),{coupleNames:$('#settingNames').value.trim(),weddingDate:$('#settingDate').value,initialized:true,updatedAt:serverTimestamp()},{merge:true})}catch(err){alert('操作失敗：'+err.message)}});
-$('#fab').onclick=()=>{if(currentView==='tasks')fillTaskDialog();if(currentView==='people')fillPersonDialog();if(currentView==='categories')fillCategoryDialog()};
-async function bootstrap(){const ref=doc(db,'weddingSettings','main'),snap=await getDoc(ref);if(snap.exists()&&snap.data().initialized)return;const cs=await getDocs(collection(db,'weddingCategories'));if(!cs.empty){await setDoc(ref,{initialized:true,coupleNames:'新人婚禮',weddingDate:'',createdAt:serverTimestamp()},{merge:true});return}const b=writeBatch(db),catRefs={};defaults.categories.forEach(([name,icon],i)=>{const r=doc(collection(db,'weddingCategories'));catRefs[name]=r;b.set(r,{name,icon,sort:i,createdAt:serverTimestamp()})});defaults.people.forEach(([name,role],i)=>{const r=doc(collection(db,'weddingPeople'));b.set(r,{name,role,phone:'',sort:i,createdAt:serverTimestamp()})});defaults.tasks.forEach(([title,type,cat,due],i)=>{const r=doc(collection(db,'weddingTasks'));b.set(r,{title,type,categoryId:catRefs[cat].id,assigneeIds:[],due,notes:'',done:false,sort:i,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),updatedBy:'系統建立'})});b.set(ref,{initialized:true,coupleNames:'新人婚禮',weddingDate:'',createdAt:serverTimestamp()});await b.commit()}
-function subscribe(){unsubs.forEach(f=>f());unsubs=[];unsubs.push(onSnapshot(query(collection(db,'weddingCategories'),orderBy('createdAt','asc')),s=>{categories=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));unsubs.push(onSnapshot(query(collection(db,'weddingPeople'),orderBy('createdAt','asc')),s=>{people=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));unsubs.push(onSnapshot(query(collection(db,'weddingTasks'),orderBy('createdAt','asc')),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));unsubs.push(onSnapshot(doc(db,'weddingSettings','main'),s=>{if(s.exists())settings={...settings,...s.data()};renderAll()}))}
-async function start(){if(!displayName)askName();renderHeader();$('#fab').style.display='none';try{const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);await signInAnonymously(auth);onAuthStateChanged(auth,async user=>{if(!user)return;currentUser=user;$('#sync').className='sync ok';$('#sync').textContent='已連線・多人即時同步';await bootstrap();subscribe()})}catch(err){$('#sync').className='sync bad';$('#sync').textContent='連線失敗';$('#dashboard').innerHTML=`<div class="error">${esc(err.message)}</div>`}}start();
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import {
+  getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
+  onSnapshot, serverTimestamp, query, orderBy, getDocs, getDoc, writeBatch
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+const $ = (s) => document.querySelector(s);
+const esc = (v = "") => String(v).replace(/[&<>"']/g, (m) => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[m]));
+const fmt = (ts) => {
+  try { return ts?.toDate().toLocaleString("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) || ""; }
+  catch { return ""; }
+};
+
+let db;
+let currentUser;
+let displayName = localStorage.getItem("weddingDisplayName") || "";
+let currentView = "dashboard";
+let tasks = [];
+let categories = [];
+let people = [];
+let settings = { coupleNames:"婚禮工作中心", weddingDate:"", initialized:false };
+let selectedAssignees = new Set();
+
+const defaults = {
+  categories:[
+    ["文定準備","💍"],["迎娶與車隊","🚗"],["婚宴現場","🥂"],["攝影錄影","📸"],["新人隨身物品","🧳"]
+  ],
+  people:[
+    ["新郎","新人"],["新娘","新人"],["伴郎","工作人員"],["伴娘","工作人員"],["主持人","廠商"]
+  ],
+  tasks:[
+    ["十二禮與紅包確認完成","工作","文定準備","婚禮前二天"],
+    ["奉茶名單最終確認","工作","文定準備","婚禮前一天"],
+    ["禮車司機與集合時間確認","工作","迎娶與車隊","婚禮前一天"],
+    ["車隊路線傳送給所有司機","工作","迎娶與車隊","婚禮前一天"],
+    ["主持流程最終版","工作","婚宴現場","婚禮前一天"],
+    ["收禮與招待分工確認","工作","婚宴現場","婚禮前二天"],
+    ["攝影團隊抵達時間確認","工作","攝影錄影","婚禮前一天"],
+    ["婚戒","物品","新人隨身物品","婚禮當天"],
+    ["身分證、紅包袋、行動電源","物品","新人隨身物品","婚禮當天"]
+  ]
+};
+
+function categoryById(id){ return categories.find((x)=>x.id===id); }
+function personById(id){ return people.find((x)=>x.id===id); }
+function taskPeople(task){ return (task.assigneeIds || []).map((id)=>personById(id)?.name).filter(Boolean); }
+
+function setView(view){
+  currentView = view;
+  document.querySelectorAll(".tab").forEach((el)=>el.classList.toggle("active", el.dataset.view === view));
+  document.querySelectorAll(".panel").forEach((el)=>el.classList.toggle("active", el.id === view));
+  renderAll();
+}
+
+$("#tabs").addEventListener("click",(event)=>{
+  const tab = event.target.closest(".tab");
+  if(tab) setView(tab.dataset.view);
+});
+
+function askName(){
+  $("#displayName").value = displayName;
+  $("#nameDialog").showModal();
+}
+$("#changeName").addEventListener("click", askName);
+
+$("#nameForm").addEventListener("submit",(event)=>{
+  if(event.submitter?.value !== "ok") return;
+  const value = $("#displayName").value.trim();
+  if(!value){ event.preventDefault(); return; }
+  displayName = value;
+  localStorage.setItem("weddingDisplayName", value);
+  renderHeader();
+});
+
+function renderHeader(){
+  const total = tasks.length;
+  const done = tasks.filter((x)=>x.done).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  $("#who").textContent = displayName ? `目前使用者：${displayName}` : "尚未設定姓名";
+  $("#heroTitle").textContent = settings.coupleNames || "婚禮工作中心";
+  $("#heroDate").textContent = settings.weddingDate ? `婚禮日期：${settings.weddingDate}` : "多人即時同步・免安裝 App";
+  $("#progressBar").style.width = pct + "%";
+  $("#progressText").textContent = pct + "%";
+}
+
+function taskCard(task){
+  const cat = categoryById(task.categoryId);
+  const names = taskPeople(task);
+  return `<div class="item ${task.done ? "done" : ""}">
+    <input class="check" type="checkbox" data-action="toggle-task" data-id="${task.id}" ${task.done ? "checked" : ""}>
+    <div class="main">
+      <div class="name">${esc(task.title)}</div>
+      <div class="meta">
+        ${cat ? `${esc(cat.icon || "📌")} ${esc(cat.name)}・` : ""}${esc(task.type || "工作")}
+        ${names.length ? `<br>負責人：${esc(names.join("、"))}` : "<br>負責人：未指定"}
+        ${task.due ? `・${esc(task.due)}` : ""}
+        ${task.notes ? `<br>備註：${esc(task.notes)}` : ""}
+        ${task.updatedBy ? `<br>最後更新：${esc(task.updatedBy)} ${fmt(task.updatedAt)}` : ""}
+      </div>
+    </div>
+    <div class="actions">
+      <span class="badge">${task.done ? "已完成" : "待完成"}</span>
+      <button class="btn small" data-action="edit-task" data-id="${task.id}">修改</button>
+      <button class="btn small danger" data-action="delete-task" data-id="${task.id}">刪除</button>
+    </div>
+  </div>`;
+}
+
+function renderDashboard(){
+  const done = tasks.filter((x)=>x.done).length;
+  const work = tasks.filter((x)=>x.type==="工作").length;
+  const items = tasks.filter((x)=>x.type==="物品").length;
+  const me = people.find((p)=>p.name===displayName);
+  const mine = me ? tasks.filter((t)=>(t.assigneeIds||[]).includes(me.id) && !t.done).length : 0;
+
+  $("#dashboard").innerHTML = `
+    <div class="grid">
+      <div class="stat"><strong>${done}/${tasks.length}</strong><span>整體完成</span></div>
+      <div class="stat"><strong>${mine}</strong><span>我的未完成</span></div>
+      <div class="stat"><strong>${work}</strong><span>工作內容</span></div>
+      <div class="stat"><strong>${items}</strong><span>準備物品</span></div>
+    </div>
+    ${categories.map((cat)=>{
+      const list = tasks.filter((t)=>t.categoryId===cat.id);
+      return `<section class="section">
+        <div class="head"><div class="title">${esc(cat.icon||"📌")} ${esc(cat.name)}</div><div class="count">${list.filter((t)=>t.done).length}/${list.length}</div></div>
+        ${list.filter((t)=>!t.done).slice(0,3).map(taskCard).join("") || '<div class="empty">目前沒有未完成事項</div>'}
+      </section>`;
+    }).join("") || '<div class="empty">尚未建立分類</div>'}
+  `;
+}
+
+function renderTasks(){
+  const grouped = categories
+    .map((cat)=>({cat, list:tasks.filter((t)=>t.categoryId===cat.id)}))
+    .filter((x)=>x.list.length);
+  const uncat = tasks.filter((t)=>!categoryById(t.categoryId));
+
+  $("#tasks").innerHTML = `
+    <div class="toolbar"><div></div><button class="btn primary" data-action="new-task">新增任務</button></div>
+    ${grouped.map((group)=>`<section class="section">
+      <div class="head"><div class="title">${esc(group.cat.icon||"📌")} ${esc(group.cat.name)}</div><div class="count">${group.list.filter((t)=>t.done).length}/${group.list.length}</div></div>
+      ${group.list.map(taskCard).join("")}
+    </section>`).join("")}
+    ${uncat.length ? `<section class="section"><div class="head"><div class="title">📌 未分類</div></div>${uncat.map(taskCard).join("")}</section>` : ""}
+    ${tasks.length ? "" : '<div class="empty">目前沒有任務</div>'}
+  `;
+}
+
+function renderMine(){
+  const me = people.find((p)=>p.name===displayName);
+  if(!me){
+    $("#mine").innerHTML = `<div class="notice">目前姓名「${esc(displayName||"未設定")}」尚未在人員名單中。請先到「人員」新增同名人員。</div>`;
+    return;
+  }
+  const mine = tasks.filter((t)=>(t.assigneeIds||[]).includes(me.id));
+  const work = mine.filter((t)=>t.type==="工作");
+  const items = mine.filter((t)=>t.type==="物品");
+
+  $("#mine").innerHTML = `
+    <section class="section">
+      <div class="head"><div class="title">🧑‍💼 ${esc(me.name)}的工作內容</div><div class="count">${work.filter((t)=>t.done).length}/${work.length}</div></div>
+      ${work.map(taskCard).join("") || '<div class="empty">目前沒有工作任務</div>'}
+    </section>
+    <section class="section">
+      <div class="head"><div class="title">🧳 ${esc(me.name)}要準備的物品</div><div class="count">${items.filter((t)=>t.done).length}/${items.length}</div></div>
+      ${items.map(taskCard).join("") || '<div class="empty">目前沒有物品清單</div>'}
+    </section>
+  `;
+}
+
+function renderPeople(){
+  $("#people").innerHTML = `
+    <div class="toolbar"><div></div><button class="btn primary" data-action="new-person">新增人員</button></div>
+    <div class="cardlist">
+      ${people.map((person)=>{
+        const assigned = tasks.filter((t)=>(t.assigneeIds||[]).includes(person.id));
+        return `<div class="person">
+          <div class="person-info"><strong>${esc(person.name)}</strong><small>${esc(person.role||"未設定角色")}・任務 ${assigned.length} 項</small></div>
+          <div class="actions">
+            <button class="btn small" data-action="show-person" data-id="${person.id}">查看</button>
+            <button class="btn small" data-action="edit-person" data-id="${person.id}">修改</button>
+            <button class="btn small danger" data-action="delete-person" data-id="${person.id}">刪除</button>
+          </div>
+        </div>`;
+      }).join("") || '<div class="empty">尚未建立人員</div>'}
+    </div>
+  `;
+}
+
+function renderCategories(){
+  $("#categories").innerHTML = `
+    <div class="toolbar"><div></div><button class="btn primary" data-action="new-category">新增分類</button></div>
+    <div class="cardlist">
+      ${categories.map((cat)=>{
+        const list = tasks.filter((t)=>t.categoryId===cat.id);
+        return `<div class="category">
+          <div class="category-info"><strong>${esc(cat.icon||"📌")} ${esc(cat.name)}</strong><small>任務 ${list.length} 項・完成 ${list.filter((t)=>t.done).length} 項</small></div>
+          <div class="actions">
+            <button class="btn small" data-action="edit-category" data-id="${cat.id}">修改</button>
+            <button class="btn small danger" data-action="delete-category" data-id="${cat.id}">刪除</button>
+          </div>
+        </div>`;
+      }).join("") || '<div class="empty">尚未建立分類</div>'}
+    </div>
+  `;
+}
+
+function renderSettings(){
+  $("#settings").innerHTML = `
+    <section class="section">
+      <div class="head"><div class="title">⚙️ 基本設定</div></div>
+      <div style="padding:16px">
+        <div class="field"><label>首頁名稱</label><input id="settingNames" value="${esc(settings.coupleNames||"")}"></div>
+        <div class="field"><label>婚禮日期</label><input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></div>
+        <button class="btn primary" data-action="save-settings">儲存設定</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderAll(){
+  renderHeader();
+  if(currentView==="dashboard") renderDashboard();
+  if(currentView==="tasks") renderTasks();
+  if(currentView==="mine") renderMine();
+  if(currentView==="people") renderPeople();
+  if(currentView==="categories") renderCategories();
+  if(currentView==="settings") renderSettings();
+}
+
+function renderAssignees(){
+  $("#assigneePicker").innerHTML = people.map((person)=>`
+    <button type="button" class="person-chip ${selectedAssignees.has(person.id) ? "selected" : ""}" data-person="${person.id}">
+      ${esc(person.name)}
+    </button>
+  `).join("") || '<span class="meta">請先建立人員</span>';
+}
+
+$("#assigneePicker").addEventListener("click",(event)=>{
+  const button = event.target.closest("[data-person]");
+  if(!button) return;
+  if(selectedAssignees.has(button.dataset.person)) selectedAssignees.delete(button.dataset.person);
+  else selectedAssignees.add(button.dataset.person);
+  renderAssignees();
+});
+
+function openTaskDialog(task=null){
+  $("#taskDialogTitle").textContent = task ? "修改任務" : "新增任務";
+  $("#taskId").value = task?.id || "";
+  $("#taskTitle").value = task?.title || "";
+  $("#taskType").value = task?.type || "工作";
+  $("#taskCategory").innerHTML = categories.map((cat)=>`<option value="${cat.id}">${esc(cat.icon||"📌")} ${esc(cat.name)}</option>`).join("");
+  $("#taskCategory").value = task?.categoryId || categories[0]?.id || "";
+  $("#taskDue").value = task?.due || "";
+  $("#taskNotes").value = task?.notes || "";
+  selectedAssignees = new Set(task?.assigneeIds || []);
+  renderAssignees();
+  $("#taskDialog").showModal();
+}
+
+function openCategoryDialog(cat=null){
+  $("#categoryDialogTitle").textContent = cat ? "修改分類" : "新增分類";
+  $("#categoryId").value = cat?.id || "";
+  $("#categoryName").value = cat?.name || "";
+  $("#categoryIcon").value = cat?.icon || "";
+  $("#categoryDialog").showModal();
+}
+
+function openPersonDialog(person=null){
+  $("#personDialogTitle").textContent = person ? "修改人員" : "新增人員";
+  $("#personId").value = person?.id || "";
+  $("#personName").value = person?.name || "";
+  $("#personRole").value = person?.role || "";
+  $("#personPhone").value = person?.phone || "";
+  $("#personDialog").showModal();
+}
+
+$("#taskForm").addEventListener("submit",async(event)=>{
+  if(event.submitter?.value !== "ok") return;
+  event.preventDefault();
+  const id = $("#taskId").value;
+  const payload = {
+    title:$("#taskTitle").value.trim(),
+    type:$("#taskType").value,
+    categoryId:$("#taskCategory").value,
+    assigneeIds:[...selectedAssignees],
+    due:$("#taskDue").value.trim(),
+    notes:$("#taskNotes").value.trim(),
+    updatedAt:serverTimestamp(),
+    updatedBy:displayName,
+    updatedByUid:currentUser.uid
+  };
+  if(!payload.title) return;
+  if(id) await updateDoc(doc(db,"weddingTasks",id),payload);
+  else await addDoc(collection(db,"weddingTasks"),{...payload,done:false,createdAt:serverTimestamp()});
+  $("#taskDialog").close();
+});
+
+$("#categoryForm").addEventListener("submit",async(event)=>{
+  if(event.submitter?.value !== "ok") return;
+  event.preventDefault();
+  const id = $("#categoryId").value;
+  const payload = {
+    name:$("#categoryName").value.trim(),
+    icon:$("#categoryIcon").value.trim() || "📌",
+    updatedAt:serverTimestamp()
+  };
+  if(!payload.name) return;
+  if(id) await updateDoc(doc(db,"weddingCategories",id),payload);
+  else await addDoc(collection(db,"weddingCategories"),{...payload,createdAt:serverTimestamp()});
+  $("#categoryDialog").close();
+});
+
+$("#personForm").addEventListener("submit",async(event)=>{
+  if(event.submitter?.value !== "ok") return;
+  event.preventDefault();
+  const id = $("#personId").value;
+  const payload = {
+    name:$("#personName").value.trim(),
+    role:$("#personRole").value.trim(),
+    phone:$("#personPhone").value.trim(),
+    updatedAt:serverTimestamp()
+  };
+  if(!payload.name) return;
+  if(id) await updateDoc(doc(db,"weddingPeople",id),payload);
+  else await addDoc(collection(db,"weddingPeople"),{...payload,createdAt:serverTimestamp()});
+  $("#personDialog").close();
+});
+
+document.body.addEventListener("click",async(event)=>{
+  const button = event.target.closest("[data-action]");
+  if(!button) return;
+  const action = button.dataset.action;
+  const id = button.dataset.id;
+
+  try{
+    if(action==="new-task") openTaskDialog();
+    if(action==="edit-task") openTaskDialog(tasks.find((x)=>x.id===id));
+
+    if(action==="delete-task"){
+      const task = tasks.find((x)=>x.id===id);
+      if(task && confirm(`確定刪除「${task.title}」嗎？`)) await deleteDoc(doc(db,"weddingTasks",id));
+    }
+
+    if(action==="toggle-task"){
+      await updateDoc(doc(db,"weddingTasks",id),{
+        done:button.checked,
+        updatedAt:serverTimestamp(),
+        updatedBy:displayName,
+        updatedByUid:currentUser.uid
+      });
+    }
+
+    if(action==="new-category") openCategoryDialog();
+    if(action==="edit-category") openCategoryDialog(categoryById(id));
+
+    if(action==="delete-category"){
+      const cat = categoryById(id);
+      const affected = tasks.filter((t)=>t.categoryId===id);
+      if(cat && confirm(affected.length ? `分類內有 ${affected.length} 個任務，刪除後會移到未分類。確定嗎？` : `確定刪除「${cat.name}」嗎？`)){
+        const batch = writeBatch(db);
+        affected.forEach((task)=>batch.update(doc(db,"weddingTasks",task.id),{categoryId:""}));
+        batch.delete(doc(db,"weddingCategories",id));
+        await batch.commit();
+      }
+    }
+
+    if(action==="new-person") openPersonDialog();
+    if(action==="edit-person") openPersonDialog(personById(id));
+
+    if(action==="delete-person"){
+      const person = personById(id);
+      if(person && confirm(`確定刪除「${person.name}」嗎？`)){
+        const batch = writeBatch(db);
+        tasks.filter((task)=>(task.assigneeIds||[]).includes(id)).forEach((task)=>{
+          batch.update(doc(db,"weddingTasks",task.id),{
+            assigneeIds:(task.assigneeIds||[]).filter((personId)=>personId!==id)
+          });
+        });
+        batch.delete(doc(db,"weddingPeople",id));
+        await batch.commit();
+      }
+    }
+
+    if(action==="show-person"){
+      const person = personById(id);
+      if(person){
+        displayName = person.name;
+        localStorage.setItem("weddingDisplayName", person.name);
+        setView("mine");
+      }
+    }
+
+    if(action==="save-settings"){
+      await setDoc(doc(db,"weddingSettings","main"),{
+        coupleNames:$("#settingNames").value.trim(),
+        weddingDate:$("#settingDate").value,
+        initialized:true,
+        updatedAt:serverTimestamp()
+      },{merge:true});
+    }
+  }catch(error){
+    alert("操作失敗：" + error.message);
+  }
+});
+
+$("#fab").addEventListener("click",()=>{
+  if(currentView==="people") openPersonDialog();
+  else if(currentView==="categories") openCategoryDialog();
+  else openTaskDialog();
+});
+
+async function bootstrap(){
+  const settingsRef = doc(db,"weddingSettings","main");
+  const settingsSnap = await getDoc(settingsRef);
+  if(settingsSnap.exists() && settingsSnap.data().initialized) return;
+
+  const categoriesSnap = await getDocs(collection(db,"weddingCategories"));
+  if(!categoriesSnap.empty){
+    await setDoc(settingsRef,{initialized:true,coupleNames:"婚禮工作中心",weddingDate:""},{merge:true});
+    return;
+  }
+
+  const batch = writeBatch(db);
+  const categoryRefs = {};
+
+  defaults.categories.forEach(([name,icon],index)=>{
+    const ref = doc(collection(db,"weddingCategories"));
+    categoryRefs[name] = ref;
+    batch.set(ref,{name,icon,sort:index,createdAt:serverTimestamp()});
+  });
+
+  defaults.people.forEach(([name,role],index)=>{
+    const ref = doc(collection(db,"weddingPeople"));
+    batch.set(ref,{name,role,phone:"",sort:index,createdAt:serverTimestamp()});
+  });
+
+  defaults.tasks.forEach(([title,type,category,due],index)=>{
+    const ref = doc(collection(db,"weddingTasks"));
+    batch.set(ref,{
+      title,type,categoryId:categoryRefs[category].id,assigneeIds:[],
+      due,notes:"",done:false,sort:index,
+      createdAt:serverTimestamp(),updatedAt:serverTimestamp(),updatedBy:"系統建立"
+    });
+  });
+
+  batch.set(settingsRef,{
+    initialized:true,coupleNames:"婚禮工作中心",weddingDate:"",
+    createdAt:serverTimestamp()
+  });
+  await batch.commit();
+}
+
+function subscribe(){
+  onSnapshot(query(collection(db,"weddingCategories"),orderBy("createdAt","asc")),(snap)=>{
+    categories = snap.docs.map((item)=>({id:item.id,...item.data()}));
+    renderAll();
+  });
+  onSnapshot(query(collection(db,"weddingPeople"),orderBy("createdAt","asc")),(snap)=>{
+    people = snap.docs.map((item)=>({id:item.id,...item.data()}));
+    renderAll();
+  });
+  onSnapshot(query(collection(db,"weddingTasks"),orderBy("createdAt","asc")),(snap)=>{
+    tasks = snap.docs.map((item)=>({id:item.id,...item.data()}));
+    renderAll();
+  });
+  onSnapshot(doc(db,"weddingSettings","main"),(snap)=>{
+    if(snap.exists()) settings = {...settings,...snap.data()};
+    renderAll();
+  });
+}
+
+async function start(){
+  if(!displayName) askName();
+  renderHeader();
+
+  try{
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    db = getFirestore(app);
+
+    const credential = await signInAnonymously(auth);
+    currentUser = credential.user;
+
+    $("#sync").className = "sync ok";
+    $("#sync").textContent = "已連線・多人即時同步";
+
+    await bootstrap();
+    subscribe();
+  }catch(error){
+    $("#sync").className = "sync bad";
+    $("#sync").textContent = "連線失敗";
+    $("#dashboard").innerHTML = `<div class="error">${esc(error.message)}</div>`;
+  }
+}
+start();

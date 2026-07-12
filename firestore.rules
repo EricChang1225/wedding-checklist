@@ -1,10 +1,25 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    match /weddingTasks/{id} { allow read, create, update, delete: if signedIn(); }
-    match /weddingCategories/{id} { allow read, create, update, delete: if signedIn(); }
-    match /weddingPeople/{id} { allow read, create, update, delete: if signedIn(); }
-    match /weddingSettings/{id} { allow read, create, update: if signedIn(); allow delete: if false; }
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /weddingTasks/{id} {
+      allow read, create, update, delete: if signedIn();
+    }
+
+    match /weddingCategories/{id} {
+      allow read, create, update, delete: if signedIn();
+    }
+
+    match /weddingPeople/{id} {
+      allow read, create, update, delete: if signedIn();
+    }
+
+    match /weddingSettings/{id} {
+      allow read, create, update: if signedIn();
+      allow delete: if false;
+    }
   }
 }

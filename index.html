@@ -1,7 +1,173 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#c77d83"><title>婚禮工作中心</title><style>
-:root{--bg:#fff8f7;--card:#fff;--text:#403333;--muted:#8b7777;--line:#eee1e1;--accent:#c77d83;--accent-dark:#a95f67;--accent-soft:#f8e7e8;--green:#6e9e79;--red:#b8565f;--shadow:0 10px 28px rgba(80,52,52,.10)}*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:linear-gradient(#fff5f4,#fffefd 45%,#f8f1f0);color:var(--text);min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}.app{width:min(820px,100%);margin:auto;padding:14px 12px 105px}.hero{padding:20px;border-radius:25px;background:linear-gradient(135deg,#f3d4d7,#fff);box-shadow:var(--shadow);position:relative;overflow:hidden}.hero:after{content:"♡";position:absolute;right:14px;top:-20px;font-size:105px;color:#d7969b33}.eyebrow{font-size:12px;letter-spacing:.13em;color:var(--muted)}h1{font-size:26px;margin:5px 0}.sub{color:var(--muted);font-size:14px}.progress{display:flex;gap:10px;align-items:center;margin-top:16px}.bar{height:12px;background:#efdfe0;border-radius:99px;overflow:hidden;flex:1}.bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:.25s}.pct{font-weight:850}.statusrow{display:flex;justify-content:space-between;align-items:center;margin:15px 2px 10px}.who{font-size:14px;color:var(--muted)}.sync{font-size:12px;color:var(--muted);margin-top:3px}.sync.ok:before{content:"●";color:#55a46a;margin-right:5px}.sync.bad:before{content:"●";color:#d38c4c;margin-right:5px}.btn{border:0;background:#fff;color:var(--text);border-radius:13px;padding:10px 13px;font-weight:750;box-shadow:0 5px 15px #6b494917}.btn.primary{background:var(--accent);color:#fff}.btn.danger{background:#fff0f1;color:var(--red)}.btn.small{padding:7px 9px;font-size:12px;box-shadow:none}.tabs{display:flex;gap:8px;overflow:auto;padding:3px 1px 11px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;white-space:nowrap;font-weight:750;color:var(--muted)}.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}.stat{background:#fff;border:1px solid #f1e6e5;border-radius:18px;padding:15px;box-shadow:var(--shadow)}.stat strong{font-size:27px;display:block}.stat span{font-size:13px;color:var(--muted)}.section{margin:13px 0;background:var(--card);border:1px solid #f1e6e5;border-radius:20px;box-shadow:var(--shadow);overflow:hidden}.head{padding:15px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}.title{font-size:18px;font-weight:850;display:flex;align-items:center;gap:7px}.count{font-size:12px;background:#f7ecec;padding:6px 9px;border-radius:99px;color:var(--muted);font-weight:800}.item{display:flex;gap:12px;padding:14px 15px;border-bottom:1px solid #f2e9e8;align-items:flex-start}.item:last-child{border-bottom:0}.item.done{background:#fbfffc}.check{appearance:none;width:25px;height:25px;border:2px solid #d8b8bb;border-radius:8px;flex:none;margin-top:1px;display:grid;place-items:center;background:#fff}.check:checked{background:var(--green);border-color:var(--green)}.check:checked:after{content:"✓";color:#fff;font-size:16px;font-weight:900}.main{flex:1;min-width:0}.name{font-weight:750;font-size:16px}.done .name{text-decoration:line-through;color:#7f9184}.meta{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.55}.badge{font-size:11px;border-radius:99px;padding:5px 8px;background:var(--accent-soft);color:#96585e;white-space:nowrap;font-weight:750}.done .badge{background:#e7f3ea;color:#557b5e}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.cardlist{display:grid;gap:10px}.person,.category{background:#fff;border:1px solid #f1e6e5;border-radius:17px;padding:14px;box-shadow:var(--shadow);display:flex;justify-content:space-between;gap:10px;align-items:center}.person-info strong,.category-info strong{display:block}.person-info small,.category-info small{color:var(--muted)}.empty,.error{padding:28px;text-align:center;color:var(--muted)}.fab{position:fixed;right:18px;bottom:24px;background:var(--accent);color:#fff;border:0;border-radius:50%;width:57px;height:57px;font-size:27px;box-shadow:0 10px 25px #a45a6166}dialog{border:0;border-radius:22px;width:min(450px,calc(100% - 24px));padding:0;box-shadow:0 25px 70px #4a33335c}dialog::backdrop{background:#30222288}.modal{padding:20px;max-height:85vh;overflow:auto}.modal h2{margin:0 0 7px}.modal p{color:var(--muted);font-size:14px}.field{margin:12px 0}.field label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid #decaca;border-radius:12px;font-size:16px;background:#fff}.field textarea{min-height:85px;resize:vertical}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}.checkgroup{display:flex;flex-wrap:wrap;gap:7px}.person-chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px}.person-chip.selected{background:var(--accent);color:#fff;border-color:var(--accent)}.toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0}.search{flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:13px;background:#fff}.notice{background:#fff3cd;border:1px solid #ffe69c;padding:13px;border-radius:14px;font-size:13px;line-height:1.55;margin:10px 0}@media(max-width:520px){.grid{grid-template-columns:1fr 1fr}.hero{padding:18px}.item{padding:13px}.actions{flex-direction:column}.btn.small{padding:6px 8px}}
-</style></head><body><div class="app"><section class="hero"><div class="eyebrow">WEDDING CONTROL CENTER</div><h1 id="heroTitle">婚禮工作中心</h1><div class="sub" id="heroDate">多人即時同步・免安裝 App</div><div class="progress"><div class="bar"><span id="progressBar"></span></div><div class="pct" id="progressText">0%</div></div></section><div class="statusrow"><div><div class="who" id="who">尚未設定姓名</div><div id="sync" class="sync bad">準備連線</div></div><button class="btn" id="changeName">更改姓名</button></div><nav class="tabs" id="tabs"><button class="tab active" data-view="dashboard">首頁</button><button class="tab" data-view="tasks">全部任務</button><button class="tab" data-view="mine">我的任務</button><button class="tab" data-view="people">人員</button><button class="tab" data-view="categories">分類</button><button class="tab" data-view="settings">設定</button></nav><main><section class="panel active" id="dashboard"></section><section class="panel" id="tasks"></section><section class="panel" id="mine"></section><section class="panel" id="people"></section><section class="panel" id="categories"></section><section class="panel" id="settings"></section></main></div><button class="fab" id="fab">＋</button>
-<dialog id="nameDialog"><form method="dialog" class="modal" id="nameForm"><h2>輸入你的姓名</h2><p>系統會記住這台裝置，並顯示最後更新者。</p><div class="field"><label>姓名或稱呼</label><input id="displayName" maxlength="20" required></div><div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div></form></dialog>
-<dialog id="taskDialog"><form method="dialog" class="modal" id="taskForm"><h2 id="taskDialogTitle">新增任務</h2><input type="hidden" id="taskId"><div class="field"><label>任務名稱</label><input id="taskTitle" maxlength="80" required></div><div class="field"><label>類型</label><select id="taskType"><option value="工作">工作內容</option><option value="物品">要準備的物品</option></select></div><div class="field"><label>大分類</label><select id="taskCategory"></select></div><div class="field"><label>負責人（可複選）</label><div id="assigneePicker" class="checkgroup"></div></div><div class="field"><label>期限</label><input id="taskDue" placeholder="例如：婚禮前一天"></div><div class="field"><label>備註</label><textarea id="taskNotes"></textarea></div><div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div></form></dialog>
-<dialog id="categoryDialog"><form method="dialog" class="modal" id="categoryForm"><h2 id="categoryDialogTitle">新增分類</h2><input type="hidden" id="categoryId"><div class="field"><label>分類名稱</label><input id="categoryName" maxlength="30" required></div><div class="field"><label>圖示</label><input id="categoryIcon" maxlength="4" placeholder="例如：💍"></div><div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div></form></dialog>
-<dialog id="personDialog"><form method="dialog" class="modal" id="personForm"><h2 id="personDialogTitle">新增人員</h2><input type="hidden" id="personId"><div class="field"><label>姓名</label><input id="personName" maxlength="20" required></div><div class="field"><label>角色</label><input id="personRole" maxlength="30" placeholder="例如：伴郎、主持人"></div><div class="field"><label>電話（選填）</label><input id="personPhone" maxlength="30"></div><div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div></form></dialog><script type="module" src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#c97f86">
+  <title>婚禮工作中心</title>
+  <style>
+    :root{
+      --bg:#fff9f8; --card:#fff; --text:#403333; --muted:#8d7779;
+      --line:#eee2e3; --accent:#c97f86; --accent-dark:#a95f67;
+      --soft:#f8e8e9; --ok:#6f9d79; --danger:#b45861;
+      --shadow:0 10px 28px rgba(80,52,52,.10);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:linear-gradient(#fff5f4,#fffefd 42%,#f8f1f0);color:var(--text);min-height:100vh}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{width:min(840px,100%);margin:auto;padding:14px 12px 110px}
+    .hero{padding:20px;border-radius:26px;background:linear-gradient(135deg,#f3d4d7,#fff);box-shadow:var(--shadow);position:relative;overflow:hidden}
+    .hero:after{content:"♡";position:absolute;right:12px;top:-28px;font-size:112px;color:#d7969b33}
+    .eyebrow{font-size:12px;letter-spacing:.14em;color:var(--muted)}
+    h1{font-size:27px;margin:5px 0}
+    .sub{font-size:14px;color:var(--muted)}
+    .progress{display:flex;gap:10px;align-items:center;margin-top:16px}
+    .bar{height:12px;background:#efdfe0;border-radius:999px;overflow:hidden;flex:1}
+    .bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:.25s}
+    .pct{font-weight:850}
+    .statusrow{display:flex;justify-content:space-between;align-items:center;margin:15px 2px 10px}
+    .who{font-size:14px;color:var(--muted)}
+    .sync{font-size:12px;color:var(--muted);margin-top:3px}
+    .sync.ok:before{content:"●";color:#55a46a;margin-right:5px}
+    .sync.bad:before{content:"●";color:#d38c4c;margin-right:5px}
+    .btn{border:0;background:#fff;color:var(--text);border-radius:13px;padding:10px 13px;font-weight:750;box-shadow:0 5px 15px #6b494917}
+    .btn.primary{background:var(--accent);color:#fff}
+    .btn.danger{background:#fff0f1;color:var(--danger)}
+    .btn.small{padding:7px 9px;font-size:12px;box-shadow:none}
+    .tabs{display:flex;gap:8px;overflow:auto;padding:3px 1px 11px;scrollbar-width:none}
+    .tabs::-webkit-scrollbar{display:none}
+    .tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;white-space:nowrap;font-weight:750;color:var(--muted)}
+    .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .panel{display:none}
+    .panel.active{display:block}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
+    .stat{background:#fff;border:1px solid #f1e6e5;border-radius:18px;padding:15px;box-shadow:var(--shadow)}
+    .stat strong{font-size:27px;display:block}
+    .stat span{font-size:13px;color:var(--muted)}
+    .section{margin:13px 0;background:var(--card);border:1px solid #f1e6e5;border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+    .head{padding:15px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);gap:8px}
+    .title{font-size:18px;font-weight:850;display:flex;align-items:center;gap:7px}
+    .count{font-size:12px;background:#f7ecec;padding:6px 9px;border-radius:999px;color:var(--muted);font-weight:800}
+    .item{display:flex;gap:12px;padding:14px 15px;border-bottom:1px solid #f2e9e8;align-items:flex-start}
+    .item:last-child{border-bottom:0}
+    .item.done{background:#fbfffc}
+    .check{appearance:none;width:25px;height:25px;border:2px solid #d8b8bb;border-radius:8px;flex:none;margin-top:1px;display:grid;place-items:center;background:#fff}
+    .check:checked{background:var(--ok);border-color:var(--ok)}
+    .check:checked:after{content:"✓";color:#fff;font-size:16px;font-weight:900}
+    .main{flex:1;min-width:0}
+    .name{font-weight:750;font-size:16px}
+    .done .name{text-decoration:line-through;color:#7f9184}
+    .meta{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.55}
+    .badge{font-size:11px;border-radius:999px;padding:5px 8px;background:var(--soft);color:#96585e;white-space:nowrap;font-weight:750}
+    .done .badge{background:#e7f3ea;color:#557b5e}
+    .actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .cardlist{display:grid;gap:10px}
+    .person,.category{background:#fff;border:1px solid #f1e6e5;border-radius:17px;padding:14px;box-shadow:var(--shadow);display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .person-info strong,.category-info strong{display:block}
+    .person-info small,.category-info small{color:var(--muted)}
+    .empty,.error{padding:28px;text-align:center;color:var(--muted)}
+    .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0}
+    .notice{background:#fff3cd;border:1px solid #ffe69c;padding:13px;border-radius:14px;font-size:13px;line-height:1.55;margin:10px 0}
+    .fab{position:fixed;right:18px;bottom:24px;background:var(--accent);color:#fff;border:0;border-radius:50%;width:58px;height:58px;font-size:28px;box-shadow:0 10px 25px #a45a6166}
+    dialog{border:0;border-radius:22px;width:min(460px,calc(100% - 24px));padding:0;box-shadow:0 25px 70px #4a33335c}
+    dialog::backdrop{background:#30222288}
+    .modal{padding:20px;max-height:85vh;overflow:auto}
+    .modal h2{margin:0 0 7px}
+    .modal p{color:var(--muted);font-size:14px}
+    .field{margin:12px 0}
+    .field label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px}
+    .field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid #decaca;border-radius:12px;font-size:16px;background:#fff}
+    .field textarea{min-height:85px;resize:vertical}
+    .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+    .checkgroup{display:flex;flex-wrap:wrap;gap:7px}
+    .person-chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px}
+    .person-chip.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+    @media(max-width:520px){.item{padding:13px}.actions{flex-direction:column}.btn.small{padding:6px 8px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <section class="hero">
+    <div class="eyebrow">WEDDING CONTROL CENTER</div>
+    <h1 id="heroTitle">婚禮工作中心</h1>
+    <div class="sub" id="heroDate">多人即時同步・免安裝 App</div>
+    <div class="progress"><div class="bar"><span id="progressBar"></span></div><div class="pct" id="progressText">0%</div></div>
+  </section>
+
+  <div class="statusrow">
+    <div>
+      <div class="who" id="who">尚未設定姓名</div>
+      <div id="sync" class="sync bad">準備連線</div>
+    </div>
+    <button class="btn" id="changeName">更改姓名</button>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-view="dashboard">首頁</button>
+    <button class="tab" data-view="tasks">全部任務</button>
+    <button class="tab" data-view="mine">我的任務</button>
+    <button class="tab" data-view="people">人員</button>
+    <button class="tab" data-view="categories">分類</button>
+    <button class="tab" data-view="settings">設定</button>
+  </nav>
+
+  <main>
+    <section class="panel active" id="dashboard"></section>
+    <section class="panel" id="tasks"></section>
+    <section class="panel" id="mine"></section>
+    <section class="panel" id="people"></section>
+    <section class="panel" id="categories"></section>
+    <section class="panel" id="settings"></section>
+  </main>
+</div>
+
+<button class="fab" id="fab" aria-label="新增">＋</button>
+
+<dialog id="nameDialog">
+  <form method="dialog" class="modal" id="nameForm">
+    <h2>輸入你的姓名</h2>
+    <p>系統會記住這台裝置，並顯示最後更新者。</p>
+    <div class="field"><label>姓名或稱呼</label><input id="displayName" maxlength="20" required></div>
+    <div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div>
+  </form>
+</dialog>
+
+<dialog id="taskDialog">
+  <form method="dialog" class="modal" id="taskForm">
+    <h2 id="taskDialogTitle">新增任務</h2>
+    <input type="hidden" id="taskId">
+    <div class="field"><label>任務名稱</label><input id="taskTitle" maxlength="80" required></div>
+    <div class="field"><label>類型</label><select id="taskType"><option value="工作">工作內容</option><option value="物品">要準備的物品</option></select></div>
+    <div class="field"><label>大分類</label><select id="taskCategory"></select></div>
+    <div class="field"><label>負責人（可複選）</label><div id="assigneePicker" class="checkgroup"></div></div>
+    <div class="field"><label>期限</label><input id="taskDue" placeholder="例如：婚禮前一天"></div>
+    <div class="field"><label>備註</label><textarea id="taskNotes"></textarea></div>
+    <div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div>
+  </form>
+</dialog>
+
+<dialog id="categoryDialog">
+  <form method="dialog" class="modal" id="categoryForm">
+    <h2 id="categoryDialogTitle">新增分類</h2>
+    <input type="hidden" id="categoryId">
+    <div class="field"><label>分類名稱</label><input id="categoryName" maxlength="30" required></div>
+    <div class="field"><label>圖示</label><input id="categoryIcon" maxlength="4" placeholder="例如：💍"></div>
+    <div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div>
+  </form>
+</dialog>
+
+<dialog id="personDialog">
+  <form method="dialog" class="modal" id="personForm">
+    <h2 id="personDialogTitle">新增人員</h2>
+    <input type="hidden" id="personId">
+    <div class="field"><label>姓名</label><input id="personName" maxlength="20" required></div>
+    <div class="field"><label>角色</label><input id="personRole" maxlength="30" placeholder="例如：伴郎、主持人"></div>
+    <div class="field"><label>電話（選填）</label><input id="personPhone" maxlength="30"></div>
+    <div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div>
+  </form>
+</dialog>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
