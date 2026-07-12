@@ -2,8 +2,8 @@ import { firebaseConfig } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 import {
-  getFirestore, collection, doc, setDoc, addDoc, updateDoc, onSnapshot,
-  serverTimestamp, query, orderBy, getDocs, writeBatch
+  getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot,
+  serverTimestamp, query, orderBy, getDocs, getDoc, writeBatch
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const CATEGORY_ORDER=["文定準備","迎娶與車隊","婚宴現場","新人隨身物品","其他"];
@@ -64,12 +64,17 @@ function render(){
   $("#list").innerHTML=Object.entries(groups).filter(([,arr])=>arr.length).map(([cat,arr])=>{
     const d=arr.filter(x=>x.done).length;
     return `<section class="section"><div class="head"><div class="title">${ICONS[cat]||"📌"} ${esc(cat)}</div><div class="count">${d} / ${arr.length}</div></div>
-    ${arr.map(x=>`<label class="item ${x.done?"done":""}">
+    ${arr.map(x=>`<div class="item ${x.done?"done":""}">
       <input type="checkbox" data-id="${x.id}" ${x.done?"checked":""}>
       <div class="main"><div class="name">${esc(x.title)}</div>
       <div class="meta">負責人：${esc(x.owner||"未指定")} ${x.due?`・${esc(x.due)}`:""}
       ${x.updatedBy?`<br>最後更新：${esc(x.updatedBy)} ${fmtTime(x.updatedAt)}`:""}</div></div>
-      <div class="badge">${x.done?"已完成":"待完成"}</div></label>`).join("")}</section>`;
+      <div style="display:flex;flex-direction:column;gap:7px;align-items:flex-end">
+        <div class="badge">${x.done?"已完成":"待完成"}</div>
+        <button type="button" class="delete-btn" data-id="${x.id}" data-title="${esc(x.title)}"
+          style="box-shadow:none;background:#fff1f1;color:#a84e55;padding:6px 9px;font-size:12px">刪除</button>
+      </div>
+    </div>`).join("")}</section>`;
   }).join("") || `<div class="empty">目前沒有待辦事項</div>`;
 
   document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb=>{
@@ -82,17 +87,39 @@ function render(){
       cb.disabled=false;
     };
   });
+
+  document.querySelectorAll(".delete-btn").forEach(btn=>{
+    btn.onclick=async()=>{
+      if(!displayName)return askName();
+      if(!confirm(`確定要刪除「${btn.dataset.title}」嗎？\n刪除後所有裝置都會同步消失。`))return;
+      btn.disabled=true;
+      try{
+        await deleteDoc(doc(db,"weddingChecklist",btn.dataset.id));
+      }catch(err){
+        alert("刪除失敗："+err.message);
+        btn.disabled=false;
+      }
+    };
+  });
 }
 
 async function seedIfEmpty(){
+  const setupRef=doc(db,"weddingSettings","bootstrap");
+  const setupSnap=await getDoc(setupRef);
+  if(setupSnap.exists())return;
+
   const snap=await getDocs(collection(db,"weddingChecklist"));
-  if(!snap.empty)return;
-  const batch=writeBatch(db);
-  seed.forEach(([category,title,owner,due],i)=>{
-    const ref=doc(collection(db,"weddingChecklist"));
-    batch.set(ref,{category,title,owner,due,done:false,sort:i,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),updatedBy:"系統建立",updatedByUid:currentUser.uid});
-  });
-  await batch.commit();
+  if(snap.empty){
+    const batch=writeBatch(db);
+    seed.forEach(([category,title,owner,due],i)=>{
+      const ref=doc(collection(db,"weddingChecklist"));
+      batch.set(ref,{category,title,owner,due,done:false,sort:i,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),updatedBy:"系統建立",updatedByUid:currentUser.uid});
+    });
+    batch.set(setupRef,{initialized:true,initializedAt:serverTimestamp()});
+    await batch.commit();
+  }else{
+    await setDoc(setupRef,{initialized:true,initializedAt:serverTimestamp()});
+  }
 }
 
 async function start(){
