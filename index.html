@@ -84,7 +84,13 @@
     .person-chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px}
     .person-chip.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
     @media(max-width:520px){.item{padding:13px}.actions{flex-direction:column}.btn.small{padding:6px 8px}}
-  </style>
+  
+    .assignee-input-row{display:grid;grid-template-columns:1fr auto;gap:8px}
+    .suggestions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+    .suggestion{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 10px;color:#2777c7}
+    .tag{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#fff;border-radius:999px;padding:8px 11px}
+    .tag button{border:0;background:transparent;color:#fff;font-size:17px;line-height:1}
+</style>
 </head>
 <body>
 <div class="app">
@@ -138,7 +144,15 @@
     <div class="field"><label>任務名稱</label><input id="taskTitle" maxlength="80" required></div>
     <div class="field"><label>類型</label><select id="taskType"><option value="工作">工作內容</option><option value="物品">要準備的物品</option></select></div>
     <div class="field"><label>大分類</label><select id="taskCategory"></select></div>
-    <div class="field"><label>負責人（可複選）</label><div id="assigneePicker" class="checkgroup"></div></div>
+    <div class="field">
+      <label>負責人（自由輸入，可多人）</label>
+      <div class="assignee-input-row">
+        <input id="assigneeInput" maxlength="20" placeholder="輸入姓名後按加入">
+        <button type="button" class="btn" id="addAssignee">加入</button>
+      </div>
+      <div id="assigneeSuggestions" class="suggestions"></div>
+      <div id="assigneeTags" class="checkgroup"></div>
+    </div>
     <div class="field"><label>備註</label><textarea id="taskNotes"></textarea></div>
     <div class="modal-actions"><button type="button" class="btn" data-close>取消</button><button class="btn primary" value="ok">儲存</button></div>
   </form>

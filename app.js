@@ -23,15 +23,13 @@ let tasks = [];
 let categories = [];
 let people = [];
 let settings = { coupleNames:"婚禮工作中心", weddingDate:"", initialized:false };
-let selectedAssignees = new Set();
+let selectedAssigneeNames = [];
 
 const defaults = {
   categories:[
     ["文定準備","💍"],["迎娶與車隊","🚗"],["婚宴現場","🥂"],["攝影錄影","📸"],["新人隨身物品","🧳"]
   ],
-  people:[
-    ["新郎","新人"],["新娘","新人"],["伴郎","工作人員"],["伴娘","工作人員"],["主持人","廠商"]
-  ],
+  people:[],
   tasks:[
     ["十二禮與紅包確認完成","工作","文定準備","婚禮前二天"],
     ["奉茶名單最終確認","工作","文定準備","婚禮前一天"],
@@ -47,7 +45,11 @@ const defaults = {
 
 function categoryById(id){ return categories.find((x)=>x.id===id); }
 function personById(id){ return people.find((x)=>x.id===id); }
-function taskPeople(task){ return (task.assigneeIds || []).map((id)=>personById(id)?.name).filter(Boolean); }
+function personByName(name){ return people.find((x)=>x.name===name); }
+function taskPeople(task){
+  if(Array.isArray(task.assignees)) return task.assignees;
+  return (task.assigneeIds || []).map((id)=>personById(id)?.name).filter(Boolean);
+}
 
 function setView(view){
   currentView = view;
@@ -150,12 +152,14 @@ function renderTasks(){
 }
 
 function renderMine(){
-  const me = people.find((p)=>p.name===displayName);
-  if(!me){
-    $("#mine").innerHTML = `<div class="notice">目前姓名「${esc(displayName||"未設定")}」尚未在人員名單中。請先到「人員」新增同名人員。</div>`;
+  if(!displayName){
+    $("#mine").innerHTML = `<div class="notice">請先設定目前使用者姓名。</div>`;
     return;
   }
-  const mine = tasks.filter((t)=>(t.assigneeIds||[]).includes(me.id));
+  const me = people.find((p)=>p.name===displayName);
+  const mine = tasks.filter((t)=>
+    (t.assignees||[]).includes(displayName) || (me && (t.assigneeIds||[]).includes(me.id))
+  );
   const work = mine.filter((t)=>t.type==="工作");
   const items = mine.filter((t)=>t.type==="物品");
 
@@ -176,7 +180,7 @@ function renderPeople(){
     <div class="toolbar"><div></div><button class="btn primary" data-action="new-person">新增人員</button></div>
     <div class="cardlist">
       ${people.map((person)=>{
-        const assigned = tasks.filter((t)=>(t.assigneeIds||[]).includes(person.id));
+        const assigned = tasks.filter((t)=>(t.assignees||[]).includes(person.name) || (t.assigneeIds||[]).includes(person.id));
         return `<div class="person">
           <div class="person-info"><strong>${esc(person.name)}</strong><small>${esc(person.role||"未設定角色")}・任務 ${assigned.length} 項</small></div>
           <div class="actions">
@@ -229,20 +233,47 @@ function renderAll(){
   if(currentView==="settings") renderSettings();
 }
 
-function renderAssignees(){
-  $("#assigneePicker").innerHTML = people.map((person)=>`
-    <button type="button" class="person-chip ${selectedAssignees.has(person.id) ? "selected" : ""}" data-person="${person.id}">
-      ${esc(person.name)}
-    </button>
-  `).join("") || '<span class="meta">請先建立人員</span>';
+function renderAssigneeTags(){
+  $("#assigneeTags").innerHTML = selectedAssigneeNames.map((name)=>`
+    <span class="tag">${esc(name)}<button type="button" data-remove-assignee="${esc(name)}">×</button></span>
+  `).join("");
 }
 
-$("#assigneePicker").addEventListener("click",(event)=>{
-  const button = event.target.closest("[data-person]");
-  if(!button) return;
-  if(selectedAssignees.has(button.dataset.person)) selectedAssignees.delete(button.dataset.person);
-  else selectedAssignees.add(button.dataset.person);
-  renderAssignees();
+function renderAssigneeSuggestions(){
+  const input = $("#assigneeInput");
+  if(!input) return;
+  const text = input.value.trim().toLowerCase();
+  const list = people.filter((p)=>!selectedAssigneeNames.includes(p.name))
+    .filter((p)=>!text || p.name.toLowerCase().includes(text)).slice(0,8);
+  $("#assigneeSuggestions").innerHTML = list.map((p)=>`
+    <button type="button" class="suggestion" data-suggest-assignee="${esc(p.name)}">${esc(p.name)}</button>
+  `).join("");
+}
+
+function addAssigneeName(raw){
+  const name = raw.trim();
+  if(!name || selectedAssigneeNames.includes(name)) return;
+  selectedAssigneeNames.push(name);
+  $("#assigneeInput").value = "";
+  renderAssigneeTags();
+  renderAssigneeSuggestions();
+}
+
+$("#addAssignee").addEventListener("click",()=>addAssigneeName($("#assigneeInput").value));
+$("#assigneeInput").addEventListener("input",renderAssigneeSuggestions);
+$("#assigneeInput").addEventListener("keydown",(event)=>{
+  if(event.key === "Enter"){ event.preventDefault(); addAssigneeName(event.target.value); }
+});
+$("#assigneeSuggestions").addEventListener("click",(event)=>{
+  const b=event.target.closest("[data-suggest-assignee]");
+  if(b) addAssigneeName(b.dataset.suggestAssignee);
+});
+$("#assigneeTags").addEventListener("click",(event)=>{
+  const b=event.target.closest("[data-remove-assignee]");
+  if(!b) return;
+  selectedAssigneeNames = selectedAssigneeNames.filter((name)=>name!==b.dataset.removeAssignee);
+  renderAssigneeTags();
+  renderAssigneeSuggestions();
 });
 
 function openTaskDialog(task=null){
@@ -253,8 +284,10 @@ function openTaskDialog(task=null){
   $("#taskCategory").innerHTML = categories.map((cat)=>`<option value="${cat.id}">${esc(cat.icon||"📌")} ${esc(cat.name)}</option>`).join("");
   $("#taskCategory").value = task?.categoryId || categories[0]?.id || "";
   $("#taskNotes").value = task?.notes || "";
-  selectedAssignees = new Set(task?.assigneeIds || []);
-  renderAssignees();
+  selectedAssigneeNames = [...(task?.assignees || taskPeople(task) || [])];
+  $("#assigneeInput").value = "";
+  renderAssigneeTags();
+  renderAssigneeSuggestions();
   $("#taskDialog").showModal();
 }
 
@@ -275,6 +308,14 @@ function openPersonDialog(person=null){
   $("#personDialog").showModal();
 }
 
+async function ensurePeopleExist(names){
+  for(const name of names){
+    if(!personByName(name)){
+      await addDoc(collection(db,"weddingPeople"),{name,role:"",phone:"",createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    }
+  }
+}
+
 $("#taskForm").addEventListener("submit",async(event)=>{
   if(event.submitter?.value !== "ok") return;
   event.preventDefault();
@@ -283,16 +324,18 @@ $("#taskForm").addEventListener("submit",async(event)=>{
     title:$("#taskTitle").value.trim(),
     type:$("#taskType").value,
     categoryId:$("#taskCategory").value,
-    assigneeIds:[...selectedAssignees],
+    assignees:[...selectedAssigneeNames],
     notes:$("#taskNotes").value.trim(),
     updatedAt:serverTimestamp(),
     updatedBy:displayName,
     updatedByUid:currentUser.uid
   };
   if(!payload.title) return;
+  await ensurePeopleExist(payload.assignees);
   if(id) await updateDoc(doc(db,"weddingTasks",id),payload);
   else await addDoc(collection(db,"weddingTasks"),{...payload,done:false,createdAt:serverTimestamp()});
   $("#taskForm").reset();
+  selectedAssigneeNames = [];
   $("#taskDialog").close();
 });
 
@@ -384,15 +427,8 @@ document.body.addEventListener("click",async(event)=>{
 
     if(action==="delete-person"){
       const person = personById(id);
-      if(person && confirm(`確定刪除「${person.name}」嗎？`)){
-        const batch = writeBatch(db);
-        tasks.filter((task)=>(task.assigneeIds||[]).includes(id)).forEach((task)=>{
-          batch.update(doc(db,"weddingTasks",task.id),{
-            assigneeIds:(task.assigneeIds||[]).filter((personId)=>personId!==id)
-          });
-        });
-        batch.delete(doc(db,"weddingPeople",id));
-        await batch.commit();
+      if(person && confirm(`確定刪除「${person.name}」嗎？任務上的姓名仍會保留。`)){
+        await deleteDoc(doc(db,"weddingPeople",id));
       }
     }
 
@@ -443,15 +479,11 @@ async function bootstrap(){
     batch.set(ref,{name,icon,sort:index,createdAt:serverTimestamp()});
   });
 
-  defaults.people.forEach(([name,role],index)=>{
-    const ref = doc(collection(db,"weddingPeople"));
-    batch.set(ref,{name,role,phone:"",sort:index,createdAt:serverTimestamp()});
-  });
 
   defaults.tasks.forEach(([title,type,category,due],index)=>{
     const ref = doc(collection(db,"weddingTasks"));
     batch.set(ref,{
-      title,type,categoryId:categoryRefs[category].id,assigneeIds:[],
+      title,type,categoryId:categoryRefs[category].id,assignees:[],assigneeIds:[],
       due,notes:"",done:false,sort:index,
       createdAt:serverTimestamp(),updatedAt:serverTimestamp(),updatedBy:"系統建立"
     });
@@ -471,6 +503,7 @@ function subscribe(){
   });
   onSnapshot(query(collection(db,"weddingPeople"),orderBy("createdAt","asc")),(snap)=>{
     people = snap.docs.map((item)=>({id:item.id,...item.data()}));
+    if($("#taskDialog")?.open) renderAssigneeSuggestions();
     renderAll();
   });
   onSnapshot(query(collection(db,"weddingTasks"),orderBy("createdAt","asc")),(snap)=>{
