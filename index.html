@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#c77d83">
+  <title>紹廷 & 筱彤｜婚禮 Checklist</title>
+  <style>
+    :root{--bg:#fff8f7;--card:#fff;--text:#403333;--muted:#8d7777;--line:#eee1e1;--pink:#c77d83;--soft:#f8e7e8;--green:#6f9e79;--shadow:0 10px 28px rgba(80,52,52,.10)}
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:linear-gradient(#fff5f4,#fffefd);color:var(--text);min-height:100vh}
+    .app{width:min(760px,100%);margin:auto;padding:14px 12px 90px}.hero{padding:20px;border-radius:25px;background:linear-gradient(135deg,#f3d4d7,#fff);box-shadow:var(--shadow);position:relative;overflow:hidden}
+    .hero:after{content:"♡";position:absolute;right:14px;top:-15px;font-size:100px;color:#d7969b33}.eyebrow{font-size:12px;letter-spacing:.13em;color:var(--muted)}h1{font-size:26px;margin:5px 0}.sub{color:var(--muted);font-size:14px}
+    .status{display:flex;gap:8px;align-items:center;margin-top:16px}.bar{height:12px;background:#f0dfe0;border-radius:20px;overflow:hidden;flex:1}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#d98f95,#ae636b);transition:.25s}.pct{font-weight:800}
+    .topline{display:flex;justify-content:space-between;align-items:center;margin:15px 2px 8px}.who{font-size:14px;color:var(--muted)}button{border:0;border-radius:13px;padding:10px 13px;font-weight:750;background:#fff;box-shadow:0 5px 15px #6b494917;color:var(--text)}
+    .sync{font-size:12px;color:var(--muted)}.sync.online:before{content:"●";color:#56a36b;margin-right:5px}.sync.offline:before{content:"●";color:#d18c49;margin-right:5px}
+    .section{margin:13px 0;background:var(--card);border:1px solid #f1e6e5;border-radius:20px;box-shadow:var(--shadow);overflow:hidden}.head{padding:15px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+    .title{font-size:18px;font-weight:850}.count{font-size:12px;background:#f7ecec;padding:6px 9px;border-radius:99px;color:var(--muted);font-weight:800}
+    .item{display:flex;gap:12px;padding:14px 15px;border-bottom:1px solid #f2e9e8;align-items:flex-start}.item:last-child{border-bottom:0}.item.done{background:#fbfffc}
+    input[type=checkbox]{appearance:none;width:25px;height:25px;border:2px solid #d8b8bb;border-radius:8px;flex:none;margin-top:1px;display:grid;place-items:center;background:#fff}input:checked{background:var(--green);border-color:var(--green)}input:checked:after{content:"✓";color:#fff;font-size:16px;font-weight:900}
+    .main{flex:1}.name{font-weight:750;font-size:16px}.done .name{text-decoration:line-through;color:#7f9184}.meta{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}.badge{font-size:11px;border-radius:99px;padding:5px 8px;background:var(--soft);color:#96585e;white-space:nowrap;font-weight:750}.done .badge{background:#e8f4eb;color:#557b5e}
+    .empty,.error{padding:26px;text-align:center;color:var(--muted)}.fab{position:fixed;right:18px;bottom:22px;background:var(--pink);color:#fff;border-radius:50%;width:55px;height:55px;font-size:25px;box-shadow:0 10px 25px #a45a6166}
+    dialog{border:0;border-radius:22px;width:min(420px,calc(100% - 28px));padding:0;box-shadow:0 25px 70px #4a33335c}dialog::backdrop{background:#30222288}.modal{padding:20px}.modal h2{margin:0 0 7px}.modal p{color:var(--muted);font-size:14px}.field{margin:12px 0}.field label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px}.field input,.field select{width:100%;padding:12px;border:1px solid #decaca;border-radius:12px;font-size:16px;background:#fff}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}.primary{background:var(--pink);color:#fff}
+    .setup{background:#fff3cd;border:1px solid #ffe69c;padding:14px;border-radius:14px;font-size:13px;line-height:1.55;margin-top:12px}
+  </style>
+</head>
+<body>
+<div class="app">
+  <section class="hero">
+    <div class="eyebrow">WEDDING PREPARATION</div>
+    <h1>紹廷 & 筱彤 婚禮 Checklist</h1>
+    <div class="sub">婚禮日期：2026 年 7 月 18 日</div>
+    <div class="status"><div class="bar"><i id="bar"></i></div><div class="pct" id="pct">0%</div></div>
+  </section>
+
+  <div class="topline">
+    <div><div class="who" id="who">尚未設定使用者</div><div id="sync" class="sync offline">連線中</div></div>
+    <button id="changeName">更改姓名</button>
+  </div>
+
+  <div id="setupWarn" class="setup" hidden>尚未填入 Firebase 設定。請依 README 步驟設定 <b>firebase-config.js</b>，再上傳 GitHub。</div>
+  <main id="list"><div class="empty">正在載入共同清單…</div></main>
+</div>
+
+<button class="fab" id="addBtn" aria-label="新增待辦">＋</button>
+
+<dialog id="nameDialog">
+  <form method="dialog" class="modal" id="nameForm">
+    <h2>請輸入你的姓名</h2><p>勾選紀錄會顯示完成者，這台裝置下次會自動記住。</p>
+    <div class="field"><label>姓名或稱呼</label><input id="displayName" maxlength="20" required placeholder="例如：紹廷"></div>
+    <div class="actions"><button value="cancel">取消</button><button class="primary" value="ok">儲存</button></div>
+  </form>
+</dialog>
+
+<dialog id="addDialog">
+  <form method="dialog" class="modal" id="addForm">
+    <h2>新增待辦事項</h2>
+    <div class="field"><label>分類</label><select id="newCategory"><option>文定準備</option><option>迎娶與車隊</option><option>婚宴現場</option><option>新人隨身物品</option><option>其他</option></select></div>
+    <div class="field"><label>待辦內容</label><input id="newTitle" maxlength="60" required placeholder="例如：確認主持人抵達時間"></div>
+    <div class="field"><label>負責人</label><input id="newOwner" maxlength="20" placeholder="例如：紹廷"></div>
+    <div class="field"><label>期限</label><input id="newDue" maxlength="30" placeholder="例如：7/17 前"></div>
+    <div class="actions"><button value="cancel">取消</button><button class="primary" value="ok">新增</button></div>
+  </form>
+</dialog>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
