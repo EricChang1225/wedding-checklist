@@ -1,146 +1,37 @@
 import { firebaseConfig } from "./firebase-config.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-import {
-  getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot,
-  serverTimestamp, query, orderBy, getDocs, getDoc, writeBatch
-} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-
-const CATEGORY_ORDER=["文定準備","迎娶與車隊","婚宴現場","新人隨身物品","其他"];
-const ICONS={"文定準備":"💍","迎娶與車隊":"🚗","婚宴現場":"🥂","新人隨身物品":"🧳","其他":"📌"};
-const seed=[
-["文定準備","十二禮與紅包確認完成","紹廷","7/16 前"],
-["文定準備","奉茶名單最終確認","媒人","7/17 前"],
-["文定準備","喜餅與茶具送達","女方家人","7/17 前"],
-["文定準備","好命婆與引鳳時間確認","筱彤","7/17 前"],
-["迎娶與車隊","六台禮車司機確認","紹廷","7/16 前"],
-["迎娶與車隊","車隊路線與集合時間傳送","國哥","7/17 前"],
-["迎娶與車隊","鳴炮人員與炮竹準備","明松叔叔","7/17 前"],
-["迎娶與車隊","攝影團隊抵達時間確認","倆好攝影","7/17 前"],
-["婚宴現場","Candy Bar 尾款確認","紹廷","7/17 前"],
-["婚宴現場","冰淇淋 41 桌數量確認","筱彤","7/17 前"],
-["婚宴現場","主持人流程最終版","主持人","7/17 前"],
-["婚宴現場","收禮、招待、工作人員分工表","紹廷","7/16 前"],
-["新人隨身物品","婚戒","伴郎","婚禮當天"],
-["新人隨身物品","身分證與紅包袋","紹廷","婚禮當天"],
-["新人隨身物品","備用襯衫、襪子、行動電源","筱彤","婚禮當天"]
-];
-
-const $=s=>document.querySelector(s);
-let displayName=localStorage.getItem("weddingDisplayName")||"";
-let items=[]; let db, auth; let currentUser=null;
-
-function configReady(){return firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("PASTE_")}
-function askName(){ $("#displayName").value=displayName; $("#nameDialog").showModal(); }
-function updateWho(){ $("#who").textContent=displayName?`目前使用者：${displayName}`:"尚未設定使用者"; }
-
-$("#changeName").onclick=askName;
-$("#nameForm").addEventListener("submit",e=>{
-  if(e.submitter?.value!=="ok") return;
-  const v=$("#displayName").value.trim(); if(!v){e.preventDefault();return}
-  displayName=v; localStorage.setItem("weddingDisplayName",v); updateWho();
-});
-$("#addBtn").onclick=()=>{if(!displayName)return askName();$("#newOwner").value=displayName;$("#addDialog").showModal()};
-$("#addForm").addEventListener("submit",async e=>{
-  if(e.submitter?.value!=="ok")return;
-  e.preventDefault();
-  const title=$("#newTitle").value.trim(); if(!title)return;
-  await addDoc(collection(db,"weddingChecklist"),{
-    category:$("#newCategory").value,title,owner:$("#newOwner").value.trim(),
-    due:$("#newDue").value.trim(),done:false,createdAt:serverTimestamp(),
-    updatedAt:serverTimestamp(),updatedBy:displayName,updatedByUid:currentUser.uid
-  });
-  $("#newTitle").value=""; $("#newDue").value=""; $("#addDialog").close();
-});
-
-function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function fmtTime(ts){try{return ts?.toDate().toLocaleString("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})||""}catch{return""}}
-
-function render(){
-  const groups={}; CATEGORY_ORDER.forEach(c=>groups[c]=[]);
-  items.forEach(x=>(groups[x.category]||(groups[x.category]=[])).push(x));
-  const total=items.length, done=items.filter(x=>x.done).length, pct=total?Math.round(done/total*100):0;
-  $("#bar").style.width=pct+"%"; $("#pct").textContent=pct+"%";
-  $("#list").innerHTML=Object.entries(groups).filter(([,arr])=>arr.length).map(([cat,arr])=>{
-    const d=arr.filter(x=>x.done).length;
-    return `<section class="section"><div class="head"><div class="title">${ICONS[cat]||"📌"} ${esc(cat)}</div><div class="count">${d} / ${arr.length}</div></div>
-    ${arr.map(x=>`<div class="item ${x.done?"done":""}">
-      <input type="checkbox" data-id="${x.id}" ${x.done?"checked":""}>
-      <div class="main"><div class="name">${esc(x.title)}</div>
-      <div class="meta">負責人：${esc(x.owner||"未指定")} ${x.due?`・${esc(x.due)}`:""}
-      ${x.updatedBy?`<br>最後更新：${esc(x.updatedBy)} ${fmtTime(x.updatedAt)}`:""}</div></div>
-      <div style="display:flex;flex-direction:column;gap:7px;align-items:flex-end">
-        <div class="badge">${x.done?"已完成":"待完成"}</div>
-        <button type="button" class="delete-btn" data-id="${x.id}" data-title="${esc(x.title)}"
-          style="box-shadow:none;background:#fff1f1;color:#a84e55;padding:6px 9px;font-size:12px">刪除</button>
-      </div>
-    </div>`).join("")}</section>`;
-  }).join("") || `<div class="empty">目前沒有待辦事項</div>`;
-
-  document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb=>{
-    cb.onchange=async()=>{
-      if(!displayName){cb.checked=!cb.checked;return askName()}
-      cb.disabled=true;
-      try{await updateDoc(doc(db,"weddingChecklist",cb.dataset.id),{
-        done:cb.checked,updatedAt:serverTimestamp(),updatedBy:displayName,updatedByUid:currentUser.uid
-      })}catch(err){alert("更新失敗："+err.message);cb.checked=!cb.checked}
-      cb.disabled=false;
-    };
-  });
-
-  document.querySelectorAll(".delete-btn").forEach(btn=>{
-    btn.onclick=async()=>{
-      if(!displayName)return askName();
-      if(!confirm(`確定要刪除「${btn.dataset.title}」嗎？\n刪除後所有裝置都會同步消失。`))return;
-      btn.disabled=true;
-      try{
-        await deleteDoc(doc(db,"weddingChecklist",btn.dataset.id));
-      }catch(err){
-        alert("刪除失敗："+err.message);
-        btn.disabled=false;
-      }
-    };
-  });
-}
-
-async function seedIfEmpty(){
-  const setupRef=doc(db,"weddingSettings","bootstrap");
-  const setupSnap=await getDoc(setupRef);
-  if(setupSnap.exists())return;
-
-  const snap=await getDocs(collection(db,"weddingChecklist"));
-  if(snap.empty){
-    const batch=writeBatch(db);
-    seed.forEach(([category,title,owner,due],i)=>{
-      const ref=doc(collection(db,"weddingChecklist"));
-      batch.set(ref,{category,title,owner,due,done:false,sort:i,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),updatedBy:"系統建立",updatedByUid:currentUser.uid});
-    });
-    batch.set(setupRef,{initialized:true,initializedAt:serverTimestamp()});
-    await batch.commit();
-  }else{
-    await setDoc(setupRef,{initialized:true,initializedAt:serverTimestamp()});
-  }
-}
-
-async function start(){
-  updateWho(); if(!displayName)askName();
-  if(!configReady()){
-    $("#setupWarn").hidden=false; $("#list").innerHTML='<div class="error">請先完成 Firebase 設定。</div>'; return;
-  }
-  try{
-    const app=initializeApp(firebaseConfig); auth=getAuth(app); db=getFirestore(app);
-    await signInAnonymously(auth);
-    onAuthStateChanged(auth,async user=>{
-      if(!user)return; currentUser=user;
-      $("#sync").className="sync online"; $("#sync").textContent="已連線・多人即時同步";
-      await seedIfEmpty();
-      const q=query(collection(db,"weddingChecklist"),orderBy("createdAt","asc"));
-      onSnapshot(q,snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));render()},
-        err=>{$("#list").innerHTML=`<div class="error">讀取失敗：${esc(err.message)}</div>`});
-    });
-  }catch(err){
-    $("#sync").className="sync offline";$("#sync").textContent="連線失敗";
-    $("#list").innerHTML=`<div class="error">Firebase 連線失敗：${esc(err.message)}</div>`;
-  }
-}
-start();
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, orderBy, getDocs, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+const $=s=>document.querySelector(s),esc=(v="")=>String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const fmt=ts=>{try{return ts?.toDate().toLocaleString("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})||""}catch{return""}};
+let db,auth,currentUser,displayName=localStorage.getItem("weddingDisplayName")||"",currentView="dashboard",tasks=[],categories=[],people=[],settings={coupleNames:"新人婚禮",weddingDate:"",initialized:false},selectedAssignees=new Set(),unsubs=[];
+const defaults={categories:[["文定準備","💍"],["迎娶與車隊","🚗"],["婚宴現場","🥂"],["攝影錄影","📸"],["新人隨身物品","🧳"]],people:[["新郎","新人"],["新娘","新人"],["伴郎","工作人員"],["伴娘","工作人員"],["主持人","廠商"]],tasks:[["十二禮與紅包確認完成","工作","文定準備","婚禮前二天"],["奉茶名單最終確認","工作","文定準備","婚禮前一天"],["禮車司機與集合時間確認","工作","迎娶與車隊","婚禮前一天"],["車隊路線傳送給所有司機","工作","迎娶與車隊","婚禮前一天"],["主持流程最終版","工作","婚宴現場","婚禮前一天"],["收禮與招待分工確認","工作","婚宴現場","婚禮前二天"],["攝影團隊抵達時間確認","工作","攝影錄影","婚禮前一天"],["婚戒","物品","新人隨身物品","婚禮當天"],["身分證、紅包袋、行動電源","物品","新人隨身物品","婚禮當天"]]};
+function setView(v){currentView=v;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===v));$('#fab').style.display=['tasks','people','categories'].includes(v)?'block':'none';renderAll()}
+$('#tabs').onclick=e=>{const b=e.target.closest('.tab');if(b)setView(b.dataset.view)};
+function askName(){$('#displayName').value=displayName;$('#nameDialog').showModal()}$('#changeName').onclick=askName;$('#nameForm').addEventListener('submit',e=>{if(e.submitter?.value!=='ok')return;const v=$('#displayName').value.trim();if(!v){e.preventDefault();return}displayName=v;localStorage.setItem('weddingDisplayName',v);renderHeader()});
+function renderHeader(){$('#who').textContent=displayName?`目前使用者：${displayName}`:'尚未設定姓名';$('#heroTitle').textContent=settings.coupleNames||'婚禮工作中心';$('#heroDate').textContent=settings.weddingDate?`婚禮日期：${settings.weddingDate}`:'多人即時同步・免安裝 App';const total=tasks.length,done=tasks.filter(x=>x.done).length,pct=total?Math.round(done/total*100):0;$('#progressBar').style.width=pct+'%';$('#progressText').textContent=pct+'%'}
+const categoryById=id=>categories.find(x=>x.id===id),personById=id=>people.find(x=>x.id===id),taskPeople=t=>(t.assigneeIds||[]).map(id=>personById(id)?.name).filter(Boolean);
+function taskCard(t){const c=categoryById(t.categoryId),names=taskPeople(t);return `<div class="item ${t.done?'done':''}"><input class="check" type="checkbox" data-action="toggle-task" data-id="${t.id}" ${t.done?'checked':''}><div class="main"><div class="name">${esc(t.title)}</div><div class="meta">${c?`${esc(c.icon||'📌')} ${esc(c.name)}・`:''}${esc(t.type||'工作')}${names.length?`<br>負責人：${esc(names.join('、'))}`:'<br>負責人：未指定'}${t.due?`・${esc(t.due)}`:''}${t.notes?`<br>備註：${esc(t.notes)}`:''}${t.updatedBy?`<br>最後更新：${esc(t.updatedBy)} ${fmt(t.updatedAt)}`:''}</div></div><div class="actions"><span class="badge">${t.done?'已完成':'待完成'}</span><button class="btn small" data-action="edit-task" data-id="${t.id}">修改</button><button class="btn small danger" data-action="delete-task" data-id="${t.id}">刪除</button></div></div>`}
+function renderDashboard(){const done=tasks.filter(x=>x.done).length,work=tasks.filter(x=>x.type==='工作').length,items=tasks.filter(x=>x.type==='物品').length,me=people.find(p=>p.name===displayName),mine=me?tasks.filter(t=>(t.assigneeIds||[]).includes(me.id)&&!t.done).length:0;$('#dashboard').innerHTML=`<div class="grid"><div class="stat"><strong>${done}/${tasks.length}</strong><span>整體完成</span></div><div class="stat"><strong>${mine}</strong><span>我的未完成</span></div><div class="stat"><strong>${work}</strong><span>工作內容</span></div><div class="stat"><strong>${items}</strong><span>準備物品</span></div></div>${categories.map(c=>{const a=tasks.filter(t=>t.categoryId===c.id);return `<section class="section"><div class="head"><div class="title">${esc(c.icon||'📌')} ${esc(c.name)}</div><div class="count">${a.filter(t=>t.done).length}/${a.length}</div></div>${a.filter(t=>!t.done).slice(0,3).map(taskCard).join('')||'<div class="empty">目前沒有未完成事項</div>'}</section>`}).join('')||'<div class="empty">尚未建立分類</div>'}`}
+function renderTasks(){const search=$('#taskSearch')?.value?.toLowerCase()||'',list=tasks.filter(t=>!search||[t.title,t.notes,t.due,...taskPeople(t)].join(' ').toLowerCase().includes(search)),grouped=categories.map(c=>({c,arr:list.filter(t=>t.categoryId===c.id)})).filter(x=>x.arr.length),unc=list.filter(t=>!categoryById(t.categoryId));$('#tasks').innerHTML=`<div class="toolbar"><input class="search" id="taskSearch" placeholder="搜尋任務、人員或備註" value="${esc(search)}"><button class="btn primary" data-action="new-task">新增任務</button></div>${grouped.map(x=>`<section class="section"><div class="head"><div class="title">${esc(x.c.icon||'📌')} ${esc(x.c.name)}</div><div class="count">${x.arr.filter(t=>t.done).length}/${x.arr.length}</div></div>${x.arr.map(taskCard).join('')}</section>`).join('')}${unc.length?`<section class="section"><div class="head"><div class="title">📌 未分類</div></div>${unc.map(taskCard).join('')}</section>`:''}${list.length?'':'<div class="empty">目前沒有任務</div>'}`;$('#taskSearch').oninput=renderTasks}
+function renderMine(){const me=people.find(p=>p.name===displayName);if(!me){$('#mine').innerHTML=`<div class="notice">目前姓名「${esc(displayName||'未設定')}」尚未在人員名單中。請先到「人員」新增同名人員。</div>`;return}const mine=tasks.filter(t=>(t.assigneeIds||[]).includes(me.id)),work=mine.filter(t=>t.type==='工作'),items=mine.filter(t=>t.type==='物品');$('#mine').innerHTML=`<section class="section"><div class="head"><div class="title">🧑‍💼 ${esc(me.name)}的工作內容</div><div class="count">${work.filter(t=>t.done).length}/${work.length}</div></div>${work.map(taskCard).join('')||'<div class="empty">目前沒有工作任務</div>'}</section><section class="section"><div class="head"><div class="title">🧳 ${esc(me.name)}要準備的物品</div><div class="count">${items.filter(t=>t.done).length}/${items.length}</div></div>${items.map(taskCard).join('')||'<div class="empty">目前沒有物品清單</div>'}</section>`}
+function renderPeople(){$('#people').innerHTML=`<div class="toolbar"><div></div><button class="btn primary" data-action="new-person">新增人員</button></div><div class="cardlist">${people.map(p=>{const a=tasks.filter(t=>(t.assigneeIds||[]).includes(p.id));return `<div class="person"><div class="person-info"><strong>${esc(p.name)}</strong><small>${esc(p.role||'未設定角色')}・任務 ${a.length} 項${p.phone?`・${esc(p.phone)}`:''}</small></div><div class="actions"><button class="btn small" data-action="show-person" data-id="${p.id}">查看</button><button class="btn small" data-action="edit-person" data-id="${p.id}">修改</button><button class="btn small danger" data-action="delete-person" data-id="${p.id}">刪除</button></div></div>`}).join('')||'<div class="empty">尚未建立人員</div>'}</div>`}
+function renderCategories(){$('#categories').innerHTML=`<div class="toolbar"><div></div><button class="btn primary" data-action="new-category">新增分類</button></div><div class="cardlist">${categories.map(c=>{const a=tasks.filter(t=>t.categoryId===c.id);return `<div class="category"><div class="category-info"><strong>${esc(c.icon||'📌')} ${esc(c.name)}</strong><small>任務 ${a.length} 項・完成 ${a.filter(t=>t.done).length} 項</small></div><div class="actions"><button class="btn small" data-action="edit-category" data-id="${c.id}">修改</button><button class="btn small danger" data-action="delete-category" data-id="${c.id}">刪除</button></div></div>`}).join('')||'<div class="empty">尚未建立分類</div>'}</div>`}
+function renderSettings(){$('#settings').innerHTML=`<section class="section"><div class="head"><div class="title">⚙️ 基本設定</div></div><div style="padding:16px"><div class="field"><label>首頁名稱</label><input id="settingNames" value="${esc(settings.coupleNames||'')}"></div><div class="field"><label>婚禮日期</label><input id="settingDate" type="date" value="${esc(settings.weddingDate||'')}"></div><button class="btn primary" data-action="save-settings">儲存設定</button></div></section><div class="notice">所有清單資料儲存在 Firebase Firestore；GitHub Pages 只負責顯示網站程式。</div>`}
+function renderAll(){renderHeader();if(currentView==='dashboard')renderDashboard();if(currentView==='tasks')renderTasks();if(currentView==='mine')renderMine();if(currentView==='people')renderPeople();if(currentView==='categories')renderCategories();if(currentView==='settings')renderSettings()}
+function fillTaskDialog(t=null){$('#taskDialogTitle').textContent=t?'修改任務':'新增任務';$('#taskId').value=t?.id||'';$('#taskTitle').value=t?.title||'';$('#taskType').value=t?.type||'工作';$('#taskCategory').innerHTML=categories.map(c=>`<option value="${c.id}">${esc(c.icon||'📌')} ${esc(c.name)}</option>`).join('');$('#taskCategory').value=t?.categoryId||categories[0]?.id||'';$('#taskDue').value=t?.due||'';$('#taskNotes').value=t?.notes||'';selectedAssignees=new Set(t?.assigneeIds||[]);renderAssigneePicker();$('#taskDialog').showModal()}
+function renderAssigneePicker(){$('#assigneePicker').innerHTML=people.map(p=>`<button type="button" class="person-chip ${selectedAssignees.has(p.id)?'selected':''}" data-person="${p.id}">${esc(p.name)}</button>`).join('')||'<span class="meta">請先建立人員</span>'}
+$('#assigneePicker').onclick=e=>{const b=e.target.closest('[data-person]');if(!b)return;selectedAssignees.has(b.dataset.person)?selectedAssignees.delete(b.dataset.person):selectedAssignees.add(b.dataset.person);renderAssigneePicker()};
+$('#taskForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='ok')return;e.preventDefault();const id=$('#taskId').value,p={title:$('#taskTitle').value.trim(),type:$('#taskType').value,categoryId:$('#taskCategory').value,assigneeIds:[...selectedAssignees],due:$('#taskDue').value.trim(),notes:$('#taskNotes').value.trim(),updatedAt:serverTimestamp(),updatedBy:displayName,updatedByUid:currentUser.uid};if(!p.title)return;id?await updateDoc(doc(db,'weddingTasks',id),p):await addDoc(collection(db,'weddingTasks'),{...p,done:false,createdAt:serverTimestamp()});$('#taskDialog').close()});
+function fillCategoryDialog(c=null){$('#categoryDialogTitle').textContent=c?'修改分類':'新增分類';$('#categoryId').value=c?.id||'';$('#categoryName').value=c?.name||'';$('#categoryIcon').value=c?.icon||'';$('#categoryDialog').showModal()}
+$('#categoryForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='ok')return;e.preventDefault();const id=$('#categoryId').value,p={name:$('#categoryName').value.trim(),icon:$('#categoryIcon').value.trim()||'📌',updatedAt:serverTimestamp()};if(!p.name)return;id?await updateDoc(doc(db,'weddingCategories',id),p):await addDoc(collection(db,'weddingCategories'),{...p,createdAt:serverTimestamp()});$('#categoryDialog').close()});
+function fillPersonDialog(p=null){$('#personDialogTitle').textContent=p?'修改人員':'新增人員';$('#personId').value=p?.id||'';$('#personName').value=p?.name||'';$('#personRole').value=p?.role||'';$('#personPhone').value=p?.phone||'';$('#personDialog').showModal()}
+$('#personForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='ok')return;e.preventDefault();const id=$('#personId').value,p={name:$('#personName').value.trim(),role:$('#personRole').value.trim(),phone:$('#personPhone').value.trim(),updatedAt:serverTimestamp()};if(!p.name)return;id?await updateDoc(doc(db,'weddingPeople',id),p):await addDoc(collection(db,'weddingPeople'),{...p,createdAt:serverTimestamp()});$('#personDialog').close()});
+async function deleteTask(id){const t=tasks.find(x=>x.id===id);if(t&&confirm(`確定刪除「${t.title}」嗎？`))await deleteDoc(doc(db,'weddingTasks',id))}
+async function deleteCategory(id){const c=categoryById(id);if(!c)return;const a=tasks.filter(t=>t.categoryId===id),msg=a.length?`分類內有 ${a.length} 個任務。刪除後會移到「未分類」，確定嗎？`:`確定刪除分類「${c.name}」嗎？`;if(!confirm(msg))return;const b=writeBatch(db);a.forEach(t=>b.update(doc(db,'weddingTasks',t.id),{categoryId:'',updatedAt:serverTimestamp(),updatedBy:displayName}));b.delete(doc(db,'weddingCategories',id));await b.commit()}
+async function deletePerson(id){const p=personById(id);if(!p||!confirm(`確定刪除人員「${p.name}」嗎？其任務不會刪除，只會移除負責人。`))return;const a=tasks.filter(t=>(t.assigneeIds||[]).includes(id)),b=writeBatch(db);a.forEach(t=>b.update(doc(db,'weddingTasks',t.id),{assigneeIds:(t.assigneeIds||[]).filter(x=>x!==id),updatedAt:serverTimestamp(),updatedBy:displayName}));b.delete(doc(db,'weddingPeople',id));await b.commit()}
+document.body.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action,id=b.dataset.id;try{if(a==='new-task')fillTaskDialog();if(a==='edit-task')fillTaskDialog(tasks.find(x=>x.id===id));if(a==='delete-task')await deleteTask(id);if(a==='toggle-task')await updateDoc(doc(db,'weddingTasks',id),{done:b.checked,updatedAt:serverTimestamp(),updatedBy:displayName,updatedByUid:currentUser.uid});if(a==='new-category')fillCategoryDialog();if(a==='edit-category')fillCategoryDialog(categoryById(id));if(a==='delete-category')await deleteCategory(id);if(a==='new-person')fillPersonDialog();if(a==='edit-person')fillPersonDialog(personById(id));if(a==='delete-person')await deletePerson(id);if(a==='show-person'){const p=personById(id);if(p){displayName=p.name;localStorage.setItem('weddingDisplayName',p.name);setView('mine')}}if(a==='save-settings')await setDoc(doc(db,'weddingSettings','main'),{coupleNames:$('#settingNames').value.trim(),weddingDate:$('#settingDate').value,initialized:true,updatedAt:serverTimestamp()},{merge:true})}catch(err){alert('操作失敗：'+err.message)}});
+$('#fab').onclick=()=>{if(currentView==='tasks')fillTaskDialog();if(currentView==='people')fillPersonDialog();if(currentView==='categories')fillCategoryDialog()};
+async function bootstrap(){const ref=doc(db,'weddingSettings','main'),snap=await getDoc(ref);if(snap.exists()&&snap.data().initialized)return;const cs=await getDocs(collection(db,'weddingCategories'));if(!cs.empty){await setDoc(ref,{initialized:true,coupleNames:'新人婚禮',weddingDate:'',createdAt:serverTimestamp()},{merge:true});return}const b=writeBatch(db),catRefs={};defaults.categories.forEach(([name,icon],i)=>{const r=doc(collection(db,'weddingCategories'));catRefs[name]=r;b.set(r,{name,icon,sort:i,createdAt:serverTimestamp()})});defaults.people.forEach(([name,role],i)=>{const r=doc(collection(db,'weddingPeople'));b.set(r,{name,role,phone:'',sort:i,createdAt:serverTimestamp()})});defaults.tasks.forEach(([title,type,cat,due],i)=>{const r=doc(collection(db,'weddingTasks'));b.set(r,{title,type,categoryId:catRefs[cat].id,assigneeIds:[],due,notes:'',done:false,sort:i,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),updatedBy:'系統建立'})});b.set(ref,{initialized:true,coupleNames:'新人婚禮',weddingDate:'',createdAt:serverTimestamp()});await b.commit()}
+function subscribe(){unsubs.forEach(f=>f());unsubs=[];unsubs.push(onSnapshot(query(collection(db,'weddingCategories'),orderBy('createdAt','asc')),s=>{categories=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));unsubs.push(onSnapshot(query(collection(db,'weddingPeople'),orderBy('createdAt','asc')),s=>{people=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));unsubs.push(onSnapshot(query(collection(db,'weddingTasks'),orderBy('createdAt','asc')),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));unsubs.push(onSnapshot(doc(db,'weddingSettings','main'),s=>{if(s.exists())settings={...settings,...s.data()};renderAll()}))}
+async function start(){if(!displayName)askName();renderHeader();$('#fab').style.display='none';try{const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);await signInAnonymously(auth);onAuthStateChanged(auth,async user=>{if(!user)return;currentUser=user;$('#sync').className='sync ok';$('#sync').textContent='已連線・多人即時同步';await bootstrap();subscribe()})}catch(err){$('#sync').className='sync bad';$('#sync').textContent='連線失敗';$('#dashboard').innerHTML=`<div class="error">${esc(err.message)}</div>`}}start();
