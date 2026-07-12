@@ -18,7 +18,7 @@ const fmt = (ts) => {
 let db;
 let currentUser;
 let displayName = localStorage.getItem("weddingDisplayName") || "";
-let currentView = "dashboard";
+let currentView = "tasks";
 let tasks = [];
 let categories = [];
 let people = [];
@@ -82,7 +82,6 @@ function renderHeader(){
   const pct = total ? Math.round((done / total) * 100) : 0;
   $("#who").textContent = displayName ? `目前使用者：${displayName}` : "尚未設定姓名";
   $("#heroTitle").textContent = settings.coupleNames || "婚禮工作中心";
-  $("#heroDate").textContent = settings.weddingDate ? `婚禮日期：${settings.weddingDate}` : "多人即時同步・免安裝 App";
   $("#progressBar").style.width = pct + "%";
   $("#progressText").textContent = pct + "%";
 }
@@ -97,7 +96,6 @@ function taskCard(task){
       <div class="meta">
         ${cat ? `${esc(cat.icon || "📌")} ${esc(cat.name)}・` : ""}${esc(task.type || "工作")}
         ${names.length ? `<br>負責人：${esc(names.join("、"))}` : "<br>負責人：未指定"}
-        ${task.due ? `・${esc(task.due)}` : ""}
         ${task.notes ? `<br>備註：${esc(task.notes)}` : ""}
         ${task.updatedBy ? `<br>最後更新：${esc(task.updatedBy)} ${fmt(task.updatedAt)}` : ""}
       </div>
@@ -216,7 +214,6 @@ function renderSettings(){
       <div class="head"><div class="title">⚙️ 基本設定</div></div>
       <div style="padding:16px">
         <div class="field"><label>首頁名稱</label><input id="settingNames" value="${esc(settings.coupleNames||"")}"></div>
-        <div class="field"><label>婚禮日期</label><input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></div>
         <button class="btn primary" data-action="save-settings">儲存設定</button>
       </div>
     </section>
@@ -225,7 +222,6 @@ function renderSettings(){
 
 function renderAll(){
   renderHeader();
-  if(currentView==="dashboard") renderDashboard();
   if(currentView==="tasks") renderTasks();
   if(currentView==="mine") renderMine();
   if(currentView==="people") renderPeople();
@@ -256,7 +252,6 @@ function openTaskDialog(task=null){
   $("#taskType").value = task?.type || "工作";
   $("#taskCategory").innerHTML = categories.map((cat)=>`<option value="${cat.id}">${esc(cat.icon||"📌")} ${esc(cat.name)}</option>`).join("");
   $("#taskCategory").value = task?.categoryId || categories[0]?.id || "";
-  $("#taskDue").value = task?.due || "";
   $("#taskNotes").value = task?.notes || "";
   selectedAssignees = new Set(task?.assigneeIds || []);
   renderAssignees();
@@ -289,7 +284,6 @@ $("#taskForm").addEventListener("submit",async(event)=>{
     type:$("#taskType").value,
     categoryId:$("#taskCategory").value,
     assigneeIds:[...selectedAssignees],
-    due:$("#taskDue").value.trim(),
     notes:$("#taskNotes").value.trim(),
     updatedAt:serverTimestamp(),
     updatedBy:displayName,
@@ -298,6 +292,7 @@ $("#taskForm").addEventListener("submit",async(event)=>{
   if(!payload.title) return;
   if(id) await updateDoc(doc(db,"weddingTasks",id),payload);
   else await addDoc(collection(db,"weddingTasks"),{...payload,done:false,createdAt:serverTimestamp()});
+  $("#taskForm").reset();
   $("#taskDialog").close();
 });
 
@@ -313,6 +308,7 @@ $("#categoryForm").addEventListener("submit",async(event)=>{
   if(!payload.name) return;
   if(id) await updateDoc(doc(db,"weddingCategories",id),payload);
   else await addDoc(collection(db,"weddingCategories"),{...payload,createdAt:serverTimestamp()});
+  $("#categoryForm").reset();
   $("#categoryDialog").close();
 });
 
@@ -329,7 +325,20 @@ $("#personForm").addEventListener("submit",async(event)=>{
   if(!payload.name) return;
   if(id) await updateDoc(doc(db,"weddingPeople",id),payload);
   else await addDoc(collection(db,"weddingPeople"),{...payload,createdAt:serverTimestamp()});
+  $("#personForm").reset();
   $("#personDialog").close();
+});
+
+document.body.addEventListener("click",(event)=>{
+  const closeButton = event.target.closest("[data-close]");
+  if(closeButton){
+    const dialog = closeButton.closest("dialog");
+    if(dialog?.open) dialog.close();
+    return;
+  }
+  if(event.target.tagName === "DIALOG" && event.target.open){
+    event.target.close();
+  }
 });
 
 document.body.addEventListener("click",async(event)=>{
@@ -399,7 +408,6 @@ document.body.addEventListener("click",async(event)=>{
     if(action==="save-settings"){
       await setDoc(doc(db,"weddingSettings","main"),{
         coupleNames:$("#settingNames").value.trim(),
-        weddingDate:$("#settingDate").value,
         initialized:true,
         updatedAt:serverTimestamp()
       },{merge:true});
@@ -412,7 +420,7 @@ document.body.addEventListener("click",async(event)=>{
 $("#fab").addEventListener("click",()=>{
   if(currentView==="people") openPersonDialog();
   else if(currentView==="categories") openCategoryDialog();
-  else openTaskDialog();
+  else if(currentView!=="settings") openTaskDialog();
 });
 
 async function bootstrap(){

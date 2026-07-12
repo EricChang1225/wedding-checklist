@@ -91,7 +91,7 @@
   <section class="hero">
     <div class="eyebrow">WEDDING CONTROL CENTER</div>
     <h1 id="heroTitle">婚禮工作中心</h1>
-    <div class="sub" id="heroDate">多人即時同步・免安裝 App</div>
+    <div class="sub">多人即時同步・免安裝 App</div>
     <div class="progress"><div class="bar"><span id="progressBar"></span></div><div class="pct" id="progressText">0%</div></div>
   </section>
 
@@ -104,8 +104,7 @@
   </div>
 
   <nav class="tabs" id="tabs">
-    <button class="tab active" data-view="dashboard">首頁</button>
-    <button class="tab" data-view="tasks">全部任務</button>
+    <button class="tab active" data-view="tasks">全部任務</button>
     <button class="tab" data-view="mine">我的任務</button>
     <button class="tab" data-view="people">人員</button>
     <button class="tab" data-view="categories">分類</button>
@@ -113,8 +112,7 @@
   </nav>
 
   <main>
-    <section class="panel active" id="dashboard"></section>
-    <section class="panel" id="tasks"></section>
+    <section class="panel active" id="tasks"></section>
     <section class="panel" id="mine"></section>
     <section class="panel" id="people"></section>
     <section class="panel" id="categories"></section>
@@ -125,46 +123,45 @@
 <button class="fab" id="fab" aria-label="新增">＋</button>
 
 <dialog id="nameDialog">
-  <form method="dialog" class="modal" id="nameForm">
+  <form class="modal" id="nameForm">
     <h2>輸入你的姓名</h2>
     <p>系統會記住這台裝置，並顯示最後更新者。</p>
     <div class="field"><label>姓名或稱呼</label><input id="displayName" maxlength="20" required></div>
-    <div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div>
+    <div class="modal-actions"><button type="button" class="btn" data-close>取消</button><button class="btn primary" value="ok">儲存</button></div>
   </form>
 </dialog>
 
 <dialog id="taskDialog">
-  <form method="dialog" class="modal" id="taskForm">
+  <form class="modal" id="taskForm">
     <h2 id="taskDialogTitle">新增任務</h2>
     <input type="hidden" id="taskId">
     <div class="field"><label>任務名稱</label><input id="taskTitle" maxlength="80" required></div>
     <div class="field"><label>類型</label><select id="taskType"><option value="工作">工作內容</option><option value="物品">要準備的物品</option></select></div>
     <div class="field"><label>大分類</label><select id="taskCategory"></select></div>
     <div class="field"><label>負責人（可複選）</label><div id="assigneePicker" class="checkgroup"></div></div>
-    <div class="field"><label>期限</label><input id="taskDue" placeholder="例如：婚禮前一天"></div>
     <div class="field"><label>備註</label><textarea id="taskNotes"></textarea></div>
-    <div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div>
+    <div class="modal-actions"><button type="button" class="btn" data-close>取消</button><button class="btn primary" value="ok">儲存</button></div>
   </form>
 </dialog>
 
 <dialog id="categoryDialog">
-  <form method="dialog" class="modal" id="categoryForm">
+  <form class="modal" id="categoryForm">
     <h2 id="categoryDialogTitle">新增分類</h2>
     <input type="hidden" id="categoryId">
     <div class="field"><label>分類名稱</label><input id="categoryName" maxlength="30" required></div>
     <div class="field"><label>圖示</label><input id="categoryIcon" maxlength="4" placeholder="例如：💍"></div>
-    <div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div>
+    <div class="modal-actions"><button type="button" class="btn" data-close>取消</button><button class="btn primary" value="ok">儲存</button></div>
   </form>
 </dialog>
 
 <dialog id="personDialog">
-  <form method="dialog" class="modal" id="personForm">
+  <form class="modal" id="personForm">
     <h2 id="personDialogTitle">新增人員</h2>
     <input type="hidden" id="personId">
     <div class="field"><label>姓名</label><input id="personName" maxlength="20" required></div>
     <div class="field"><label>角色</label><input id="personRole" maxlength="30" placeholder="例如：伴郎、主持人"></div>
     <div class="field"><label>電話（選填）</label><input id="personPhone" maxlength="30"></div>
-    <div class="modal-actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="ok">儲存</button></div>
+    <div class="modal-actions"><button type="button" class="btn" data-close>取消</button><button class="btn primary" value="ok">儲存</button></div>
   </form>
 </dialog>
 

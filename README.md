@@ -1,29 +1,23 @@
-# 婚禮工作中心 v2.0（正式版）
+# 婚禮 Checklist v3
 
-## 已修正
-- 首頁右下角「＋」可直接新增任務
-- 全部任務頁可新增／修改／刪除任務
-- 人員頁可新增／修改／刪除人員
-- 分類頁可新增／修改／刪除分類
-- 我的任務依目前姓名顯示工作與物品
+本版更新：
+- 移除重複的首頁，開啟後直接顯示全部任務
+- 移除期限／到期時間
+- 保留工作內容與準備物品
+- 任務、人員、分類皆可新增、修改、刪除
+- 修正「取消」後視窗不關閉與內容殘留
+- 點擊視窗外背景也可關閉
 - Firebase 多裝置即時同步
 
-## 更新 GitHub
-把以下檔案全部上傳到 Repository 根目錄並覆蓋舊檔：
+## 更新方式
+把 ZIP 內 5 個檔案上傳到 GitHub Repository 根目錄並覆蓋舊檔：
 - index.html
 - app.js
 - firebase-config.js
 - firestore.rules
 - README.md
 
-## Firebase Rules
-這版的 firestore.rules 與上一版相同。若你已經發布相同規則，不用再發布一次。
+這版 Firestore 規則與 v2 相同；若已發布 v2 規則，不必再次更新 Firebase。
 
-## 測試
-GitHub Pages 更新後，請使用：
-https://ericchang1225.github.io/wedding-checklist/?v=20
-
-右下角「＋」在：
-- 首頁／全部任務／我的任務／設定：新增任務
-- 人員頁：新增人員
-- 分類頁：新增分類
+更新後開啟：
+https://ericchang1225.github.io/wedding-checklist/?v=30
