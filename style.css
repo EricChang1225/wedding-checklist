@@ -156,3 +156,36 @@ body:not(.admin-mode) [data-action="delete-group"]{
   .my-flow-row{align-items:flex-start}
   .flow-time-badge{min-width:58px}
 }
+
+
+/* Wedding Control Center 2.0 */
+.today-hero{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:18px;
+}
+.today-user{
+  font-size:25px;
+  font-weight:900;
+  margin:3px 0 8px;
+}
+.next-flow-card{
+  border:2px solid #e9c7cb;
+}
+.admin-only-tab.admin-hidden{display:none!important}
+@media(max-width:620px){
+  .today-hero{align-items:flex-start;flex-direction:column}
+  .today-hero .btn{width:100%}
+}
+
+
+/* v2.1 名單中心 */
+.roster-card{overflow:hidden}
+.roster-member-list{border-top:1px solid var(--line)}
+.roster-order{
+  width:34px;height:34px;border-radius:50%;
+  background:#f5e4e6;color:#775b5e;
+  display:grid;place-items:center;font-weight:900;flex:none
+}

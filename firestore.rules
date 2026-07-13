@@ -10,6 +10,8 @@ service cloud.firestore {
     match /wccFlows/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccFlowChecks/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccPeople/{id} { allow read, create, update, delete: if signedIn(); }
+    match /wccRosters/{id} { allow read, create, update, delete: if signedIn(); }
+    match /wccRosterMembers/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccSeatingTables/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccMenu/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccVendors/{id} { allow read, create, update, delete: if signedIn(); }

@@ -28,7 +28,7 @@
 <body>
 <div class="app">
   <header class="hero">
-    <div class="eyebrow">WEDDING CONTROL CENTER</div>
+    <div class="eyebrow">WEDDING CONTROL CENTER 2.0</div>
     <div class="title-row"><h1 id="appTitle">駿瑋 &amp; 忞靜 婚禮工作中心</h1><button id="adminModeButton" class="admin-mode-button" type="button">🔒</button></div>
     <div class="status-line">
       <span id="currentUser">尚未設定使用者</span>
@@ -37,17 +37,19 @@
   </header>
 
   <nav id="tabs" class="tabs">
-    <button class="tab active" data-view="dashboard">首頁</button>
-    <button class="tab" data-view="prepare">前置準備</button>
+    <button class="tab active" data-view="dashboard">今天</button>
+    <button class="tab" data-view="prepare">準備中心</button>
+    <button class="tab" data-view="rosters">名單</button>
     <button class="tab" data-view="timeline">婚禮流程</button>
-    <button class="tab" data-view="mine">我的任務</button>
-    <button class="tab" data-view="people">人員</button>
     <button class="tab" data-view="banquet">婚宴中心</button>
+    <button class="tab" data-view="people">人員</button>
+    <button class="tab admin-only-tab" data-view="settings">設定</button>
   </nav>
 
   <main>
     <section id="dashboard" class="panel active"></section>
     <section id="prepare" class="panel"></section>
+    <section id="rosters" class="panel"></section>
     <section id="timeline" class="panel"></section>
     <section id="mine" class="panel"></section>
     <section id="people" class="panel"></section>
@@ -80,6 +82,31 @@
     <button type="button" class="btn" data-close="adminLoginDialog">取消</button>
     <button class="btn primary">確定</button>
   </div>
+</form></dialog>
+
+
+<dialog id="rosterDialog"><form id="rosterForm" class="sheet">
+  <h2 id="rosterDialogTitle">新增名單</h2>
+  <input id="rosterId" type="hidden">
+  <label>名單名稱<input id="rosterName" maxlength="50" required placeholder="例如：喝茶名單、招待名單"></label>
+  <label>圖示<input id="rosterIcon" maxlength="4" value="📋"></label>
+  <label>集合時間<input id="rosterTime" type="time"></label>
+  <label>集合地點<input id="rosterLocation" maxlength="100"></label>
+  <label>關聯流程<select id="rosterFlow"><option value="">不連結流程</option></select></label>
+  <label>共同工作內容<textarea id="rosterDuty" placeholder="例如：依序入座接受奉茶、入口接待與帶位"></textarea></label>
+  <label>備註<textarea id="rosterNotes"></textarea></label>
+  <div class="sheet-actions"><button type="button" class="btn" data-close="rosterDialog">取消</button><button class="btn primary">儲存</button></div>
+</form></dialog>
+
+<dialog id="rosterMemberDialog"><form id="rosterMemberForm" class="sheet">
+  <h2 id="rosterMemberDialogTitle">加入名單成員</h2>
+  <input id="rosterMemberId" type="hidden">
+  <input id="rosterMemberRosterId" type="hidden">
+  <label>選擇人員<select id="rosterMemberPerson"></select></label>
+  <label>順序<input id="rosterMemberOrder" type="number" min="1"></label>
+  <label>個人工作<input id="rosterMemberDuty" maxlength="100" placeholder="例如：第 3 位喝茶、入口左側帶位"></label>
+  <label>備註<textarea id="rosterMemberNotes"></textarea></label>
+  <div class="sheet-actions"><button type="button" class="btn" data-close="rosterMemberDialog">取消</button><button class="btn primary">儲存</button></div>
 </form></dialog>
 
 <dialog id="userDialog"><form id="userForm" class="sheet">
