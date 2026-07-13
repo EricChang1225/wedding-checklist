@@ -317,3 +317,22 @@ body:not(.admin-mode) [data-action="delete-group"]{
   .day-timeline-row{grid-template-columns:55px 16px 1fr}
   .day-event{padding:9px}
 }
+
+
+/* v3.0.2：使用者下拉選單 */
+.hero-user-select{
+  width:100%;
+  min-height:48px;
+  border:1px solid #ead9d9;
+  border-radius:14px;
+  padding:0 14px;
+  background:#fff;
+  color:var(--text);
+  font-size:17px;
+  font-weight:800;
+}
+.hero-user-select:focus{
+  outline:2px solid #eabfc4;
+  outline-offset:2px;
+}
+.dashboard-shortcuts{display:none!important}

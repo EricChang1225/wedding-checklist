@@ -83,15 +83,31 @@ function setView(v){view=v;document.body.classList.toggle("banquet-mode",v==="ba
 $("#tabs").onclick=e=>{const b=e.target.closest("[data-view]");if(b)setView(b.dataset.view)};
 function renderHeader(){
  const title=settings.title||"駿瑋 & 忞靜 婚禮管家";
- const couple=title.replace(/婚禮(Checklist|清單|管家|指揮中心|工作中心)?/gi,"").trim()||"駿瑋 & 忞靜";
- $("#coupleTitle").textContent=`${couple} 婚禮`;
- $("#currentUser").textContent=currentUser?`目前使用者：${currentUser}`:"尚未設定使用者";
- $("#heroUser").textContent=currentUser||"尚未設定";
+ const couple=title.replace(/婚禮\s*(Checklist|清單|管家|指揮中心|工作中心)?/gi,"").trim()||"駿瑋 & 忞靜";
+ const coupleTitle=$("#coupleTitle");if(coupleTitle)coupleTitle.textContent=`${couple} 婚禮`;
+
+ $("#currentUser").textContent=currentUser?`使用者：${currentUser}`:"尚未設定使用者";
+
  const left=daysLeft();
- $("#heroDays").textContent=typeof left==="number"?left:"--";
- $("#heroDate").textContent=settings.weddingDate?new Date(settings.weddingDate+"T00:00:00").toLocaleDateString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"}):"尚未設定婚禮日期";
+ const heroDays=$("#heroDays");if(heroDays)heroDays.textContent=typeof left==="number"?left:"--";
+ const heroDate=$("#heroDate");
+ if(heroDate)heroDate.textContent=settings.weddingDate
+   ? new Date(settings.weddingDate+"T00:00:00").toLocaleDateString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"})
+   : "尚未設定婚禮日期";
+
  $("#peopleList").innerHTML=people.map(p=>`<option value="${esc(p.name)}">`).join("");
- const changeBtn=$("#heroChangeUser");if(changeBtn)changeBtn.onclick=openUser;
+
+ const select=$("#currentUserSelect");
+ if(select){
+   select.innerHTML='<option value="">請選擇使用者</option>'+people.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("");
+   select.value=people.some(p=>p.name===currentUser)?currentUser:"";
+   select.onchange=e=>{
+     currentUser=e.target.value;
+     if(currentUser)localStorage.setItem("wccUser",currentUser);
+     else localStorage.removeItem("wccUser");
+     render();
+   };
+ }
 }
 function workKindIcon(kind){return {"接送":"🚗","採買":"🛍️","聯絡":"📞","協助":"🛠️","其他":"⭐","一般":"📋"}[kind]||"📋"}
 function taskTimeLabel(t){return t.startTime?(t.endTime?`${t.startTime}－${t.endTime}`:t.startTime):"未定"}
@@ -186,26 +202,9 @@ function renderDashboard(){
   </div>
  </section>
 
- <section class="dashboard-shortcuts">
-   <button class="shortcut-card" data-jump="dashboard">
-     <span class="shortcut-icon green">✅</span>
-     <strong>今天要做</strong>
-     <em>${workEntries.filter(x=>!x.done).length} 項待完成</em>
-   </button>
-   <button class="shortcut-card" data-jump="work">
-     <span class="shortcut-icon orange">💼</span>
-     <strong>工作中心</strong>
-     <em>${tasks.filter(x=>x.type==="工作"&&!x.done).length} 項進行中</em>
-   </button>
-   <button class="shortcut-card" data-jump="rosters">
-     <span class="shortcut-icon purple">👥</span>
-     <strong>我的名單</strong>
-     <em>${rosterEntries.length} 個名單</em>
-   </button>
- </section>
 
  <section class="card compact-detail-card">
-  <div class="card-head"><div class="card-title">✅ 今天要做</div><div class="pill">${workEntries.filter(x=>x.done).length}/${workEntries.length}</div></div>
+  <div class="card-head"><div class="card-title">✅ 任務</div><div class="pill">${workEntries.filter(x=>x.done).length}/${workEntries.length}</div></div>
   ${workEntries.map(x=>{
     if(x.kind==="task")return `<div class="row ${x.done?"done":""}">
       <input class="check" type="checkbox" data-action="toggle-task" data-id="${x.task.id}" ${x.done?"checked":""}>
@@ -217,12 +216,12 @@ function renderDashboard(){
       <div class="main"><div class="name">${x.time?`${esc(x.time)}　`:""}${esc(x.title)}</div><div class="meta">${esc(x.meta)}</div></div>
     </div>`;
     return `<div class="row"><div class="flow-time-badge">${esc(x.time||"未定")}</div><div class="main"><div class="name">${esc(x.title)}</div><div class="meta">${esc(x.meta)}</div></div></div>`;
-  }).join("")||'<div class="empty">目前沒有待完成工作</div>'}
+  }).join("")||'<div class="empty">目前沒有任務</div>'}
  </section>
 
  <section class="card compact-detail-card">
-  <div class="card-head"><div class="card-title">🎒 今天要帶</div><div class="pill">${myItems.filter(x=>x.done).length}/${myItems.length}</div></div>
-  ${myItems.map(taskRow).join("")||'<div class="empty">目前沒有需要攜帶的物品</div>'}
+  <div class="card-head"><div class="card-title">📦 準備物品</div><div class="pill">${myItems.filter(x=>x.done).length}/${myItems.length}</div></div>
+  ${myItems.map(taskRow).join("")||'<div class="empty">目前沒有準備物品</div>'}
  </section>`;
 
  const oldChange=$("#todayChangeUser");if(oldChange)oldChange.onclick=openUser;

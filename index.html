@@ -23,7 +23,7 @@
   <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
   <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
   <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
-  <link rel="stylesheet" href="./style.css?v=3001">
+  <link rel="stylesheet" href="./style.css?v=3002">
 </head>
 <body>
 <div class="app">
@@ -45,9 +45,10 @@
       </div>
 
       <div class="hero-user-box">
-        <div class="hero-info-label">目前使用者</div>
-        <div id="heroUser" class="hero-user-name">尚未設定</div>
-        <button id="heroChangeUser" class="hero-user-button" type="button">👥 切換使用者</button>
+        <label class="hero-info-label" for="currentUserSelect">使用者</label>
+        <select id="currentUserSelect" class="hero-user-select">
+          <option value="">請選擇使用者</option>
+        </select>
       </div>
     </div>
 
@@ -249,6 +250,6 @@
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app.js?v=3001"></script>
+<script type="module" src="./app.js?v=3002"></script>
 </body>
 </html>
