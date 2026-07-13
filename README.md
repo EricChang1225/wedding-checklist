@@ -1,15 +1,31 @@
-# 婚禮管家 3.0.2｜按鈕無反應修正版
+# 婚禮管家 3.0.3｜全新程式檔名修正版
 
-真正原因是上一版 app.js 在「準備物品」程式後方，多留了一行不該存在的程式碼。它會讓 JavaScript 在啟動時中斷，所以畫面看得到，但分頁、鎖頭和所有按鈕都不會動。
+Console 顯示：
 
-本版已：
-- 移除啟動中斷程式
-- app.js、style.css 與婚宴頁加入 v302 快取版本
-- 通過 JavaScript 語法檢查
+Unexpected end of input
+app.js:728
 
-請把 ZIP 裡所有檔案一起覆蓋上傳 GitHub。
+但壓縮包內的 app.js 已通過語法檢查，表示 GitHub 上實際載入的 app.js 並不是完整的新檔，可能是舊檔、上傳中斷或快取混用。
 
-測試：
-https://ericchang1225.github.io/wedding-checklist/?v=302
+本版不再覆蓋原本的 app.js，而是新增一個全新的：
+
+app-v303.js
+
+index.html 只會載入 app-v303.js，因此不會再讀取先前有問題的 app.js。
+
+## 更新方式
+
+請將 ZIP 內所有檔案一起上傳到 GitHub 根目錄，確認 GitHub 中同時出現：
+
+- index.html
+- app-v303.js
+- style.css
+- firebase-config.js
+
+舊的 app.js 可以保留，不影響網站。
+
+部署後請開：
+
+https://ericchang1225.github.io/wedding-checklist/?v=303
 
 Firebase rules 不用修改。
