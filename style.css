@@ -189,3 +189,9 @@ body:not(.admin-mode) [data-action="delete-group"]{
   background:#f5e4e6;color:#775b5e;
   display:grid;place-items:center;font-weight:900;flex:none
 }
+
+
+/* v2.2 我的行程簡化版 */
+.roster-work-row{align-items:center}
+#dashboard .card{margin-top:12px}
+#overview .card{margin-top:10px}
