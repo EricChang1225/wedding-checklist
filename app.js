@@ -21,7 +21,7 @@ function applyPermissions(){
  document.body.classList.toggle("admin-mode",admin);
  const btn=$("#adminModeButton");
  if(btn){btn.textContent=admin?"👑":"🔒";btn.classList.toggle("active",admin);btn.title=admin?"點擊退出管理模式":"長按標題或點擊輸入管理密碼";}
- const blocked=new Set(["new-category","new-task","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
+ const blocked=new Set(["new-category","new-task","new-work","new-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
  document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("admin-hidden")});
  document.querySelectorAll(".toolbar").forEach(el=>el.classList.toggle("admin-hidden",!admin));
  document.querySelectorAll(".admin-only-tab").forEach(tab=>tab.classList.toggle("admin-hidden",!admin))
@@ -81,7 +81,12 @@ const taskProgress=t=>{const list=itemsForTask(t.id);const done=list.filter(x=>x
 
 function setView(v){view=v;document.body.classList.toggle("banquet-mode",v==="banquet");document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.view===v));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===v));render()}
 $("#tabs").onclick=e=>{const b=e.target.closest("[data-view]");if(b)setView(b.dataset.view)};
-function renderHeader(){$("#appTitle").textContent=settings.title||"駿瑋 & 忞靜 婚禮指揮中心";$("#currentUser").textContent=currentUser?`目前使用者：${currentUser}`:"尚未設定使用者";$("#peopleList").innerHTML=people.map(p=>`<option value="${esc(p.name)}">`).join("")}
+function renderHeader(){$("#appTitle").textContent=settings.title||"💍 駿瑋 ❤ 忞靜";
+$("#currentUser").textContent=currentUser?`目前使用者：${currentUser}`:"尚未設定使用者";
+const left=daysLeft(),date=settings.weddingDate?new Date(settings.weddingDate+"T00:00:00").toLocaleDateString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit"}):"尚未設定日期";
+$("#heroCountdown").innerHTML=`<strong>${typeof left==="number"?`還有 ${left} 天`:esc(left)}</strong><span>${esc(date)}</span>`;
+$("#peopleList").innerHTML=people.map(p=>`<option value="${esc(p.name)}">`).join("")}
+function workKindIcon(kind){return {"接送":"🚗","採買":"🛍️","聯絡":"📞","協助":"🛠️","其他":"⭐","一般":"📋"}[kind]||"📋"}
 function pct(list){return list.length?Math.round(list.filter(x=>x.done).length/list.length*100):0}
 function daysLeft(){if(!settings.weddingDate)return "未設定";const n=new Date();n.setHours(0,0,0,0);return Math.ceil((new Date(settings.weddingDate+"T00:00:00")-n)/86400000)}
 function renderDashboard(){
@@ -92,7 +97,14 @@ function renderDashboard(){
  const rosterEntries=myRosterEntries();
 
  const workEntries=[
-  ...myWork.map(t=>({kind:"task",time:"",title:t.title,meta:"婚禮準備",done:t.done,task:t})),
+  ...myWork.map(t=>({
+    kind:"task",
+    time:t.startTime||"",
+    title:t.title,
+    meta:`${t.workKind||"一般"}${t.location?`・${t.location}`:""}${t.endTime?`・至 ${t.endTime}`:""}`,
+    done:t.done,
+    task:t
+  })),
   ...rosterEntries.map(({roster,member,flow})=>({
     kind:"roster",
     time:roster.time||formatFlowTime(flow)||"",
@@ -126,12 +138,6 @@ function renderDashboard(){
  const displayDate=weddingDate?new Date(`${weddingDate}T00:00:00`).toLocaleDateString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"}):"尚未設定婚禮日期";
 
  $("#dashboard").innerHTML=`
- <section class="countdown-hero card">
-  <div class="countdown-label">💍 距離婚禮</div>
-  <div class="countdown-number">${daysLeft()}</div>
-  <div class="countdown-unit">${typeof daysLeft()==="number"?"天":""}</div>
-  <div class="countdown-date">${esc(displayDate)}</div>
- </section>
 
  <section class="today-user-card card">
   <div>
@@ -150,7 +156,15 @@ function renderDashboard(){
  <section class="card">
   <div class="card-head"><div class="card-title">✅ 今天要做</div><div class="pill">${workEntries.filter(x=>x.done).length}/${workEntries.length}</div></div>
   ${workEntries.map(x=>{
-    if(x.kind==="task")return taskRow(x.task);
+    if(x.kind==="task")return `<div class="row ${x.done?"done":""}">
+      <input class="check" type="checkbox" data-action="toggle-task" data-id="${x.task.id}" ${x.done?"checked":""}>
+      <div class="flow-time-badge">${esc(x.time||"未定")}</div>
+      <div class="main">
+        <div class="name">${workKindIcon(x.task.workKind)} ${esc(x.title)}${Number(x.task.priority||1)>=3?` <span class="priority-high">重要</span>`:""}</div>
+        <div class="meta">${esc(x.meta)}${x.task.notes?`<br>${esc(x.task.notes)}`:""}</div>
+        ${x.task.location?`<a class="map-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(x.task.location)}" target="_blank" rel="noopener">🗺️ 導航</a>`:""}
+      </div>
+    </div>`;
     if(x.kind==="check")return `<div class="row ${x.done?"done":""}">
       <input class="check" type="checkbox" data-action="toggle-check" data-id="${x.check.id}" ${x.done?"checked":""}>
       <div class="main"><div class="name">${x.time?`${esc(x.time)}　`:""}${esc(x.title)}</div><div class="meta">${esc(x.meta)}</div></div>
@@ -209,7 +223,30 @@ function taskRow(t){
   </div>`:""}
  </div>`;
 }
-function renderPrepare(){$("#prepare").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-category">新增分類</button><button class="primary" data-action="new-task">新增項目</button></div>${categories.map(c=>{const list=tasks.filter(t=>t.categoryId===c.id);return `<div class="card"><div class="card-head"><div><div class="card-title">${esc(c.icon||"📂")} ${esc(c.name)}</div><div class="meta">${list.filter(x=>x.done).length}/${list.length}</div></div><div class="actions"><button class="small" data-action="move-category-up" data-id="${c.id}">上移</button><button class="small" data-action="move-category-down" data-id="${c.id}">下移</button><button class="small" data-action="edit-category" data-id="${c.id}">修改</button></div></div>${list.map(taskRow).join("")||'<div class="empty">此分類沒有項目</div>'}</div>`}).join("")}`}
+function independentWorkRow(t){
+ return `<div class="row ${t.done?"done":""}">
+  <input class="check" type="checkbox" data-action="toggle-task" data-id="${t.id}" ${t.done?"checked":""}>
+  <div class="flow-time-badge">${esc(t.startTime||"未定")}</div>
+  <div class="main">
+   <div class="name">${workKindIcon(t.workKind)} ${esc(t.title)}${Number(t.priority||1)>=3?` <span class="priority-high">重要</span>`:""}</div>
+   <div class="meta">負責：${esc(t.owner||"未指定")}${t.endTime?`・至 ${esc(t.endTime)}`:""}${t.location?`<br>地點：${esc(t.location)}`:""}${t.flowIds?.length?`<br>關聯流程：${t.flowIds.map(id=>flow(id)?.name).filter(Boolean).map(esc).join("、")}`:""}</div>
+   ${t.location?`<a class="map-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.location)}" target="_blank" rel="noopener">🗺️ 導航</a>`:""}
+  </div>
+  <div class="actions"><button class="small" data-action="edit-task" data-id="${t.id}">修改</button><button class="small danger" data-action="delete-task" data-id="${t.id}">刪除</button></div>
+ </div>`;
+}
+function renderWork(){
+ const list=tasks.filter(t=>t.type==="工作").sort((a,b)=>scheduleTimeValue(a.startTime)-scheduleTimeValue(b.startTime));
+ $("#work").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-work">新增獨立工作</button></div>
+ <div class="card">
+  <div class="card-head"><div><div class="card-title">📋 工作中心</div><div class="meta">接送、採買、聯絡及臨時協助，不必硬塞進婚禮流程。</div></div></div>
+  ${list.map(independentWorkRow).join("")||'<div class="empty">尚未建立獨立工作</div>'}
+ </div>`;
+}
+function renderPrepare(){
+ $("#prepare").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-category">新增分類</button><button class="primary" data-action="new-item">新增準備物品</button></div>
+ ${categories.map(c=>{const list=tasks.filter(t=>t.categoryId===c.id&&t.type==="物品");return `<div class="card"><div class="card-head"><div><div class="card-title">${esc(c.icon||"📂")} ${esc(c.name)}</div><div class="meta">${list.filter(x=>x.done).length}/${list.length}</div></div><div class="actions"><button class="small" data-action="move-category-up" data-id="${c.id}">上移</button><button class="small" data-action="move-category-down" data-id="${c.id}">下移</button><button class="small" data-action="edit-category" data-id="${c.id}">修改</button></div></div>${list.map(taskRow).join("")||'<div class="empty">此分類沒有準備物品</div>'}</div>`}).join("")}`;
+}).join("")}`}
 function mapUrl(f){if(f.mapUrl)return f.mapUrl;if(f.address)return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`;return ""}
 function linkedPreparationCard(ch){
  const t=linkedTask(ch.taskId);
@@ -413,7 +450,7 @@ function renderOverview(){
 }
 
 function renderSettings(){$("#settings").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">設定</div></div><div style="padding:16px"><label>網站名稱<input id="settingTitle" value="${esc(settings.title||"")}"></label><label>婚禮日期<input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></label><div class="actions"><button class="primary" data-action="save-settings">儲存設定</button><button id="changeUser">更改目前使用者</button><button data-action="change-admin-password">修改管理密碼</button><button data-action="logout-admin">退出管理模式</button><button data-action="export-csv">匯出 CSV</button><button data-action="print">列印</button></div></div></div>`;$("#changeUser").onclick=openUser}
-function render(){renderHeader();const renderer={dashboard:renderDashboard,prepare:renderPrepare,rosters:renderRosters,timeline:renderTimeline,mine:renderMine,people:renderPeople,overview:renderOverview,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
+function render(){renderHeader();const renderer={dashboard:renderDashboard,work:renderWork,prepare:renderPrepare,rosters:renderRosters,timeline:renderTimeline,mine:renderMine,people:renderPeople,overview:renderOverview,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
 document.body.addEventListener("click",e=>{const j=e.target.closest("[data-jump]");if(j)setView(j.dataset.jump)});
 document.body.addEventListener("keydown",e=>{
  const area=e.target.closest?.(".flow-click-area");
@@ -452,9 +489,48 @@ function openUser(){$("#userName").value=currentUser;$("#userDialog").showModal(
 function fillCategorySelect(){$("#taskCategory").innerHTML=categories.map(c=>`<option value="${c.id}">${esc(c.icon)} ${esc(c.name)}</option>`).join("")}
 function renderTaskFlowPicker(){$("#taskFlowPicker").innerHTML=flows.map(f=>`<button type="button" class="chip ${taskFlowSelection.has(f.id)?"selected":""}" data-task-flow="${f.id}">${esc(formatFlowTime(f))} ${esc(f.name)}</button>`).join("")}
 $("#taskFlowPicker").onclick=e=>{const b=e.target.closest("[data-task-flow]");if(!b)return;taskFlowSelection.has(b.dataset.taskFlow)?taskFlowSelection.delete(b.dataset.taskFlow):taskFlowSelection.add(b.dataset.taskFlow);renderTaskFlowPicker()};
-function openTask(t=null){$("#taskDialogTitle").textContent=t?"修改前置項目":"新增準備項目";$("#taskId").value=t?.id||"";fillCategorySelect();$("#taskCategory").value=t?.categoryId||categories[0]?.id||"";$("#taskTitle").value=t?.title||"";$("#taskType").value=t?.type||"工作";$("#taskOwner").value=t?.owner||"";$("#taskNotes").value=t?.notes||"";taskFlowSelection=new Set(t?.flowIds||[]);renderTaskFlowPicker();$("#taskDialog").showModal()}
+function updateTaskTypeFields(){
+ const isWork=$("#taskType").value==="工作";
+ $("#workOnlyFields").style.display=isWork?"block":"none";
+}
+function openTask(t=null,forcedType=""){
+ const type=forcedType||t?.type||"工作";
+ $("#taskDialogTitle").textContent=t?"修改項目":type==="工作"?"新增獨立工作":"新增準備物品";
+ $("#taskId").value=t?.id||"";
+ fillCategorySelect();
+ $("#taskCategory").value=t?.categoryId||categories[0]?.id||"";
+ $("#taskTitle").value=t?.title||"";
+ $("#taskType").value=type;
+ $("#taskWorkKind").value=t?.workKind||"一般";
+ $("#taskDate").value=t?.date||settings.weddingDate||"";
+ $("#taskStartTime").value=t?.startTime||"";
+ $("#taskEndTime").value=t?.endTime||"";
+ $("#taskLocation").value=t?.location||"";
+ $("#taskPriority").value=String(t?.priority||1);
+ $("#taskOwner").value=t?.owner||"";
+ $("#taskNotes").value=t?.notes||"";
+ taskFlowSelection=new Set(t?.flowIds||[]);
+ renderTaskFlowPicker();
+ updateTaskTypeFields();
+ $("#taskDialog").showModal();
+}
+$("#taskType").onchange=updateTaskTypeFields
 async function syncTaskChecks(taskId,payload,oldFlowIds=[]){const newIds=payload.flowIds||[],batch=writeBatch(db),existing=checks.filter(c=>c.autoFromTask&&c.taskId===taskId);for(const fId of newIds){if(!existing.some(c=>c.flowId===fId)){const r=doc(collection(db,"wccFlowChecks"));batch.set(r,{flowId:fId,title:payload.title,owner:payload.owner||"",taskId,done:false,autoFromTask:true,sort:checks.filter(c=>c.flowId===fId).length,createdAt:serverTimestamp()})}else{existing.filter(c=>c.flowId===fId).forEach(c=>batch.update(doc(db,"wccFlowChecks",c.id),{title:payload.title,owner:payload.owner||"",updatedAt:serverTimestamp()}))}}existing.filter(c=>!newIds.includes(c.flowId)).forEach(c=>batch.delete(doc(db,"wccFlowChecks",c.id)));await batch.commit()}
-$("#taskForm").onsubmit=async e=>{e.preventDefault();const id=$("#taskId").value,p={title:$("#taskTitle").value.trim(),categoryId:$("#taskCategory").value,type:$("#taskType").value,owner:$("#taskOwner").value.trim(),notes:$("#taskNotes").value.trim(),flowIds:[...taskFlowSelection],updatedAt:serverTimestamp()};if(id){const old=tasks.find(x=>x.id===id);await updateDoc(doc(db,"wccTasks",id),p);await syncTaskChecks(id,p,old?.flowIds||[])}else{const ref=await addDoc(collection(db,"wccTasks"),{...p,done:false,sort:tasks.length,createdAt:serverTimestamp()});await syncTaskChecks(ref.id,p,[])}close("taskDialog")};
+$("#taskForm").onsubmit=async e=>{e.preventDefault();const id=$("#taskId").value,p={
+ title:$("#taskTitle").value.trim(),
+ categoryId:$("#taskCategory").value,
+ type:$("#taskType").value,
+ workKind:$("#taskType").value==="工作"?$("#taskWorkKind").value:"",
+ date:$("#taskType").value==="工作"?$("#taskDate").value:"",
+ startTime:$("#taskType").value==="工作"?$("#taskStartTime").value:"",
+ endTime:$("#taskType").value==="工作"?$("#taskEndTime").value:"",
+ location:$("#taskType").value==="工作"?$("#taskLocation").value.trim():"",
+ priority:$("#taskType").value==="工作"?Number($("#taskPriority").value)||1:1,
+ owner:$("#taskOwner").value.trim(),
+ notes:$("#taskNotes").value.trim(),
+ flowIds:[...taskFlowSelection],
+ updatedAt:serverTimestamp()
+};if(id){const old=tasks.find(x=>x.id===id);await updateDoc(doc(db,"wccTasks",id),p);await syncTaskChecks(id,p,old?.flowIds||[])}else{const ref=await addDoc(collection(db,"wccTasks"),{...p,done:false,sort:tasks.length,createdAt:serverTimestamp()});await syncTaskChecks(ref.id,p,[])}close("taskDialog")};
 
 
 function openSubItem(item=null,taskId=""){
@@ -583,7 +659,7 @@ function initPersonDrag(){let draggedId=null,startY=0;document.querySelectorAll(
 document.body.addEventListener("click",async e=>{const b=e.target.closest("[data-action]");if(!b)return;
 if(b.classList.contains("flow-click-area")&&e.target.closest("a,button,input,select,textarea"))return;
 const a=b.dataset.action,id=b.dataset.id;
-const managementActions=new Set(["new-category","new-task","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
+const managementActions=new Set(["new-category","new-task","new-work","new-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
 if(managementActions.has(a)&&!isAdmin()){requestAdmin();return}
 if(isAdmin())refreshAdminSession();
 if(a==="change-admin-password"){$("#adminSetupTitle").textContent="修改管理密碼";$("#adminSetupPassword").value="";$("#adminSetupConfirm").value="";$("#adminSetupDialog").showModal();return}
@@ -637,12 +713,14 @@ if(a==="new-group")openGroup();if(a==="edit-group")openGroup(groups.find(x=>x.id
 if(a==="new-flow")openFlow();if(a==="edit-flow")openFlow(flows.find(x=>x.id===id));if(a==="delete-flow"&&confirm("刪除此流程與確認項目？")){const batch=writeBatch(db);checks.filter(x=>x.flowId===id).forEach(x=>batch.delete(doc(db,"wccFlowChecks",x.id)));tasks.filter(t=>(t.flowIds||[]).includes(id)).forEach(t=>batch.update(doc(db,"wccTasks",t.id),{flowIds:(t.flowIds||[]).filter(x=>x!==id)}));batch.delete(doc(db,"wccFlows",id));await batch.commit()}
 if(a==="add-check")openCheck(null,id);if(a==="edit-check")openCheck(checks.find(x=>x.id===id));if(a==="delete-check"&&confirm("刪除此確認項目？"))await deleteDoc(doc(db,"wccFlowChecks",id));if(a==="toggle-check")await updateDoc(doc(db,"wccFlowChecks",id),{done:b.checked,updatedAt:serverTimestamp(),checkedBy:currentUser});
 if(a==="new-person")openPerson();if(a==="edit-person")openPerson(people.find(x=>x.id===id));if(a==="delete-person"&&confirm("刪除此人員？"))await deleteDoc(doc(db,"wccPeople",id));if(a==="show-person"){const p=people.find(x=>x.id===id);if(p){currentUser=p.name;localStorage.setItem("wccUser",p.name);setView("mine")}}
+if(a==="new-work")openTask(null,"工作");
+if(a==="new-item")openTask(null,"物品");
 if(a==="new-category")openCategory();if(a==="edit-category")openCategory(categories.find(x=>x.id===id));if(a==="move-category-up")await swapOrder(categories,"wccCategories",id,-1);if(a==="move-category-down")await swapOrder(categories,"wccCategories",id,1);
 if(a==="move-group-up")await swapOrder(groups,"wccFlowGroups",id,-1);if(a==="move-group-down")await swapOrder(groups,"wccFlowGroups",id,1);
 if(a==="move-flow-up"){const list=flows.filter(f=>f.groupId===(flow(id)?.groupId||""));await swapOrder(list,"wccFlows",id,-1)}if(a==="move-flow-down"){const list=flows.filter(f=>f.groupId===(flow(id)?.groupId||""));await swapOrder(list,"wccFlows",id,1)}
 if(a==="save-settings")await setDoc(doc(db,"wccSettings","main"),{title:$("#settingTitle").value.trim(),weddingDate:$("#settingDate").value,initialized:true},{merge:true});if(a==="export-csv")csvExport();if(a==="print")window.print();
 });
-$("#fab").onclick=()=>{if(view==="banquet")return;view==="prepare"?openTask():view==="rosters"?openRoster():view==="timeline"?openFlow():view==="people"?openPerson():openTask()};
+$("#fab").onclick=()=>{if(view==="banquet")return;view==="work"?openTask(null,"工作"):view==="prepare"?openTask(null,"物品"):view==="rosters"?openRoster():view==="timeline"?openFlow():view==="people"?openPerson():openTask()};
 
 async function bootstrap(){const ref=doc(db,"wccSettings","main"),snap=await getDoc(ref);if(snap.exists()&&snap.data().initialized)return;const cs=await getDocs(collection(db,"wccCategories"));if(!cs.empty){await setDoc(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮管家"},{merge:true});return}const batch=writeBatch(db),catRefs={},groupRefs={};defaults.categories.forEach(([n,i],x)=>{const r=doc(collection(db,"wccCategories"));catRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.groups.forEach(([n,i],x)=>{const r=doc(collection(db,"wccFlowGroups"));groupRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.flows.forEach(([time,n,i,g],x)=>{const r=doc(collection(db,"wccFlows"));batch.set(r,{timeMode:"single",time,startTime:"",endTime:"",name:n,icon:i,groupId:groupRefs[g].id,owner:"",location:"",address:"",mapUrl:"",notes:"",sort:x,createdAt:serverTimestamp()})});batch.set(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮管家",weddingDate:""});await batch.commit()}
 async function start(){if(!currentUser)openUser();const app=initializeApp(firebaseConfig),auth=getAuth(app);db=getFirestore(app);await signInAnonymously(auth);$("#syncState").className="sync ok";$("#syncState").textContent="已連線・多人即時同步";await bootstrap();onSnapshot(query(collection(db,"wccTasks"),orderBy("sort","asc")),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccTaskItems"),orderBy("sort","asc")),s=>{taskItems=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccCategories"),orderBy("sort","asc")),s=>{categories=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowGroups"),orderBy("sort","asc")),s=>{groups=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccRosters"),orderBy("sort","asc")),s=>{rosters=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(collection(db,"wccRosterMembers"),s=>{rosterMembers=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlows"),orderBy("sort","asc")),s=>{flows=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowChecks"),orderBy("sort","asc")),s=>{checks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccPeople"),orderBy("sort","asc")),s=>{people=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(doc(db,"wccSettings","main"),s=>{if(s.exists())settings={...settings,...s.data()};render();if(!settings.adminPasswordHash&&!adminSetupShown){adminSetupShown=true;setTimeout(()=>{$("#adminSetupTitle").textContent="建立管理密碼";$("#adminSetupDialog").showModal()},300)}})}
