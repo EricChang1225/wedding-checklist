@@ -4,6 +4,7 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
 
     match /wccTasks/{id} { allow read, create, update, delete: if signedIn(); }
+    match /wccTaskItems/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccCategories/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccFlowGroups/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccFlows/{id} { allow read, create, update, delete: if signedIn(); }

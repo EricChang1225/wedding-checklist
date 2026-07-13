@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#c97f86">
-  <title>Wedding Control Center v7</title>
+  <title>Wedding Control Center v8</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -56,6 +56,16 @@
   <div class="hint">勾選流程後，系統會自動在該流程建立一筆「現場確認」項目。</div>
   <label>備註<textarea id="taskNotes"></textarea></label>
   <div class="sheet-actions"><button type="button" class="btn" data-close="taskDialog">取消</button><button class="btn primary">儲存</button></div>
+</form></dialog>
+
+
+<dialog id="subItemDialog"><form id="subItemForm" class="sheet">
+  <h2 id="subItemDialogTitle">新增細項</h2>
+  <input id="subItemId" type="hidden">
+  <input id="subItemTaskId" type="hidden">
+  <label>細項名稱<input id="subItemTitle" maxlength="80" required placeholder="例如：金飾、茶盤、禮炮"></label>
+  <label>備註<textarea id="subItemNotes"></textarea></label>
+  <div class="sheet-actions"><button type="button" class="btn" data-close="subItemDialog">取消</button><button class="btn primary">儲存</button></div>
 </form></dialog>
 
 <dialog id="groupDialog"><form id="groupForm" class="sheet">

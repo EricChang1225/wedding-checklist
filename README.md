@@ -1,29 +1,24 @@
-# Wedding Control Center v7
+# Wedding Control Center v8
 
-## 新增功能
-- 婚禮流程可輸入地點、地址、Google Maps 連結
-- 只輸入地址時，系統會自動產生 Google 地圖搜尋連結
-- 前置項目可直接選擇要連動的婚禮流程
-- 儲存前置項目後，對應流程會自動建立「現場確認」項目
-- 我的任務改成「我的工作」與「我的準備物品」
-- 移除「我的流程」
-- 婚禮流程增加群組與收合功能
-- 人員可用 ☰ 拖曳上下排序
-- 原本建立的人員沿用同一個 wccPeople collection，不會被清除
+## v8 新增：前置項目內的展開式勾選清單
+適合「十二禮準備、新娘包、攝影包」等內容很多的項目。
 
-## 部署
-1. 把 6 個檔案全部上傳到 GitHub Repository 根目錄並覆蓋舊檔。
-2. Firebase Firestore Rules 必須更新成這版 firestore.rules，因為新增了 wccFlowGroups。
-3. GitHub Pages 更新後測試：
-   https://ericchang1225.github.io/wedding-checklist/?v=70
+- 每個前置項目可按「加細項」
+- 細項可逐一勾選、修改、刪除
+- 父項目顯示完成度，例如 8/12
+- 細項全部完成時，父項目自動完成
+- 勾選父項目時，可一次完成／取消全部細項
+- 細項可展開或收合，避免清單過長
+- 婚禮流程若連結此項目，會顯示細項完成度與「尚缺」內容
+- CSV 匯出會包含細項
 
 ## 資料保留
-沿用 v6 的：
-- wccTasks
-- wccCategories
-- wccFlows
-- wccFlowChecks
-- wccPeople
-- wccSettings
+沿用 v7 所有既有資料與 collections，人員、流程、分類、前置項目都不會被清除。
+本版只新增：
+- wccTaskItems
 
-因此 v6 已建立的人員與主要資料都會保留。舊流程沒有群組時會顯示在「未分組」。
+## 部署
+1. 將 ZIP 內 6 個檔案全部上傳 GitHub 根目錄並覆蓋舊檔。
+2. Firebase Firestore Rules 必須更新一次，因為新增 `wccTaskItems`。
+3. GitHub Pages 更新後測試：
+   https://ericchang1225.github.io/wedding-checklist/?v=80
