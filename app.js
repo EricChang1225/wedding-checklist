@@ -92,7 +92,7 @@ function renderDashboard(){
  const rosterEntries=myRosterEntries();
 
  const workEntries=[
-  ...myWork.map(t=>({kind:"task",time:"",title:t.title,meta:"前置工作",done:t.done,task:t})),
+  ...myWork.map(t=>({kind:"task",time:"",title:t.title,meta:"婚禮準備",done:t.done,task:t})),
   ...rosterEntries.map(({roster,member,flow})=>({
     kind:"roster",
     time:roster.time||formatFlowTime(flow)||"",
@@ -122,10 +122,20 @@ function renderDashboard(){
   .filter(x=>x.min!==null&&x.min>=0)
   .sort((a,b)=>a.min-b.min)[0];
 
+ const weddingDate=settings.weddingDate||"";
+ const displayDate=weddingDate?new Date(`${weddingDate}T00:00:00`).toLocaleDateString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"}):"尚未設定婚禮日期";
+
  $("#dashboard").innerHTML=`
- <section class="today-hero card">
+ <section class="countdown-hero card">
+  <div class="countdown-label">💍 距離婚禮</div>
+  <div class="countdown-number">${daysLeft()}</div>
+  <div class="countdown-unit">${typeof daysLeft()==="number"?"天":""}</div>
+  <div class="countdown-date">${esc(displayDate)}</div>
+ </section>
+
+ <section class="today-user-card card">
   <div>
-   <div class="meta">我的行程</div>
+   <div class="meta">目前使用者</div>
    <div class="today-user">${esc(currentUser||"尚未設定使用者")}</div>
    <div class="meta">${workEntries.filter(x=>!x.done).length} 件待完成・${myItems.filter(x=>!x.done).length} 件要帶</div>
   </div>
@@ -135,7 +145,7 @@ function renderDashboard(){
  ${next?`<section class="card next-flow-card">
   <div class="card-head"><div><div class="card-title">⏰ 下一個行程</div><div class="meta">${next.min===0?"現在":next.min<60?`${next.min} 分鐘後`:"接下來"}</div></div></div>
   ${myFlowRow(next.f)}
- </section>`:""}
+ </section>`:`<section class="card"><div class="empty">目前沒有下一個行程</div></section>`}
 
  <section class="card">
   <div class="card-head"><div class="card-title">✅ 今天要做</div><div class="pill">${workEntries.filter(x=>x.done).length}/${workEntries.length}</div></div>
@@ -159,9 +169,17 @@ function renderDashboard(){
  </section>
 
  <section class="card">
-  <div class="card-head"><div class="card-title">📍 我的行程表</div><div class="pill">${relatedFlows.length}</div></div>
+  <div class="card-head"><div class="card-title">📅 今天全部流程</div><div class="pill">${relatedFlows.length}</div></div>
   ${relatedFlows.map(myFlowRow).join("")||'<div class="empty">目前沒有相關婚禮流程</div>'}
- </section>`;
+ </section>
+
+ ${isAdmin()?`<section class="card admin-summary-card">
+  <div class="card-head"><div class="card-title">📊 婚禮總覽</div></div>
+  <div class="grid">
+   <div class="stat"><div class="meta">前置完成率</div><div class="big">${pct(tasks)}%</div><div class="progress"><span style="width:${pct(tasks)}%"></span></div></div>
+   <div class="stat"><div class="meta">流程確認率</div><div class="big">${pct(checks)}%</div><div class="progress"><span style="width:${pct(checks)}%"></span></div></div>
+  </div>
+ </section>`:""}`;
  $("#todayChangeUser").onclick=openUser;
 }
 function taskRow(t){
