@@ -123,7 +123,20 @@
   <h2 id="flowDialogTitle">新增流程</h2>
   <input id="flowId" type="hidden">
   <label>流程群組<select id="flowGroup"></select></label>
-  <label>時間<input id="flowTime" type="time"></label>
+  <label>時間模式
+    <select id="flowTimeMode">
+      <option value="none">不設定時間</option>
+      <option value="single">單一時間</option>
+      <option value="range">時間區間</option>
+    </select>
+  </label>
+  <div id="flowSingleTimeField" class="time-mode-field">
+    <label>時間<input id="flowTime" type="time"></label>
+  </div>
+  <div id="flowRangeTimeFields" class="time-mode-field time-range-grid">
+    <label>開始時間<input id="flowStartTime" type="time"></label>
+    <label>結束時間<input id="flowEndTime" type="time"></label>
+  </div>
   <label>流程名稱<input id="flowName" maxlength="50" required></label>
   <label>圖示<input id="flowIcon" maxlength="4" value="📍"></label>
   <label>負責人<input id="flowOwner" maxlength="30" list="peopleList"></label>

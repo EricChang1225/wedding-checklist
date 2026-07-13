@@ -63,3 +63,13 @@ body:not(.admin-mode) .admin-hidden{display:none!important}
 .flow-prep-details summary:before{content:"▶";display:inline-block;margin-right:7px;font-size:11px}
 .flow-prep-details[open] summary:before{content:"▼"}
 .flow-prep-details .sub-row{background:#fff}
+
+
+/* v13：流程時間可選無時間／單一時間／時間區間 */
+.time-mode-field{display:none}
+.time-mode-field.active{display:block}
+.time-range-grid{grid-template-columns:1fr 1fr;gap:10px}
+.time-range-grid.active{display:grid}
+@media(max-width:520px){
+  .time-range-grid{grid-template-columns:1fr}
+}

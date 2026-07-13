@@ -33,6 +33,28 @@ function requestAdmin(){
 let currentUser=localStorage.getItem("wccUser")||"", collapsedGroups=new Set(JSON.parse(localStorage.getItem("wccCollapsedGroups")||"[]")), collapsedTasks=new Set(JSON.parse(localStorage.getItem("wccCollapsedTasks")||"[]"));
 const defaults={categories:[["文定準備","💍"],["迎娶準備","🚗"],["婚宴準備","🥂"],["攝影錄影","📸"]],groups:[["集合與準備","📍"],["文定","💍"],["迎娶","🚗"],["婚宴","🥂"],["送客與收尾","🧹"]],flows:[["08:00","集合","📍","集合與準備"],["09:00","文定","💍","文定"],["11:00","迎娶","🚗","迎娶"],["18:00","婚宴","🥂","婚宴"]]};
 const category=id=>categories.find(x=>x.id===id), linkedTask=id=>tasks.find(x=>x.id===id), group=id=>groups.find(x=>x.id===id), flow=id=>flows.find(x=>x.id===id);
+const normalizeFlowTimeMode=f=>{
+ if(f?.timeMode)return f.timeMode;
+ if(f?.startTime&&f?.endTime)return "range";
+ if(f?.time)return "single";
+ return "none";
+};
+const formatFlowTime=f=>{
+ const mode=normalizeFlowTimeMode(f);
+ if(mode==="range"){
+  const start=f.startTime||f.time||"";
+  const end=f.endTime||"";
+  return start&&end?`${start}－${end}`:(start||end||"");
+ }
+ if(mode==="single")return f.time||f.startTime||"";
+ return "";
+};
+function updateFlowTimeFields(){
+ const mode=$("#flowTimeMode")?.value||"none";
+ $("#flowSingleTimeField")?.classList.toggle("active",mode==="single");
+ $("#flowRangeTimeFields")?.classList.toggle("active",mode==="range");
+}
+
 const itemsForTask=id=>taskItems.filter(x=>x.taskId===id).sort((a,b)=>(a.sort??0)-(b.sort??0));
 const taskProgress=t=>{const list=itemsForTask(t.id);const done=list.filter(x=>x.done).length;return {list,done,total:list.length,complete:list.length>0&&done===list.length};};
 
@@ -71,7 +93,7 @@ function taskRow(t){
 }
 function renderPrepare(){$("#prepare").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-category">新增分類</button><button class="primary" data-action="new-task">新增項目</button></div>${categories.map(c=>{const list=tasks.filter(t=>t.categoryId===c.id);return `<div class="card"><div class="card-head"><div><div class="card-title">${esc(c.icon||"📂")} ${esc(c.name)}</div><div class="meta">${list.filter(x=>x.done).length}/${list.length}</div></div><div class="actions"><button class="small" data-action="move-category-up" data-id="${c.id}">上移</button><button class="small" data-action="move-category-down" data-id="${c.id}">下移</button><button class="small" data-action="edit-category" data-id="${c.id}">修改</button></div></div>${list.map(taskRow).join("")||'<div class="empty">此分類沒有項目</div>'}</div>`}).join("")}`}
 function mapUrl(f){if(f.mapUrl)return f.mapUrl;if(f.address)return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`;return ""}
-function flowCard(f){const list=checks.filter(x=>x.flowId===f.id),url=mapUrl(f);return `<div class="flow-card card"><div class="card-head"><div><div class="card-title">${esc(f.time||"--:--")}　${esc(f.icon||"📍")} ${esc(f.name)}</div><div class="meta">負責人：${esc(f.owner||"未指定")}・確認 ${list.filter(x=>x.done).length}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>${url?`<a class="map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}${f.notes?`<div class="meta">${esc(f.notes)}</div>`:""}</div><div class="actions"><button class="small" data-action="move-flow-up" data-id="${f.id}">上移</button><button class="small" data-action="move-flow-down" data-id="${f.id}">下移</button><button class="small" data-action="add-check" data-id="${f.id}">加確認項</button><button class="small" data-action="edit-flow" data-id="${f.id}">修改</button><button class="small danger" data-action="delete-flow" data-id="${f.id}">刪除</button></div></div>${list.map(ch=>{const t=linkedTask(ch.taskId);return `<div class="row ${ch.done?"done":""}"><input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}><div class="main"><div class="name">${esc(ch.title)}</div><div class="meta">負責：${esc(ch.owner||"未指定")}${t?(()=>{const p=taskProgress(t),ready=p.total?p.complete:t.done,missing=p.list.filter(i=>!i.done).map(i=>i.title);return `<br>前置狀態：${ready?"✅ 已準備":"⚠️ 尚未準備"}${p.total?`（${p.done}/${p.total}）`:""}${missing.length?`<div class="missing-list">尚缺 ${missing.length} 項</div>`:""}${p.total?`<details class="flow-prep-details"><summary>查看準備細項 ${p.done}/${p.total}</summary>${p.list.map(i=>`<div class="sub-row ${i.done?"done":""}"><input class="check" type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}><div class="main"><div class="name">${esc(i.title)}</div>${i.notes?`<div class="meta">${esc(i.notes)}</div>`:""}</div></div>`).join("")}</details>`:""}`})():""}${ch.autoFromTask?"<br>🔗 由前置項目自動建立":""}</div></div><div class="actions"><button class="small" data-action="edit-check" data-id="${ch.id}">修改</button><button class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button></div></div>`}).join("")||'<div class="empty">尚未建立確認項目</div>'}</div>`}
+function flowCard(f){const list=checks.filter(x=>x.flowId===f.id),url=mapUrl(f);return `<div class="flow-card card"><div class="card-head"><div><div class="card-title">${formatFlowTime(f)?`${esc(formatFlowTime(f))}　`:""}${esc(f.icon||"📍")} ${esc(f.name)}</div><div class="meta">負責人：${esc(f.owner||"未指定")}・確認 ${list.filter(x=>x.done).length}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>${url?`<a class="map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}${f.notes?`<div class="meta">${esc(f.notes)}</div>`:""}</div><div class="actions"><button class="small" data-action="move-flow-up" data-id="${f.id}">上移</button><button class="small" data-action="move-flow-down" data-id="${f.id}">下移</button><button class="small" data-action="add-check" data-id="${f.id}">加確認項</button><button class="small" data-action="edit-flow" data-id="${f.id}">修改</button><button class="small danger" data-action="delete-flow" data-id="${f.id}">刪除</button></div></div>${list.map(ch=>{const t=linkedTask(ch.taskId);return `<div class="row ${ch.done?"done":""}"><input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}><div class="main"><div class="name">${esc(ch.title)}</div><div class="meta">負責：${esc(ch.owner||"未指定")}${t?(()=>{const p=taskProgress(t),ready=p.total?p.complete:t.done,missing=p.list.filter(i=>!i.done).map(i=>i.title);return `<br>前置狀態：${ready?"✅ 已準備":"⚠️ 尚未準備"}${p.total?`（${p.done}/${p.total}）`:""}${missing.length?`<div class="missing-list">尚缺 ${missing.length} 項</div>`:""}${p.total?`<details class="flow-prep-details"><summary>查看準備細項 ${p.done}/${p.total}</summary>${p.list.map(i=>`<div class="sub-row ${i.done?"done":""}"><input class="check" type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}><div class="main"><div class="name">${esc(i.title)}</div>${i.notes?`<div class="meta">${esc(i.notes)}</div>`:""}</div></div>`).join("")}</details>`:""}`})():""}${ch.autoFromTask?"<br>🔗 由前置項目自動建立":""}</div></div><div class="actions"><button class="small" data-action="edit-check" data-id="${ch.id}">修改</button><button class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button></div></div>`}).join("")||'<div class="empty">尚未建立確認項目</div>'}</div>`}
 function renderTimeline(){const ungrouped=flows.filter(f=>!f.groupId||!group(f.groupId));$("#timeline").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-group">新增群組</button><button class="primary" data-action="new-flow">新增流程</button></div>${groups.map(g=>{const list=flows.filter(f=>f.groupId===g.id),collapsed=collapsedGroups.has(g.id);return `<div class="group-card"><div class="group-head"><button class="group-toggle" data-action="toggle-group" data-id="${g.id}">${collapsed?"▶":"▼"}</button><div class="main"><div class="card-title">${esc(g.icon||"🗂️")} ${esc(g.name)}</div><div class="meta">${list.length} 項・確認 ${checks.filter(c=>list.some(f=>f.id===c.flowId)&&c.done).length}/${checks.filter(c=>list.some(f=>f.id===c.flowId)).length}</div></div><div class="actions"><button class="small" data-action="move-group-up" data-id="${g.id}">上移</button><button class="small" data-action="move-group-down" data-id="${g.id}">下移</button><button class="small" data-action="edit-group" data-id="${g.id}">修改</button><button class="small danger" data-action="delete-group" data-id="${g.id}">刪除</button></div></div><div class="group-body ${collapsed?"collapsed":""}"><div class="timeline-line">${list.map(flowCard).join("")||'<div class="empty">此群組尚無流程</div>'}</div></div></div>`}).join("")}${ungrouped.length?`<div class="group-card"><div class="group-head"><div class="card-title">📌 未分組</div></div><div class="timeline-line">${ungrouped.map(flowCard).join("")}</div></div>`:""}`}
 function renderMine(){const work=tasks.filter(x=>x.owner===currentUser&&x.type==="工作"),items=tasks.filter(x=>x.owner===currentUser&&x.type==="物品");$("#mine").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">📝 我的工作</div><div class="pill ${work.length&&work.every(x=>x.done)?"ok":""}">${work.filter(x=>x.done).length}/${work.length}</div></div>${work.map(taskRow).join("")||'<div class="empty">目前沒有工作</div>'}</div><div class="card"><div class="card-head"><div class="card-title">📦 我的準備物品</div><div class="pill ${items.length&&items.every(x=>x.done)?"ok":""}">${items.filter(x=>x.done).length}/${items.length}</div></div>${items.map(taskRow).join("")||'<div class="empty">目前沒有準備物品</div>'}</div>`}
 function renderPeople(){$("#people").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-person">新增人員</button></div><div id="peopleSortList">${people.map(p=>`<div class="person-card" data-person-card="${p.id}"><div class="drag-handle" data-drag-person="${p.id}" title="拖曳排序">☰</div><div class="main"><strong>${esc(p.name)}</strong><div class="meta">${esc(p.role||"未設定角色")}・工作 ${tasks.filter(x=>x.owner===p.name&&x.type==="工作").length}・物品 ${tasks.filter(x=>x.owner===p.name&&x.type==="物品").length}</div></div><div class="actions"><button class="small" data-action="show-person" data-id="${p.id}">查看</button><button class="small" data-action="edit-person" data-id="${p.id}">修改</button><button class="small danger" data-action="delete-person" data-id="${p.id}">刪除</button></div></div>`).join("")||'<div class="empty">尚未建立人員</div>'}</div>`;initPersonDrag()}
@@ -106,7 +128,7 @@ $("#adminLoginForm").onsubmit=async e=>{
 function openUser(){$("#userName").value=currentUser;$("#userDialog").showModal()}$("#userForm").onsubmit=e=>{e.preventDefault();currentUser=$("#userName").value.trim();localStorage.setItem("wccUser",currentUser);close("userDialog");render()};
 
 function fillCategorySelect(){$("#taskCategory").innerHTML=categories.map(c=>`<option value="${c.id}">${esc(c.icon)} ${esc(c.name)}</option>`).join("")}
-function renderTaskFlowPicker(){$("#taskFlowPicker").innerHTML=flows.map(f=>`<button type="button" class="chip ${taskFlowSelection.has(f.id)?"selected":""}" data-task-flow="${f.id}">${esc(f.time||"")} ${esc(f.name)}</button>`).join("")}
+function renderTaskFlowPicker(){$("#taskFlowPicker").innerHTML=flows.map(f=>`<button type="button" class="chip ${taskFlowSelection.has(f.id)?"selected":""}" data-task-flow="${f.id}">${esc(formatFlowTime(f))} ${esc(f.name)}</button>`).join("")}
 $("#taskFlowPicker").onclick=e=>{const b=e.target.closest("[data-task-flow]");if(!b)return;taskFlowSelection.has(b.dataset.taskFlow)?taskFlowSelection.delete(b.dataset.taskFlow):taskFlowSelection.add(b.dataset.taskFlow);renderTaskFlowPicker()};
 function openTask(t=null){$("#taskDialogTitle").textContent=t?"修改前置項目":"新增前置項目";$("#taskId").value=t?.id||"";fillCategorySelect();$("#taskCategory").value=t?.categoryId||categories[0]?.id||"";$("#taskTitle").value=t?.title||"";$("#taskType").value=t?.type||"工作";$("#taskOwner").value=t?.owner||"";$("#taskNotes").value=t?.notes||"";taskFlowSelection=new Set(t?.flowIds||[]);renderTaskFlowPicker();$("#taskDialog").showModal()}
 async function syncTaskChecks(taskId,payload,oldFlowIds=[]){const newIds=payload.flowIds||[],batch=writeBatch(db),existing=checks.filter(c=>c.autoFromTask&&c.taskId===taskId);for(const fId of newIds){if(!existing.some(c=>c.flowId===fId)){const r=doc(collection(db,"wccFlowChecks"));batch.set(r,{flowId:fId,title:payload.title,owner:payload.owner||"",taskId,done:false,autoFromTask:true,sort:checks.filter(c=>c.flowId===fId).length,createdAt:serverTimestamp()})}else{existing.filter(c=>c.flowId===fId).forEach(c=>batch.update(doc(db,"wccFlowChecks",c.id),{title:payload.title,owner:payload.owner||"",updatedAt:serverTimestamp()}))}}existing.filter(c=>!newIds.includes(c.flowId)).forEach(c=>batch.delete(doc(db,"wccFlowChecks",c.id)));await batch.commit()}
@@ -138,7 +160,57 @@ $("#subItemForm").onsubmit=async e=>{
 };
 
 function openGroup(g=null){$("#groupDialogTitle").textContent=g?"修改流程群組":"新增流程群組";$("#groupId").value=g?.id||"";$("#groupName").value=g?.name||"";$("#groupIcon").value=g?.icon||"🗂️";$("#groupDialog").showModal()}$("#groupForm").onsubmit=async e=>{e.preventDefault();const id=$("#groupId").value,p={name:$("#groupName").value.trim(),icon:$("#groupIcon").value.trim()||"🗂️",updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccFlowGroups",id),p):await addDoc(collection(db,"wccFlowGroups"),{...p,sort:groups.length,createdAt:serverTimestamp()});close("groupDialog")};
-function openFlow(f=null){$("#flowDialogTitle").textContent=f?"修改流程":"新增流程";$("#flowId").value=f?.id||"";$("#flowGroup").innerHTML='<option value="">未分組</option>'+groups.map(g=>`<option value="${g.id}">${esc(g.icon)} ${esc(g.name)}</option>`).join("");$("#flowGroup").value=f?.groupId||"";$("#flowTime").value=f?.time||"";$("#flowName").value=f?.name||"";$("#flowIcon").value=f?.icon||"📍";$("#flowOwner").value=f?.owner||"";$("#flowLocation").value=f?.location||"";$("#flowAddress").value=f?.address||"";$("#flowMapUrl").value=f?.mapUrl||"";$("#flowNotes").value=f?.notes||"";$("#flowDialog").showModal()}$("#flowForm").onsubmit=async e=>{e.preventDefault();const id=$("#flowId").value,p={groupId:$("#flowGroup").value,time:$("#flowTime").value,name:$("#flowName").value.trim(),icon:$("#flowIcon").value.trim()||"📍",owner:$("#flowOwner").value.trim(),location:$("#flowLocation").value.trim(),address:$("#flowAddress").value.trim(),mapUrl:$("#flowMapUrl").value.trim(),notes:$("#flowNotes").value.trim(),updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccFlows",id),p):await addDoc(collection(db,"wccFlows"),{...p,sort:flows.filter(x=>x.groupId===p.groupId).length,createdAt:serverTimestamp()});close("flowDialog")};
+function openFlow(f=null){
+ $("#flowDialogTitle").textContent=f?"修改流程":"新增流程";
+ $("#flowId").value=f?.id||"";
+ $("#flowGroup").innerHTML='<option value="">未分組</option>'+groups.map(g=>`<option value="${g.id}">${esc(g.icon)} ${esc(g.name)}</option>`).join("");
+ $("#flowGroup").value=f?.groupId||"";
+ const mode=normalizeFlowTimeMode(f);
+ $("#flowTimeMode").value=mode;
+ $("#flowTime").value=mode==="single"?(f?.time||f?.startTime||""):"";
+ $("#flowStartTime").value=mode==="range"?(f?.startTime||f?.time||""):"";
+ $("#flowEndTime").value=mode==="range"?(f?.endTime||""):"";
+ updateFlowTimeFields();
+ $("#flowName").value=f?.name||"";
+ $("#flowIcon").value=f?.icon||"📍";
+ $("#flowOwner").value=f?.owner||"";
+ $("#flowLocation").value=f?.location||"";
+ $("#flowAddress").value=f?.address||"";
+ $("#flowMapUrl").value=f?.mapUrl||"";
+ $("#flowNotes").value=f?.notes||"";
+ $("#flowDialog").showModal();
+}
+$("#flowTimeMode").onchange=updateFlowTimeFields;
+$("#flowForm").onsubmit=async e=>{
+ e.preventDefault();
+ const id=$("#flowId").value;
+ const timeMode=$("#flowTimeMode").value;
+ const singleTime=timeMode==="single"?$("#flowTime").value:"";
+ const startTime=timeMode==="range"?$("#flowStartTime").value:"";
+ const endTime=timeMode==="range"?$("#flowEndTime").value:"";
+ if(timeMode==="range"&&startTime&&endTime&&endTime<startTime){
+  alert("結束時間不能早於開始時間");
+  return;
+ }
+ const p={
+  groupId:$("#flowGroup").value,
+  timeMode,
+  time:singleTime,
+  startTime,
+  endTime,
+  name:$("#flowName").value.trim(),
+  icon:$("#flowIcon").value.trim()||"📍",
+  owner:$("#flowOwner").value.trim(),
+  location:$("#flowLocation").value.trim(),
+  address:$("#flowAddress").value.trim(),
+  mapUrl:$("#flowMapUrl").value.trim(),
+  notes:$("#flowNotes").value.trim(),
+  updatedAt:serverTimestamp()
+ };
+ if(id)await updateDoc(doc(db,"wccFlows",id),p);
+ else await addDoc(collection(db,"wccFlows"),{...p,sort:flows.filter(x=>x.groupId===p.groupId).length,createdAt:serverTimestamp()});
+ close("flowDialog");
+};
 function openCheck(ch=null,flowId=""){$("#checkDialogTitle").textContent=ch?"修改流程確認項目":"新增流程確認項目";$("#checkId").value=ch?.id||"";$("#checkFlowId").value=ch?.flowId||flowId;$("#checkTitle").value=ch?.title||"";$("#checkOwner").value=ch?.owner||"";$("#checkTaskLink").innerHTML='<option value="">不連結</option>'+tasks.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join("");$("#checkTaskLink").value=ch?.taskId||"";$("#checkDialog").showModal()}$("#checkForm").onsubmit=async e=>{e.preventDefault();const id=$("#checkId").value,p={flowId:$("#checkFlowId").value,title:$("#checkTitle").value.trim(),owner:$("#checkOwner").value.trim(),taskId:$("#checkTaskLink").value,autoFromTask:false,updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccFlowChecks",id),p):await addDoc(collection(db,"wccFlowChecks"),{...p,done:false,sort:checks.filter(x=>x.flowId===p.flowId).length,createdAt:serverTimestamp()});close("checkDialog")};
 function openPerson(p=null){$("#personDialogTitle").textContent=p?"修改人員":"新增人員";$("#personId").value=p?.id||"";$("#personName").value=p?.name||"";$("#personRole").value=p?.role||"";$("#personDialog").showModal()}$("#personForm").onsubmit=async e=>{e.preventDefault();const id=$("#personId").value,p={name:$("#personName").value.trim(),role:$("#personRole").value.trim(),updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccPeople",id),p):await addDoc(collection(db,"wccPeople"),{...p,sort:people.length,createdAt:serverTimestamp()});close("personDialog")};
 function openCategory(c=null){$("#categoryDialogTitle").textContent=c?"修改分類":"新增分類";$("#categoryId").value=c?.id||"";$("#categoryName").value=c?.name||"";$("#categoryIcon").value=c?.icon||"📂";$("#categoryDialog").showModal()}$("#categoryForm").onsubmit=async e=>{e.preventDefault();const id=$("#categoryId").value,p={name:$("#categoryName").value.trim(),icon:$("#categoryIcon").value.trim()||"📂",updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccCategories",id),p):await addDoc(collection(db,"wccCategories"),{...p,sort:categories.length,createdAt:serverTimestamp()});close("categoryDialog")};
@@ -175,6 +247,6 @@ if(a==="save-settings")await setDoc(doc(db,"wccSettings","main"),{title:$("#sett
 });
 $("#fab").onclick=()=>{if(view==="banquet")return;view==="prepare"?openTask():view==="timeline"?openFlow():view==="people"?openPerson():openTask()};
 
-async function bootstrap(){const ref=doc(db,"wccSettings","main"),snap=await getDoc(ref);if(snap.exists()&&snap.data().initialized)return;const cs=await getDocs(collection(db,"wccCategories"));if(!cs.empty){await setDoc(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮工作中心"},{merge:true});return}const batch=writeBatch(db),catRefs={},groupRefs={};defaults.categories.forEach(([n,i],x)=>{const r=doc(collection(db,"wccCategories"));catRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.groups.forEach(([n,i],x)=>{const r=doc(collection(db,"wccFlowGroups"));groupRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.flows.forEach(([time,n,i,g],x)=>{const r=doc(collection(db,"wccFlows"));batch.set(r,{time,name:n,icon:i,groupId:groupRefs[g].id,owner:"",location:"",address:"",mapUrl:"",notes:"",sort:x,createdAt:serverTimestamp()})});batch.set(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮工作中心",weddingDate:""});await batch.commit()}
+async function bootstrap(){const ref=doc(db,"wccSettings","main"),snap=await getDoc(ref);if(snap.exists()&&snap.data().initialized)return;const cs=await getDocs(collection(db,"wccCategories"));if(!cs.empty){await setDoc(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮工作中心"},{merge:true});return}const batch=writeBatch(db),catRefs={},groupRefs={};defaults.categories.forEach(([n,i],x)=>{const r=doc(collection(db,"wccCategories"));catRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.groups.forEach(([n,i],x)=>{const r=doc(collection(db,"wccFlowGroups"));groupRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.flows.forEach(([time,n,i,g],x)=>{const r=doc(collection(db,"wccFlows"));batch.set(r,{timeMode:"single",time,startTime:"",endTime:"",name:n,icon:i,groupId:groupRefs[g].id,owner:"",location:"",address:"",mapUrl:"",notes:"",sort:x,createdAt:serverTimestamp()})});batch.set(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮工作中心",weddingDate:""});await batch.commit()}
 async function start(){if(!currentUser)openUser();const app=initializeApp(firebaseConfig),auth=getAuth(app);db=getFirestore(app);await signInAnonymously(auth);$("#syncState").className="sync ok";$("#syncState").textContent="已連線・多人即時同步";await bootstrap();onSnapshot(query(collection(db,"wccTasks"),orderBy("sort","asc")),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccTaskItems"),orderBy("sort","asc")),s=>{taskItems=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccCategories"),orderBy("sort","asc")),s=>{categories=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowGroups"),orderBy("sort","asc")),s=>{groups=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlows"),orderBy("sort","asc")),s=>{flows=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowChecks"),orderBy("sort","asc")),s=>{checks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccPeople"),orderBy("sort","asc")),s=>{people=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(doc(db,"wccSettings","main"),s=>{if(s.exists())settings={...settings,...s.data()};render();if(!settings.adminPasswordHash&&!adminSetupShown){adminSetupShown=true;setTimeout(()=>{$("#adminSetupTitle").textContent="建立管理密碼";$("#adminSetupDialog").showModal()},300)}})}
 start().catch(err=>{$("#syncState").className="sync bad";$("#syncState").textContent="連線失敗";alert(err.message)});
