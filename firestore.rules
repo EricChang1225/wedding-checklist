@@ -2,11 +2,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+
     match /wccTasks/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccCategories/{id} { allow read, create, update, delete: if signedIn(); }
+    match /wccFlowGroups/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccFlows/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccFlowChecks/{id} { allow read, create, update, delete: if signedIn(); }
     match /wccPeople/{id} { allow read, create, update, delete: if signedIn(); }
-    match /wccSettings/{id} { allow read, create, update: if signedIn(); allow delete: if false; }
+    match /wccSettings/{id} {
+      allow read, create, update: if signedIn();
+      allow delete: if false;
+    }
   }
 }
