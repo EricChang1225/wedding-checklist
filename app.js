@@ -30,7 +30,11 @@ function requestAdmin(){
  if(isAdmin()){localStorage.removeItem("wccAdminUntil");applyPermissions();render();return}
  $("#adminLoginPassword").value="";$("#adminLoginError").textContent="";$("#adminLoginDialog").showModal();
 }
-let currentUser=localStorage.getItem("wccUser")||"", collapsedGroups=new Set(JSON.parse(localStorage.getItem("wccCollapsedGroups")||"[]")), collapsedTasks=new Set(JSON.parse(localStorage.getItem("wccCollapsedTasks")||"[]"));
+let currentUser=localStorage.getItem("wccUser")||"",
+ collapsedGroups=new Set(JSON.parse(localStorage.getItem("wccCollapsedGroups")||"[]")),
+ collapsedTasks=new Set(JSON.parse(localStorage.getItem("wccCollapsedTasks")||"[]")),
+ collapsedFlows=new Set(JSON.parse(localStorage.getItem("wccCollapsedFlows")||"[]")),
+ collapsedFlowPackages=new Set(JSON.parse(localStorage.getItem("wccCollapsedFlowPackages")||"[]"));
 const defaults={categories:[["文定準備","💍"],["迎娶準備","🚗"],["婚宴準備","🥂"],["攝影錄影","📸"]],groups:[["集合與準備","📍"],["文定","💍"],["迎娶","🚗"],["婚宴","🥂"],["送客與收尾","🧹"]],flows:[["08:00","集合","📍","集合與準備"],["09:00","文定","💍","文定"],["11:00","迎娶","🚗","迎娶"],["18:00","婚宴","🥂","婚宴"]]};
 const category=id=>categories.find(x=>x.id===id), linkedTask=id=>tasks.find(x=>x.id===id), group=id=>groups.find(x=>x.id===id), flow=id=>flows.find(x=>x.id===id);
 const normalizeFlowTimeMode=f=>{
@@ -93,8 +97,91 @@ function taskRow(t){
 }
 function renderPrepare(){$("#prepare").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-category">新增分類</button><button class="primary" data-action="new-task">新增項目</button></div>${categories.map(c=>{const list=tasks.filter(t=>t.categoryId===c.id);return `<div class="card"><div class="card-head"><div><div class="card-title">${esc(c.icon||"📂")} ${esc(c.name)}</div><div class="meta">${list.filter(x=>x.done).length}/${list.length}</div></div><div class="actions"><button class="small" data-action="move-category-up" data-id="${c.id}">上移</button><button class="small" data-action="move-category-down" data-id="${c.id}">下移</button><button class="small" data-action="edit-category" data-id="${c.id}">修改</button></div></div>${list.map(taskRow).join("")||'<div class="empty">此分類沒有項目</div>'}</div>`}).join("")}`}
 function mapUrl(f){if(f.mapUrl)return f.mapUrl;if(f.address)return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`;return ""}
-function flowCard(f){const list=checks.filter(x=>x.flowId===f.id),url=mapUrl(f);return `<div class="flow-card card"><div class="card-head"><div><div class="card-title">${formatFlowTime(f)?`${esc(formatFlowTime(f))}　`:""}${esc(f.icon||"📍")} ${esc(f.name)}</div><div class="meta">負責人：${esc(f.owner||"未指定")}・確認 ${list.filter(x=>x.done).length}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>${url?`<a class="map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}${f.notes?`<div class="meta">${esc(f.notes)}</div>`:""}</div><div class="actions"><button class="small" data-action="move-flow-up" data-id="${f.id}">上移</button><button class="small" data-action="move-flow-down" data-id="${f.id}">下移</button><button class="small" data-action="add-check" data-id="${f.id}">加確認項</button><button class="small" data-action="edit-flow" data-id="${f.id}">修改</button><button class="small danger" data-action="delete-flow" data-id="${f.id}">刪除</button></div></div>${list.map(ch=>{const t=linkedTask(ch.taskId);return `<div class="row ${ch.done?"done":""}"><input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}><div class="main"><div class="name">${esc(ch.title)}</div><div class="meta">負責：${esc(ch.owner||"未指定")}${t?(()=>{const p=taskProgress(t),ready=p.total?p.complete:t.done,missing=p.list.filter(i=>!i.done).map(i=>i.title);return `<br>前置狀態：${ready?"✅ 已準備":"⚠️ 尚未準備"}${p.total?`（${p.done}/${p.total}）`:""}${missing.length?`<div class="missing-list">尚缺 ${missing.length} 項</div>`:""}${p.total?`<details class="flow-prep-details"><summary>查看準備細項 ${p.done}/${p.total}</summary>${p.list.map(i=>`<div class="sub-row ${i.done?"done":""}"><input class="check" type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}><div class="main"><div class="name">${esc(i.title)}</div>${i.notes?`<div class="meta">${esc(i.notes)}</div>`:""}</div></div>`).join("")}</details>`:""}`})():""}${ch.autoFromTask?"<br>🔗 由前置項目自動建立":""}</div></div><div class="actions"><button class="small" data-action="edit-check" data-id="${ch.id}">修改</button><button class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button></div></div>`}).join("")||'<div class="empty">尚未建立確認項目</div>'}</div>`}
-function renderTimeline(){const ungrouped=flows.filter(f=>!f.groupId||!group(f.groupId));$("#timeline").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-group">新增群組</button><button class="primary" data-action="new-flow">新增流程</button></div>${groups.map(g=>{const list=flows.filter(f=>f.groupId===g.id),collapsed=collapsedGroups.has(g.id);return `<div class="group-card"><div class="group-head"><button class="group-toggle" data-action="toggle-group" data-id="${g.id}">${collapsed?"▶":"▼"}</button><div class="main"><div class="card-title">${esc(g.icon||"🗂️")} ${esc(g.name)}</div><div class="meta">${list.length} 項・確認 ${checks.filter(c=>list.some(f=>f.id===c.flowId)&&c.done).length}/${checks.filter(c=>list.some(f=>f.id===c.flowId)).length}</div></div><div class="actions"><button class="small" data-action="move-group-up" data-id="${g.id}">上移</button><button class="small" data-action="move-group-down" data-id="${g.id}">下移</button><button class="small" data-action="edit-group" data-id="${g.id}">修改</button><button class="small danger" data-action="delete-group" data-id="${g.id}">刪除</button></div></div><div class="group-body ${collapsed?"collapsed":""}"><div class="timeline-line">${list.map(flowCard).join("")||'<div class="empty">此群組尚無流程</div>'}</div></div></div>`}).join("")}${ungrouped.length?`<div class="group-card"><div class="group-head"><div class="card-title">📌 未分組</div></div><div class="timeline-line">${ungrouped.map(flowCard).join("")}</div></div>`:""}`}
+function linkedPreparationCard(ch){
+ const t=linkedTask(ch.taskId);
+ if(!t){
+  return `<div class="row ${ch.done?"done":""}">
+   <input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}>
+   <div class="main"><div class="name">${esc(ch.title)}</div><div class="meta">負責：${esc(ch.owner||"未指定")}</div></div>
+   <div class="actions"><button class="small" data-action="edit-check" data-id="${ch.id}">修改</button><button class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button></div>
+  </div>`;
+ }
+ const p=taskProgress(t),ready=p.total?p.complete:t.done;
+ const packageKey=ch.id;
+ const collapsed=collapsedFlowPackages.has(packageKey);
+ return `<div class="flow-package ${ready?"done":""}">
+  <div class="flow-package-head">
+   <button class="package-toggle" data-action="toggle-flow-package" data-id="${packageKey}">${collapsed?"▶":"▼"}</button>
+   <input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}>
+   <div class="main">
+    <div class="name">${esc(ch.title)}</div>
+    <div class="meta">負責：${esc(ch.owner||t.owner||"未指定")}・前置狀態：${ready?"✅ 已準備":"⚠️ 尚未準備"}${p.total?`（${p.done}/${p.total}）`:""}</div>
+    ${p.total?`<div class="progress compact-progress"><span style="width:${Math.round(p.done/p.total*100)}%"></span></div>`:""}
+   </div>
+   <div class="actions">
+    <button class="small" data-action="edit-check" data-id="${ch.id}">修改</button>
+    <button class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button>
+   </div>
+  </div>
+  <div class="flow-package-body ${collapsed?"collapsed":""}">
+   ${p.total?p.list.map(i=>`<div class="sub-row ${i.done?"done":""}">
+    <input class="check" type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}>
+    <div class="main"><div class="name">${esc(i.title)}</div>${i.notes?`<div class="meta">${esc(i.notes)}</div>`:""}</div>
+   </div>`).join(""):`<div class="empty small-empty">此準備項目沒有細項</div>`}
+  </div>
+ </div>`;
+}
+
+function flowCard(f){
+ const list=checks.filter(x=>x.flowId===f.id),url=mapUrl(f),collapsed=collapsedFlows.has(f.id);
+ const completed=list.filter(x=>x.done).length;
+ return `<div class="flow-card card">
+  <div class="card-head flow-head">
+   <button class="flow-toggle" data-action="toggle-flow" data-id="${f.id}">${collapsed?"▶":"▼"}</button>
+   <div class="main">
+    <div class="card-title">${formatFlowTime(f)?`${esc(formatFlowTime(f))}　`:""}${esc(f.icon||"📍")} ${esc(f.name)}</div>
+    <div class="meta">負責人：${esc(f.owner||"未指定")}・確認 ${completed}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>
+    ${list.length?`<div class="progress compact-progress"><span style="width:${Math.round(completed/list.length*100)}%"></span></div>`:""}
+    ${url?`<a class="map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}
+    ${f.notes?`<div class="meta">${esc(f.notes)}</div>`:""}
+   </div>
+   <div class="actions">
+    <button class="small" data-action="toggle-all-packages" data-id="${f.id}">全部展開／收合</button>
+    <button class="small" data-action="move-flow-up" data-id="${f.id}">上移</button>
+    <button class="small" data-action="move-flow-down" data-id="${f.id}">下移</button>
+    <button class="small" data-action="add-check" data-id="${f.id}">加確認項</button>
+    <button class="small" data-action="edit-flow" data-id="${f.id}">修改</button>
+    <button class="small danger" data-action="delete-flow" data-id="${f.id}">刪除</button>
+   </div>
+  </div>
+  <div class="flow-body ${collapsed?"collapsed":""}">
+   ${list.map(linkedPreparationCard).join("")||'<div class="empty">尚未建立確認項目</div>'}
+  </div>
+ </div>`;
+}
+
+function renderTimeline(){
+ const ungrouped=flows.filter(f=>!f.groupId||!group(f.groupId));
+ $("#timeline").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-group">新增階段</button><button class="primary" data-action="new-flow">新增流程</button></div>
+ ${groups.map(g=>{
+  const list=flows.filter(f=>f.groupId===g.id),collapsed=collapsedGroups.has(g.id);
+  const stageChecks=checks.filter(c=>list.some(f=>f.id===c.flowId));
+  return `<div class="group-card">
+   <div class="group-head">
+    <button class="group-toggle" data-action="toggle-group" data-id="${g.id}">${collapsed?"▶":"▼"}</button>
+    <div class="main"><div class="card-title">${esc(g.icon||"🗂️")} ${esc(g.name)}</div><div class="meta">${list.length} 個流程・確認 ${stageChecks.filter(c=>c.done).length}/${stageChecks.length}</div></div>
+    <div class="actions">
+     <button class="small" data-action="move-group-up" data-id="${g.id}">上移</button>
+     <button class="small" data-action="move-group-down" data-id="${g.id}">下移</button>
+     <button class="small" data-action="edit-group" data-id="${g.id}">修改</button>
+     <button class="small danger" data-action="delete-group" data-id="${g.id}">刪除</button>
+    </div>
+   </div>
+   <div class="group-body ${collapsed?"collapsed":""}"><div class="timeline-line">${list.map(flowCard).join("")||'<div class="empty">此階段尚無流程</div>'}</div></div>
+  </div>`;
+ }).join("")}
+ ${ungrouped.map(flowCard).join("")}`;
+}
 function renderMine(){const work=tasks.filter(x=>x.owner===currentUser&&x.type==="工作"),items=tasks.filter(x=>x.owner===currentUser&&x.type==="物品");$("#mine").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">📝 我的工作</div><div class="pill ${work.length&&work.every(x=>x.done)?"ok":""}">${work.filter(x=>x.done).length}/${work.length}</div></div>${work.map(taskRow).join("")||'<div class="empty">目前沒有工作</div>'}</div><div class="card"><div class="card-head"><div class="card-title">📦 我的準備物品</div><div class="pill ${items.length&&items.every(x=>x.done)?"ok":""}">${items.filter(x=>x.done).length}/${items.length}</div></div>${items.map(taskRow).join("")||'<div class="empty">目前沒有準備物品</div>'}</div>`}
 function renderPeople(){$("#people").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-person">新增人員</button></div><div id="peopleSortList">${people.map(p=>`<div class="person-card" data-person-card="${p.id}"><div class="drag-handle" data-drag-person="${p.id}" title="拖曳排序">☰</div><div class="main"><strong>${esc(p.name)}</strong><div class="meta">${esc(p.role||"未設定角色")}・工作 ${tasks.filter(x=>x.owner===p.name&&x.type==="工作").length}・物品 ${tasks.filter(x=>x.owner===p.name&&x.type==="物品").length}</div></div><div class="actions"><button class="small" data-action="show-person" data-id="${p.id}">查看</button><button class="small" data-action="edit-person" data-id="${p.id}">修改</button><button class="small danger" data-action="delete-person" data-id="${p.id}">刪除</button></div></div>`).join("")||'<div class="empty">尚未建立人員</div>'}</div>`;initPersonDrag()}
 function renderSettings(){$("#settings").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">設定</div></div><div style="padding:16px"><label>網站名稱<input id="settingTitle" value="${esc(settings.title||"")}"></label><label>婚禮日期<input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></label><div class="actions"><button class="primary" data-action="save-settings">儲存設定</button><button id="changeUser">更改目前使用者</button><button data-action="change-admin-password">修改管理密碼</button><button data-action="logout-admin">退出管理模式</button><button data-action="export-csv">匯出 CSV</button><button data-action="print">列印</button></div></div></div>`;$("#changeUser").onclick=openUser}
@@ -236,6 +323,23 @@ if(a==="toggle-subitem"){const item=taskItems.find(x=>x.id===id);await updateDoc
 if(a==="toggle-task-expand"){collapsedTasks.has(id)?collapsedTasks.delete(id):collapsedTasks.add(id);localStorage.setItem("wccCollapsedTasks",JSON.stringify([...collapsedTasks]));render()}
 if(a==="delete-task"&&confirm("刪除此項目與所有細項？")){const batch=writeBatch(db);checks.filter(c=>c.taskId===id&&c.autoFromTask).forEach(c=>batch.delete(doc(db,"wccFlowChecks",c.id)));itemsForTask(id).forEach(i=>batch.delete(doc(db,"wccTaskItems",i.id)));batch.delete(doc(db,"wccTasks",id));await batch.commit()}
 if(a==="toggle-task"){const list=itemsForTask(id);if(list.length){const batch=writeBatch(db);list.forEach(i=>batch.update(doc(db,"wccTaskItems",i.id),{done:b.checked,updatedAt:serverTimestamp(),updatedBy:currentUser}));batch.update(doc(db,"wccTasks",id),{done:b.checked,updatedAt:serverTimestamp(),updatedBy:currentUser});await batch.commit()}else await updateDoc(doc(db,"wccTasks",id),{done:b.checked,updatedAt:serverTimestamp(),updatedBy:currentUser});}
+if(a==="toggle-flow"){
+ collapsedFlows.has(id)?collapsedFlows.delete(id):collapsedFlows.add(id);
+ localStorage.setItem("wccCollapsedFlows",JSON.stringify([...collapsedFlows]));
+ renderTimeline();
+}
+if(a==="toggle-flow-package"){
+ collapsedFlowPackages.has(id)?collapsedFlowPackages.delete(id):collapsedFlowPackages.add(id);
+ localStorage.setItem("wccCollapsedFlowPackages",JSON.stringify([...collapsedFlowPackages]));
+ renderTimeline();
+}
+if(a==="toggle-all-packages"){
+ const packageIds=checks.filter(c=>c.flowId===id&&c.taskId).map(c=>c.id);
+ const allCollapsed=packageIds.length&&packageIds.every(x=>collapsedFlowPackages.has(x));
+ packageIds.forEach(x=>allCollapsed?collapsedFlowPackages.delete(x):collapsedFlowPackages.add(x));
+ localStorage.setItem("wccCollapsedFlowPackages",JSON.stringify([...collapsedFlowPackages]));
+ renderTimeline();
+}
 if(a==="new-group")openGroup();if(a==="edit-group")openGroup(groups.find(x=>x.id===id));if(a==="delete-group"&&confirm("刪除此群組？流程會移到未分組。")){const batch=writeBatch(db);flows.filter(f=>f.groupId===id).forEach(f=>batch.update(doc(db,"wccFlows",f.id),{groupId:""}));batch.delete(doc(db,"wccFlowGroups",id));await batch.commit()}if(a==="toggle-group"){collapsedGroups.has(id)?collapsedGroups.delete(id):collapsedGroups.add(id);localStorage.setItem("wccCollapsedGroups",JSON.stringify([...collapsedGroups]));renderTimeline()}
 if(a==="new-flow")openFlow();if(a==="edit-flow")openFlow(flows.find(x=>x.id===id));if(a==="delete-flow"&&confirm("刪除此流程與確認項目？")){const batch=writeBatch(db);checks.filter(x=>x.flowId===id).forEach(x=>batch.delete(doc(db,"wccFlowChecks",x.id)));tasks.filter(t=>(t.flowIds||[]).includes(id)).forEach(t=>batch.update(doc(db,"wccTasks",t.id),{flowIds:(t.flowIds||[]).filter(x=>x!==id)}));batch.delete(doc(db,"wccFlows",id));await batch.commit()}
 if(a==="add-check")openCheck(null,id);if(a==="edit-check")openCheck(checks.find(x=>x.id===id));if(a==="delete-check"&&confirm("刪除此確認項目？"))await deleteDoc(doc(db,"wccFlowChecks",id));if(a==="toggle-check")await updateDoc(doc(db,"wccFlowChecks",id),{done:b.checked,updatedAt:serverTimestamp(),checkedBy:currentUser});

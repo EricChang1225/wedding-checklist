@@ -73,3 +73,24 @@ body:not(.admin-mode) .admin-hidden{display:none!important}
 @media(max-width:520px){
   .time-range-grid{grid-template-columns:1fr}
 }
+
+
+/* v14：婚禮階段、流程、準備包三層收合 */
+.flow-head{align-items:flex-start}
+.flow-toggle,.package-toggle{
+  border:0;background:#fff5f5;border-radius:10px;padding:7px 9px;
+  font-weight:900;color:#806868;flex:none
+}
+.flow-body.collapsed,.flow-package-body.collapsed{display:none}
+.flow-package{border-top:1px solid #f0e4e4;background:#fff}
+.flow-package:first-child{border-top:0}
+.flow-package-head{display:flex;gap:10px;align-items:flex-start;padding:13px 15px}
+.flow-package-body{margin:0 14px 13px 54px;border-left:3px solid #ead2d5;background:#fffafa;border-radius:0 13px 13px 0;overflow:hidden}
+.compact-progress{max-width:280px;height:7px;margin-top:7px}
+.small-empty{padding:16px}
+.group-card>.group-head{cursor:default}
+@media(max-width:620px){
+  .flow-package-body{margin-left:40px;margin-right:8px}
+  .flow-head>.actions{flex-direction:row}
+  .flow-package-head>.actions{flex-direction:column}
+}
