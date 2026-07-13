@@ -23,14 +23,13 @@
   <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
   <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
   <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
-  <link rel="stylesheet" href="./style.css?v=303">
+  <link rel="stylesheet" href="./style.css?v=231">
 </head>
 <body>
 <div class="app">
   <header class="hero">
     <div class="eyebrow">WEDDING BUTLER</div>
-    <div class="title-row"><h1 id="appTitle">💍 駿瑋 ❤ 忞靜</h1><div class="hero-subtitle">婚禮管家</div>
-      <div id="heroCountdown" class="hero-countdown"></div><button id="adminModeButton" class="admin-mode-button" type="button">🔒</button></div>
+    <div class="title-row"><h1 id="appTitle">💍 駿瑋 ❤ 忞靜</h1><div class="hero-subtitle">婚禮管家</div><button id="adminModeButton" class="admin-mode-button" type="button">🔒</button></div>
     <div class="status-line">
       <span id="currentUser">尚未設定使用者</span>
       <span id="syncState" class="sync bad">準備連線</span>
@@ -39,8 +38,7 @@
 
   <nav id="tabs" class="tabs">
     <button class="tab active" data-view="dashboard">我的行程</button>
-    <button class="tab" data-view="work">工作中心</button>
-    <button class="tab" data-view="prepare">準備物品</button>
+    <button class="tab" data-view="prepare">婚禮準備</button>
     <button class="tab" data-view="rosters">工作名單</button>
     <button class="tab" data-view="timeline">婚禮流程</button>
     <button class="tab" data-view="banquet">婚宴資訊</button>
@@ -51,14 +49,13 @@
 
   <main>
     <section id="dashboard" class="panel active"></section>
-    <section id="work" class="panel"></section>
     <section id="prepare" class="panel"></section>
     <section id="rosters" class="panel"></section>
     <section id="timeline" class="panel"></section>
     <section id="mine" class="panel"></section>
     <section id="people" class="panel"></section>
     <section id="banquet" class="panel">
-      <iframe id="banquetFrame" class="banquet-frame" src="./banquet.html?v=302" title="婚宴中心"></iframe>
+      <iframe id="banquetFrame" class="banquet-frame" src="./banquet.html?v=231" title="婚宴中心"></iframe>
     </section>
     <section id="overview" class="panel"></section>
     <section id="settings" class="panel"></section>
@@ -126,34 +123,9 @@
   <label>名稱<input id="taskTitle" maxlength="80" required></label>
   <label>大分類<select id="taskCategory"></select></label>
   <label>類型<select id="taskType"><option value="工作">工作</option><option value="物品">準備物品</option></select></label>
-  <div id="workOnlyFields">
-    <label>工作分類
-      <select id="taskWorkKind">
-        <option value="一般">📋 一般</option>
-        <option value="接送">🚗 接送</option>
-        <option value="採買">🛍️ 採買</option>
-        <option value="聯絡">📞 聯絡</option>
-        <option value="協助">🛠️ 協助</option>
-        <option value="其他">⭐ 其他</option>
-      </select>
-    </label>
-    <label>日期<input id="taskDate" type="date"></label>
-    <div class="time-range-grid active">
-      <label>開始時間<input id="taskStartTime" type="time"></label>
-      <label>結束時間<input id="taskEndTime" type="time"></label>
-    </div>
-    <label>地點<input id="taskLocation" maxlength="120" placeholder="例如：桃園高鐵站"></label>
-    <label>重要程度
-      <select id="taskPriority">
-        <option value="1">一般</option>
-        <option value="2">重要</option>
-        <option value="3">非常重要</option>
-      </select>
-    </label>
-  </div>
   <label>DRI／負責人<input id="taskOwner" maxlength="30" list="peopleList" placeholder="可直接輸入姓名"></label>
-  <label>關聯婚禮流程（可不選）<div id="taskFlowPicker" class="chips"></div></label>
-  <div class="hint">獨立工作不必選流程；只有需要在流程內同步確認時才勾選。</div>
+  <label>連動到婚禮流程<div id="taskFlowPicker" class="chips"></div></label>
+  <div class="hint">勾選流程後，系統會自動在該流程建立一筆「現場確認」項目。</div>
   <label>備註<textarea id="taskNotes"></textarea></label>
   <div class="sheet-actions"><button type="button" class="btn" data-close="taskDialog">取消</button><button class="btn primary">儲存</button></div>
 </form></dialog>
@@ -230,6 +202,6 @@
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app-v303.js"></script>
+<script type="module" src="./app-stable-v231.js"></script>
 </body>
 </html>
