@@ -29,7 +29,7 @@
 <div class="app">
   <header class="hero">
     <div class="eyebrow">WEDDING CONTROL CENTER</div>
-    <h1 id="appTitle">駿瑋 &amp; 忞靜 婚禮工作中心</h1>
+    <div class="title-row"><h1 id="appTitle">駿瑋 &amp; 忞靜 婚禮工作中心</h1><button id="adminModeButton" class="admin-mode-button" type="button">🔒</button></div>
     <div class="status-line">
       <span id="currentUser">尚未設定使用者</span>
       <span id="syncState" class="sync bad">準備連線</span>
@@ -59,6 +59,28 @@
 </div>
 
 <button id="fab" class="fab" aria-label="新增">＋</button>
+
+
+<dialog id="adminSetupDialog"><form id="adminSetupForm" class="sheet">
+  <h2 id="adminSetupTitle">建立管理密碼</h2>
+  <p class="hint">只會在整個婚禮專案尚未設定密碼時出現一次。其他人之後不會看到這個畫面。</p>
+  <label>管理密碼<input id="adminSetupPassword" type="password" minlength="4" required autocomplete="new-password"></label>
+  <label>再次輸入<input id="adminSetupConfirm" type="password" minlength="4" required autocomplete="new-password"></label>
+  <div class="sheet-actions">
+    <button type="button" class="btn" data-close="adminSetupDialog">取消</button>
+    <button class="btn primary">儲存密碼</button>
+  </div>
+</form></dialog>
+
+<dialog id="adminLoginDialog"><form id="adminLoginForm" class="sheet">
+  <h2>進入管理模式</h2>
+  <label>管理密碼<input id="adminLoginPassword" type="password" required autocomplete="current-password"></label>
+  <div id="adminLoginError" class="error-text"></div>
+  <div class="sheet-actions">
+    <button type="button" class="btn" data-close="adminLoginDialog">取消</button>
+    <button class="btn primary">確定</button>
+  </div>
+</form></dialog>
 
 <dialog id="userDialog"><form id="userForm" class="sheet">
   <h2>設定目前使用者</h2>

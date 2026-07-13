@@ -26,3 +26,8 @@ dialog{border:0;border-radius:22px 22px 0 0;width:min(560px,100%);padding:0;marg
 body{background:transparent}
 .app{padding-top:0}
 .hero{margin-top:0}
+
+.banquet-title-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.banquet-admin-badge{font-size:12px;font-weight:800;background:#f3eeee;padding:6px 9px;border-radius:99px;color:#8b7777}
+.banquet-admin-badge.active{background:#f5d99d;color:#6a4a14}
+body:not(.banquet-admin) .banquet-admin-only{display:none!important}

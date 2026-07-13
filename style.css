@@ -49,3 +49,17 @@ dialog{border:0;border-radius:22px 22px 0 0;width:min(560px,100%);padding:0;marg
 }
 #banquet.active{display:block}
 body.banquet-mode .fab{display:none}
+
+/* v12 管理模式 */
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.title-row h1{margin:5px 0 10px}
+.admin-mode-button{border:0;border-radius:999px;background:#ffffffaa;padding:8px 11px;box-shadow:0 4px 12px #6b494917;font-size:17px}
+.admin-mode-button.active{background:#f5d99d}
+.error-text{min-height:20px;color:#b45861;font-size:13px}
+body:not(.admin-mode) .admin-hidden{display:none!important}
+.flow-prep-details{margin:9px 0 0;border:1px solid #efdfdf;border-radius:13px;background:#fffafa;overflow:hidden}
+.flow-prep-details summary{cursor:pointer;padding:10px 12px;font-weight:800;color:#765f5f;list-style:none}
+.flow-prep-details summary::-webkit-details-marker{display:none}
+.flow-prep-details summary:before{content:"▶";display:inline-block;margin-right:7px;font-size:11px}
+.flow-prep-details[open] summary:before{content:"▼"}
+.flow-prep-details .sub-row{background:#fff}

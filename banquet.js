@@ -7,6 +7,19 @@ import {getFirestore,collection,doc,setDoc,addDoc,updateDoc,deleteDoc,onSnapshot
 const $=s=>document.querySelector(s);
 const esc=(v="")=>String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 let db,tables=[],menu=[],vendors=[],settings={},allExpanded=false;
+let banquetAdmin=Date.now()<Number(localStorage.getItem("wccAdminUntil")||0);
+function applyBanquetPermissions(){
+ banquetAdmin=Date.now()<Number(localStorage.getItem("wccAdminUntil")||0);
+ document.body.classList.toggle("banquet-admin",banquetAdmin);
+ const badge=$("#banquetAdminBadge");if(badge){badge.textContent=banquetAdmin?"👑 管理模式":"唯讀模式";badge.classList.toggle("active",banquetAdmin)}
+ const blocked=new Set(["new-menu","edit-menu","delete-menu","new-vendor","edit-vendor","delete-vendor"]);
+ document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("banquet-admin-only")});
+ ["saveBanquetSettings","importExcel"].forEach(id=>$("#"+id)?.classList.toggle("banquet-admin-only",!banquetAdmin));
+ document.querySelector("#menu .toolbar")?.classList.toggle("banquet-admin-only",!banquetAdmin);
+ document.querySelector("#vendors .toolbar")?.classList.toggle("banquet-admin-only",!banquetAdmin);
+}
+window.addEventListener("message",e=>{if(e.data?.type==="wcc-admin"){banquetAdmin=!!e.data.admin;applyBanquetPermissions()}});
+
 
 $("#banquetTabs").onclick=e=>{
  const b=e.target.closest("[data-view]");if(!b)return;
@@ -71,7 +84,7 @@ function renderVendors(){
 function renderStatus(){
  $("#dataStatus").innerHTML=`<p>桌位：${tables.length} 桌</p><p>菜色：${menu.length} 道</p><p>廠商：${vendors.length} 家</p>`;
 }
-function render(){renderSummary();renderMap();renderMenu();renderVendors();renderStatus()}
+function render(){renderSummary();renderMap();renderMenu();renderVendors();renderStatus();applyBanquetPermissions()}
 
 function close(id){const d=document.getElementById(id);if(d?.open)d.close()}
 document.body.addEventListener("click",e=>{const c=e.target.closest("[data-close]");if(c)close(c.dataset.close);if(e.target.tagName==="DIALOG")e.target.close()});
@@ -88,11 +101,13 @@ $("#vendorForm").onsubmit=async e=>{e.preventDefault();const id=$("#vendorId").v
 
 document.body.addEventListener("click",async e=>{
  const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action,id=b.dataset.id;
+ if(["new-menu","edit-menu","delete-menu","new-vendor","edit-vendor","delete-vendor"].includes(a)&&!banquetAdmin)return alert("請先在主頁進入管理模式");
+
  if(a==="new-menu")openMenu();if(a==="edit-menu")openMenu(menu.find(x=>x.id===id));if(a==="delete-menu"&&confirm("刪除此菜色？"))await deleteDoc(doc(db,"wccMenu",id));
  if(a==="new-vendor")openVendor();if(a==="edit-vendor")openVendor(vendors.find(x=>x.id===id));if(a==="delete-vendor"&&confirm("刪除此廠商？"))await deleteDoc(doc(db,"wccVendors",id));
 });
 
-$("#saveBanquetSettings").onclick=async()=>{await setDoc(doc(db,"wccSettings","main"),{tableMapUrl:$("#tableMapUrl").value.trim(),updatedAt:serverTimestamp()},{merge:true});alert("已儲存")};
+$("#saveBanquetSettings").onclick=async()=>{if(!banquetAdmin)return alert("請先在主頁進入管理模式");await setDoc(doc(db,"wccSettings","main"),{tableMapUrl:$("#tableMapUrl").value.trim(),updatedAt:serverTimestamp()},{merge:true});alert("已儲存")};
 
 async function replaceSeating(data){
  const old=await getDocs(collection(db,"wccSeatingTables")),batch=writeBatch(db);
@@ -100,7 +115,7 @@ async function replaceSeating(data){
  data.forEach((t,i)=>batch.set(doc(db,"wccSeatingTables",`table_${String(t.tableNo).replace(/\W/g,"_")}_${i}`),{...t,sort:Number(t.tableNo)||i,updatedAt:serverTimestamp()}));
  await batch.commit();
 }
-$("#importExcel").onclick=async()=>{
+$("#importExcel").onclick=async()=>{if(!banquetAdmin)return alert("請先在主頁進入管理模式");
  const file=$("#excelFile").files[0];if(!file)return alert("請先選擇 Excel");
  const data=await file.arrayBuffer(),book=XLSX.read(data),sheet=book.Sheets[book.SheetNames[0]],rows=XLSX.utils.sheet_to_json(sheet,{defval:""});
  const normalized=rows.filter(r=>r["桌次"]!==""&&r["姓名"]!=="").map(r=>({tableNo:Number(r["桌次"]),guests:String(r["姓名"]),relation:String(r["關係"]||""),count:Number(r["人數"]||0),tableName:String(r["桌名"]||""),notes:String(r["備註"]||"")}));
