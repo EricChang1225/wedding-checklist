@@ -1,27 +1,15 @@
-# 婚禮管家 3.0.1｜介面無反應修正版
+# 婚禮管家 3.0.2｜按鈕無反應修正版
 
-## 修正原因
-上一版可能發生瀏覽器同時載入：
-- 舊的 index.html
-- 新的 app.js
+真正原因是上一版 app.js 在「準備物品」程式後方，多留了一行不該存在的程式碼。它會讓 JavaScript 在啟動時中斷，所以畫面看得到，但分頁、鎖頭和所有按鈕都不會動。
 
-新程式尋找新版 Header 元件時會中斷，因此所有分頁看起來都沒有反應。
+本版已：
+- 移除啟動中斷程式
+- app.js、style.css 與婚宴頁加入 v302 快取版本
+- 通過 JavaScript 語法檢查
 
-## 本版修正
-- CSS 與 JavaScript 加入 v301 快取版本
-- Header 元件加入相容保護
-- 分頁與工作表單加入防呆
-- 避免新舊檔案短暫混用時整個網站停止運作
+請把 ZIP 裡所有檔案一起覆蓋上傳 GitHub。
 
-## 更新方式
-請把 ZIP 內所有檔案一起覆蓋上傳 GitHub，不要只上傳 app.js。
+測試：
+https://ericchang1225.github.io/wedding-checklist/?v=302
 
-上傳後開啟：
-https://ericchang1225.github.io/wedding-checklist/?v=301
-
-若仍看到舊畫面：
-1. 按 Ctrl + F5 強制重新整理
-2. 或用無痕視窗開啟測試網址
-
-## Firebase
-不需要修改 firestore.rules。
+Firebase rules 不用修改。

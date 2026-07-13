@@ -246,7 +246,7 @@ function renderWork(){
 function renderPrepare(){
  $("#prepare").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-category">新增分類</button><button class="primary" data-action="new-item">新增準備物品</button></div>
  ${categories.map(c=>{const list=tasks.filter(t=>t.categoryId===c.id&&t.type==="物品");return `<div class="card"><div class="card-head"><div><div class="card-title">${esc(c.icon||"📂")} ${esc(c.name)}</div><div class="meta">${list.filter(x=>x.done).length}/${list.length}</div></div><div class="actions"><button class="small" data-action="move-category-up" data-id="${c.id}">上移</button><button class="small" data-action="move-category-down" data-id="${c.id}">下移</button><button class="small" data-action="edit-category" data-id="${c.id}">修改</button></div></div>${list.map(taskRow).join("")||'<div class="empty">此分類沒有準備物品</div>'}</div>`}).join("")}`;
-}).join("")}`}
+
 function mapUrl(f){if(f.mapUrl)return f.mapUrl;if(f.address)return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`;return ""}
 function linkedPreparationCard(ch){
  const t=linkedTask(ch.taskId);
