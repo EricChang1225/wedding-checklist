@@ -135,3 +135,24 @@ body:not(.admin-mode) [data-action="delete-group"]{
 @media(max-width:620px){
   .flow-state-text{display:block;margin-top:3px}
 }
+
+
+/* v16：我的任務個人工作台 */
+.mine-summary{margin:8px 0 12px}
+.my-flow-row{align-items:center}
+.flow-time-badge{
+  min-width:68px;
+  padding:7px 9px;
+  border-radius:12px;
+  background:#f7eaea;
+  color:#7c5f62;
+  font-size:13px;
+  font-weight:900;
+  text-align:center;
+  flex:none;
+}
+.upcoming-card{border:2px solid #e8c7ca}
+@media(max-width:620px){
+  .my-flow-row{align-items:flex-start}
+  .flow-time-badge{min-width:58px}
+}

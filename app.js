@@ -182,7 +182,74 @@ function renderTimeline(){
  }).join("")}
  ${ungrouped.length?`<div class="ungrouped-flows">${ungrouped.map(flowCard).join("")}</div>`:""}`;
 }
-function renderMine(){const work=tasks.filter(x=>x.owner===currentUser&&x.type==="工作"),items=tasks.filter(x=>x.owner===currentUser&&x.type==="物品");$("#mine").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">📝 我的工作</div><div class="pill ${work.length&&work.every(x=>x.done)?"ok":""}">${work.filter(x=>x.done).length}/${work.length}</div></div>${work.map(taskRow).join("")||'<div class="empty">目前沒有工作</div>'}</div><div class="card"><div class="card-head"><div class="card-title">📦 我的準備物品</div><div class="pill ${items.length&&items.every(x=>x.done)?"ok":""}">${items.filter(x=>x.done).length}/${items.length}</div></div>${items.map(taskRow).join("")||'<div class="empty">目前沒有準備物品</div>'}</div>`}
+function minutesFromNowForFlow(f){
+ const mode=normalizeFlowTimeMode(f);
+ const raw=mode==="range"?(f.startTime||f.time||""):(mode==="single"?(f.time||f.startTime||""):"");
+ if(!raw||!/^\d{2}:\d{2}$/.test(raw))return null;
+ const [h,m]=raw.split(":").map(Number),now=new Date(),target=new Date();
+ target.setHours(h,m,0,0);
+ return Math.round((target-now)/60000);
+}
+function myFlowRow(f){
+ const list=checks.filter(x=>x.flowId===f.id),done=list.filter(x=>x.done).length,url=mapUrl(f);
+ return `<div class="row my-flow-row">
+  <div class="flow-time-badge">${esc(formatFlowTime(f)||"未定")}</div>
+  <div class="main">
+   <div class="name">${esc(f.icon||"📍")} ${esc(f.name)}</div>
+   <div class="meta">負責：${esc(f.owner||"未指定")}・確認 ${done}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>
+   ${list.length?`<div class="progress compact-progress"><span style="width:${Math.round(done/list.length*100)}%"></span></div>`:""}
+   ${url?`<a class="map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}
+  </div>
+  <div class="actions"><button class="small" data-action="go-flow" data-id="${f.id}">前往流程</button></div>
+ </div>`;
+}
+function renderMine(){
+ const myWork=tasks.filter(x=>x.owner===currentUser&&x.type==="工作");
+ const myItems=tasks.filter(x=>x.owner===currentUser&&x.type==="物品");
+ const myFlows=flows.filter(x=>x.owner===currentUser);
+ const myChecks=checks.filter(x=>x.owner===currentUser);
+ const upcoming=myFlows
+  .map(f=>({f,min:minutesFromNowForFlow(f)}))
+  .filter(x=>x.min!==null&&x.min>=0&&x.min<=60)
+  .sort((a,b)=>a.min-b.min);
+
+ $("#mine").innerHTML=`
+ <div class="mine-summary grid">
+  <div class="stat"><div class="meta">我的前置工作</div><div class="big">${myWork.filter(x=>!x.done).length}</div><div class="meta">未完成</div></div>
+  <div class="stat"><div class="meta">我的準備物品</div><div class="big">${myItems.filter(x=>!x.done).length}</div><div class="meta">未完成</div></div>
+  <div class="stat"><div class="meta">我的婚禮流程</div><div class="big">${myFlows.length}</div><div class="meta">負責流程</div></div>
+  <div class="stat"><div class="meta">我的流程確認</div><div class="big">${myChecks.filter(x=>!x.done).length}</div><div class="meta">未確認</div></div>
+ </div>
+
+ ${upcoming.length?`<div class="card upcoming-card">
+  <div class="card-head"><div><div class="card-title">⏰ 接下來 1 小時</div><div class="meta">依目前裝置時間計算</div></div></div>
+  ${upcoming.map(x=>`<div class="row"><div class="flow-time-badge">${x.min===0?"現在":`${x.min} 分`}</div><div class="main"><div class="name">${esc(x.f.icon||"📍")} ${esc(x.f.name)}</div><div class="meta">${esc(formatFlowTime(x.f))}${x.f.location?`・${esc(x.f.location)}`:""}</div></div><div class="actions"><button class="small" data-action="go-flow" data-id="${x.f.id}">查看</button></div></div>`).join("")}
+ </div>`:""}
+
+ <div class="card">
+  <div class="card-head"><div class="card-title">📝 我的前置工作</div><div class="pill ${myWork.length&&myWork.every(x=>x.done)?"ok":""}">${myWork.filter(x=>x.done).length}/${myWork.length}</div></div>
+  ${myWork.map(taskRow).join("")||'<div class="empty">目前沒有分配的前置工作</div>'}
+ </div>
+
+ <div class="card">
+  <div class="card-head"><div class="card-title">📦 我的準備物品</div><div class="pill ${myItems.length&&myItems.every(x=>x.done)?"ok":""}">${myItems.filter(x=>x.done).length}/${myItems.length}</div></div>
+  ${myItems.map(taskRow).join("")||'<div class="empty">目前沒有分配的準備物品</div>'}
+ </div>
+
+ <div class="card">
+  <div class="card-head"><div class="card-title">🎬 我的婚禮流程</div><div class="pill">${myFlows.length}</div></div>
+  ${myFlows.map(myFlowRow).join("")||'<div class="empty">目前沒有負責的婚禮流程</div>'}
+ </div>
+
+ <div class="card">
+  <div class="card-head"><div class="card-title">✅ 我的流程確認項目</div><div class="pill ${myChecks.length&&myChecks.every(x=>x.done)?"ok":""}">${myChecks.filter(x=>x.done).length}/${myChecks.length}</div></div>
+  ${myChecks.map(ch=>`<div class="row ${ch.done?"done":""}">
+   <input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}>
+   <div class="main"><div class="name">${esc(ch.title)}</div><div class="meta">${esc(flow(ch.flowId)?.name||"未指定流程")}</div></div>
+   <div class="actions"><button class="small" data-action="go-flow" data-id="${ch.flowId}">前往流程</button></div>
+  </div>`).join("")||'<div class="empty">目前沒有分配的流程確認項目</div>'}
+ </div>`;
+}
 function renderPeople(){$("#people").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-person">新增人員</button></div><div id="peopleSortList">${people.map(p=>`<div class="person-card" data-person-card="${p.id}"><div class="drag-handle" data-drag-person="${p.id}" title="拖曳排序">☰</div><div class="main"><strong>${esc(p.name)}</strong><div class="meta">${esc(p.role||"未設定角色")}・工作 ${tasks.filter(x=>x.owner===p.name&&x.type==="工作").length}・物品 ${tasks.filter(x=>x.owner===p.name&&x.type==="物品").length}</div></div><div class="actions"><button class="small" data-action="show-person" data-id="${p.id}">查看</button><button class="small" data-action="edit-person" data-id="${p.id}">修改</button><button class="small danger" data-action="delete-person" data-id="${p.id}">刪除</button></div></div>`).join("")||'<div class="empty">尚未建立人員</div>'}</div>`;initPersonDrag()}
 function renderSettings(){$("#settings").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">設定</div></div><div style="padding:16px"><label>網站名稱<input id="settingTitle" value="${esc(settings.title||"")}"></label><label>婚禮日期<input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></label><div class="actions"><button class="primary" data-action="save-settings">儲存設定</button><button id="changeUser">更改目前使用者</button><button data-action="change-admin-password">修改管理密碼</button><button data-action="logout-admin">退出管理模式</button><button data-action="export-csv">匯出 CSV</button><button data-action="print">列印</button></div></div></div>`;$("#changeUser").onclick=openUser}
 function render(){renderHeader();const renderer={dashboard:renderDashboard,prepare:renderPrepare,timeline:renderTimeline,mine:renderMine,people:renderPeople,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
@@ -332,6 +399,18 @@ if(a==="toggle-subitem"){const item=taskItems.find(x=>x.id===id);await updateDoc
 if(a==="toggle-task-expand"){collapsedTasks.has(id)?collapsedTasks.delete(id):collapsedTasks.add(id);localStorage.setItem("wccCollapsedTasks",JSON.stringify([...collapsedTasks]));render()}
 if(a==="delete-task"&&confirm("刪除此項目與所有細項？")){const batch=writeBatch(db);checks.filter(c=>c.taskId===id&&c.autoFromTask).forEach(c=>batch.delete(doc(db,"wccFlowChecks",c.id)));itemsForTask(id).forEach(i=>batch.delete(doc(db,"wccTaskItems",i.id)));batch.delete(doc(db,"wccTasks",id));await batch.commit()}
 if(a==="toggle-task"){const list=itemsForTask(id);if(list.length){const batch=writeBatch(db);list.forEach(i=>batch.update(doc(db,"wccTaskItems",i.id),{done:b.checked,updatedAt:serverTimestamp(),updatedBy:currentUser}));batch.update(doc(db,"wccTasks",id),{done:b.checked,updatedAt:serverTimestamp(),updatedBy:currentUser});await batch.commit()}else await updateDoc(doc(db,"wccTasks",id),{done:b.checked,updatedAt:serverTimestamp(),updatedBy:currentUser});}
+if(a==="go-flow"){
+ collapsedFlows.delete(id);
+ localStorage.setItem("wccCollapsedFlows",JSON.stringify([...collapsedFlows]));
+ const targetFlow=flow(id);
+ if(targetFlow?.groupId){
+  collapsedGroups.delete(targetFlow.groupId);
+  localStorage.setItem("wccCollapsedGroups",JSON.stringify([...collapsedGroups]));
+ }
+ setView("timeline");
+ setTimeout(()=>document.querySelector(`[data-id="${id}"].flow-toggle`)?.scrollIntoView({behavior:"smooth",block:"center"}),120);
+ return;
+}
 if(a==="toggle-flow"){
  collapsedFlows.has(id)?collapsedFlows.delete(id):collapsedFlows.add(id);
  localStorage.setItem("wccCollapsedFlows",JSON.stringify([...collapsedFlows]));
