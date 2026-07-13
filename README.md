@@ -1,23 +1,22 @@
-# 婚禮管家 2.4 Beta
+# 婚禮管家 2.5 Beta｜新版首頁介面
 
-這是獨立測試版，不會覆蓋正式版 2.3.1。
+這版把真正的 HTML/CSS/JavaScript 首頁改成婚禮 App 版面，不是圖片。
 
-## 測試功能
-- 新增「工作中心」
-- 接送、採買、聯絡、協助等工作可以獨立建立
-- 可設定開始／結束時間、地點、重要程度與負責人
-- 不必連動婚禮流程
-- 指派給目前使用者後，會出現在「我的行程 → 今天要做」
-- 地點可直接開啟 Google 地圖
+## 主要修改
+- 「距離婚禮」整合進婚禮管家 Header
+- 目前使用者與切換按鈕整合進 Header
+- 首頁主標題改成「7/18（婚禮當天）我的行程」
+- 下一個行程只從婚禮當天的個人行程中選擇
+- 婚禮行程改成直式時間軸
+- 新增三張快捷卡：今天要做、工作中心、我的名單
+- 保留原本 Firebase 資料與勾選功能
+- 正式版 2.3.1 不會受到影響
 
-## 部署方式
-將整個 beta 資料夾上傳到 GitHub Repository 根目錄。
+## 部署
+將 ZIP 裡的 beta 資料夾完整覆蓋 GitHub 根目錄現有的 beta 資料夾。
 
 測試網址：
-https://ericchang1225.github.io/wedding-checklist/beta/?v=240
-
-正式版網址不會受到影響：
-https://ericchang1225.github.io/wedding-checklist/
+https://ericchang1225.github.io/wedding-checklist/beta/?v=250
 
 ## Firebase
-沿用 wccTasks collection，沒有新增 collection，不需要修改 firestore.rules。
+沒有新增 collection，不需要修改 firestore.rules。

@@ -23,15 +23,36 @@
   <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
   <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
   <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
-  <link rel="stylesheet" href="./style.css?v=240">
+  <link rel="stylesheet" href="./style.css?v=250">
 </head>
 <body>
 <div class="app">
-  <header class="hero">
-    <div class="eyebrow">WEDDING BUTLER · BETA 2.4</div>
-    <div class="title-row"><h1 id="appTitle">💍 駿瑋 ❤ 忞靜</h1><div class="hero-subtitle">婚禮管家</div><button id="adminModeButton" class="admin-mode-button" type="button">🔒</button></div>
-    <div class="status-line">
-      <span id="currentUser">尚未設定使用者</span>
+  <header class="hero hero-v25">
+    <div class="hero-topline">WEDDING BUTLER · BETA 2.5</div>
+    <div class="hero-title-line">
+      <div>
+        <h1 class="brand-title">婚禮管家 <span class="crown-badge">👑</span></h1>
+        <div id="coupleTitle" class="couple-title">駿瑋 &amp; 忞靜 婚禮</div>
+      </div>
+      <button id="adminModeButton" class="admin-mode-button" type="button">🔒</button>
+    </div>
+
+    <div class="hero-info-grid">
+      <div class="hero-countdown-box">
+        <div class="hero-info-label">距離婚禮 💍</div>
+        <div><strong id="heroDays">--</strong><span class="hero-days-unit"> 天</span></div>
+        <div id="heroDate" class="hero-date">尚未設定日期</div>
+      </div>
+
+      <div class="hero-user-box">
+        <div class="hero-info-label">目前使用者</div>
+        <div id="heroUser" class="hero-user-name">尚未設定</div>
+        <button id="heroChangeUser" class="hero-user-button" type="button">👥 切換使用者</button>
+      </div>
+    </div>
+
+    <div class="status-line hero-status-line">
+      <span id="currentUser" class="visually-hidden">尚未設定使用者</span>
       <span id="syncState" class="sync bad">準備連線</span>
     </div>
   </header>
@@ -57,7 +78,7 @@
     <section id="mine" class="panel"></section>
     <section id="people" class="panel"></section>
     <section id="banquet" class="panel">
-      <iframe id="banquetFrame" class="banquet-frame" src="./banquet.html?v=240" title="婚宴中心"></iframe>
+      <iframe id="banquetFrame" class="banquet-frame" src="./banquet.html?v=250" title="婚宴中心"></iframe>
     </section>
     <section id="overview" class="panel"></section>
     <section id="settings" class="panel"></section>
@@ -228,6 +249,6 @@
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app-beta-v240.js"></script>
+<script type="module" src="./app-beta-v250.js"></script>
 </body>
 </html>

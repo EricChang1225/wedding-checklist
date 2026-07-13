@@ -263,3 +263,57 @@ body:not(.admin-mode) [data-action="delete-group"]{
   font-size:11px;
   font-weight:900;
 }
+
+
+/* Wedding Butler 2.5：婚禮 App 首頁 */
+.visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.hero-v25{padding:22px 22px 18px}
+.hero-topline{font-size:13px;letter-spacing:.19em;color:#8e7678;margin-bottom:10px}
+.hero-title-line{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.brand-title{font-size:34px;line-height:1.08;margin:0;font-weight:950}
+.crown-badge{font-size:18px;background:#f8db80;border-radius:50%;padding:9px;vertical-align:middle}
+.couple-title{font-size:16px;margin-top:8px;font-weight:750}
+.hero-info-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:12px;margin-top:18px}
+.hero-countdown-box,.hero-user-box{border-radius:18px;padding:15px;background:rgba(255,255,255,.72);box-shadow:0 8px 25px rgba(128,82,87,.06)}
+.hero-info-label{font-size:12px;color:var(--muted);margin-bottom:5px}
+#heroDays{font-size:42px;color:#c65f68;line-height:1}
+.hero-days-unit{font-size:17px;font-weight:900}
+.hero-date{font-size:13px;color:var(--muted);margin-top:8px}
+.hero-user-name{font-size:25px;font-weight:950;margin:4px 0 10px}
+.hero-user-button{border:0;border-radius:999px;background:#fff;padding:10px 14px;font-weight:850}
+.hero-status-line{margin-top:14px}
+.wedding-day-card{padding:18px}
+.wedding-day-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:14px}
+.date-pill{background:#fff0f1;color:#b65d66;border-radius:999px;padding:8px 12px;font-weight:850;white-space:nowrap}
+.next-mini-card{display:grid;grid-template-columns:auto auto 1fr;gap:8px 12px;align-items:center;padding:13px 14px;border-radius:15px;background:linear-gradient(135deg,#fff2f3,#fff);margin-bottom:14px}
+.next-mini-label{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.next-mini-time{font-weight:950;color:#cb6570}
+.next-mini-title{font-weight:900}
+.next-mini-location{grid-column:2/-1;color:var(--muted);font-size:13px}
+.day-timeline{padding:4px 0}
+.day-timeline-row{display:grid;grid-template-columns:62px 18px 1fr;gap:8px;align-items:stretch;min-height:72px}
+.day-time{font-weight:950;color:#c4636d;padding-top:17px;text-align:right}
+.day-dot{position:relative}
+.day-dot:before{content:"";position:absolute;left:7px;top:24px;width:9px;height:9px;border:3px solid #efbfc3;border-radius:50%;background:#fff}
+.day-dot:after{content:"";position:absolute;left:11px;top:38px;bottom:-10px;width:2px;background:#f1d7d9}
+.day-timeline-row:last-child .day-dot:after{display:none}
+.day-event{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #f1e5e5;border-radius:15px;padding:10px 12px;margin:5px 0;box-shadow:0 7px 22px rgba(90,61,64,.04)}
+.day-event-icon{width:42px;height:42px;display:grid;place-items:center;background:#fff2f3;border-radius:12px;font-size:21px;flex:none}
+.dashboard-shortcuts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.shortcut-card{border:1px solid #eee1e2;background:#fff;border-radius:18px;padding:14px 10px;text-align:left;display:grid;grid-template-columns:auto 1fr;gap:4px 9px;box-shadow:0 8px 25px rgba(83,54,59,.05)}
+.shortcut-card strong{align-self:center;font-size:15px}
+.shortcut-card em{grid-column:1/-1;font-style:normal;color:var(--muted);font-size:12px}
+.shortcut-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+.shortcut-icon.green{background:#e9faed}
+.shortcut-icon.orange{background:#fff1dc}
+.shortcut-icon.purple{background:#f0e7ff}
+.compact-detail-card{margin-top:12px}
+@media(max-width:620px){
+  .hero-info-grid{grid-template-columns:1fr 1fr}
+  .brand-title{font-size:31px}
+  .dashboard-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .shortcut-card{padding:12px 8px}
+  .shortcut-card strong{font-size:13px}
+  .day-timeline-row{grid-template-columns:55px 16px 1fr}
+  .day-event{padding:9px}
+}
