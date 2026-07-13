@@ -4,14 +4,32 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#c97f86">
-  <title>Wedding Control Center v8</title>
+  <meta name="description" content="駿瑋 &amp; 忞靜 婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
+  <link rel="canonical" href="https://ericchang1225.github.io/wedding-checklist/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:site_name" content="駿瑋 &amp; 忞靜 婚禮 Checklist">
+  <meta property="og:title" content="駿瑋 &amp; 忞靜｜婚禮 Checklist">
+  <meta property="og:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
+  <meta property="og:url" content="https://ericchang1225.github.io/wedding-checklist/">
+  <meta property="og:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
+  <meta property="og:image:secure_url" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="駿瑋與忞靜婚禮 Checklist">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="駿瑋 &amp; 忞靜｜婚禮 Checklist">
+  <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
+  <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
+  <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <div class="app">
   <header class="hero">
     <div class="eyebrow">WEDDING CONTROL CENTER</div>
-    <h1 id="appTitle">婚禮工作中心</h1>
+    <h1 id="appTitle">駿瑋 &amp; 忞靜 婚禮工作中心</h1>
     <div class="status-line">
       <span id="currentUser">尚未設定使用者</span>
       <span id="syncState" class="sync bad">準備連線</span>
@@ -24,7 +42,7 @@
     <button class="tab" data-view="timeline">婚禮流程</button>
     <button class="tab" data-view="mine">我的任務</button>
     <button class="tab" data-view="people">人員</button>
-    <button class="tab" data-view="settings">設定</button>
+    <button class="tab" data-view="banquet">婚宴中心</button>
   </nav>
 
   <main>
@@ -33,6 +51,9 @@
     <section id="timeline" class="panel"></section>
     <section id="mine" class="panel"></section>
     <section id="people" class="panel"></section>
+    <section id="banquet" class="panel">
+      <iframe id="banquetFrame" class="banquet-frame" src="./banquet.html?v=110" title="婚宴中心"></iframe>
+    </section>
     <section id="settings" class="panel"></section>
   </main>
 </div>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#c97f86">
+  <meta name="description" content="駿瑋與忞靜婚宴中心｜桌位查詢、婚宴菜單與協同廠商">
+  <title>婚宴中心</title>
+  <link rel="stylesheet" href="./banquet.css">
+</head>
+<body>
+<div class="app">
+  <header class="hero">
+    <div class="eyebrow">WEDDING BANQUET CENTER</div>
+    <h1>婚宴中心</h1>
+    <p>桌位查詢、菜單與協同廠商集中管理</p>
+  </header>
+
+  <nav class="tabs" id="banquetTabs">
+    <button class="tab active" data-view="seating">婚宴桌位</button>
+    <button class="tab" data-view="menu">婚宴菜單</button>
+    <button class="tab" data-view="vendors">協同廠商</button>
+    <button class="tab" data-view="settings">更多設定</button>
+  </nav>
+
+  <main>
+    <section id="seating" class="panel active">
+      <div class="summary" id="seatingSummary"></div>
+      <div class="searchbox">
+        <input id="guestSearch" placeholder="搜尋姓名、桌號、桌名或關係">
+        <button id="clearSearch">清除</button>
+      </div>
+      <div id="searchResult"></div>
+
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>🪑 婚宴桌圖</h2>
+            <p>可在「更多設定」填入你上傳至 GitHub 的桌圖檔名或網址。</p>
+          </div>
+        </div>
+        <div id="tableMapArea" class="table-map-area"></div>
+      </section>
+
+      <div class="toolbar">
+        <button class="primary" id="toggleAllTables">展開／收合全部桌次</button>
+      </div>
+      <div id="tableList"></div>
+    </section>
+
+    <section id="menu" class="panel">
+      <div class="toolbar"><button class="primary" data-action="new-menu">新增菜色</button></div>
+      <div id="menuList"></div>
+    </section>
+
+    <section id="vendors" class="panel">
+      <div class="toolbar"><button class="primary" data-action="new-vendor">新增廠商</button></div>
+      <div id="vendorList"></div>
+    </section>
+
+    <section id="settings" class="panel">
+      <section class="card settings-card">
+        <h2>桌圖與資料</h2>
+        <label>桌圖檔名或網址
+          <input id="tableMapUrl" placeholder="例如：table-map.jpg 或 https://...">
+        </label>
+        <p class="hint">最簡單的做法：把桌圖 JPG／PNG 上傳到 GitHub 根目錄，再輸入檔名。</p>
+
+        <label>重新匯入桌位 Excel
+          <input id="excelFile" type="file" accept=".xlsx,.xls">
+        </label>
+        <p class="hint">需要欄位：桌次、姓名、關係、人數、桌名、備註。匯入會覆蓋目前桌位資料。</p>
+
+        <div class="actions">
+          <button class="primary" id="saveBanquetSettings">儲存設定</button>
+          <button id="importExcel">匯入 Excel</button>
+          <button id="exportSeatingCsv">匯出桌位 CSV</button>
+        </div>
+      </section>
+
+      <section class="card settings-card">
+        <h2>目前資料</h2>
+        <div id="dataStatus"></div>
+      </section>
+    </section>
+  </main>
+</div>
+
+<dialog id="menuDialog">
+  <form id="menuForm" class="sheet">
+    <h2 id="menuDialogTitle">新增菜色</h2>
+    <input id="menuId" type="hidden">
+    <label>上菜順序<input id="menuOrder" type="number" min="1"></label>
+    <label>菜名<input id="menuName" maxlength="80" required></label>
+    <label>類型<input id="menuType" maxlength="40" placeholder="例如：冷盤、湯品、主菜、甜點"></label>
+    <label>特殊需求<input id="menuDiet" maxlength="80" placeholder="例如：素食桌另備"></label>
+    <label>備註<textarea id="menuNotes"></textarea></label>
+    <div class="actions">
+      <button type="button" data-close="menuDialog">取消</button>
+      <button class="primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="vendorDialog">
+  <form id="vendorForm" class="sheet">
+    <h2 id="vendorDialogTitle">新增協同廠商</h2>
+    <input id="vendorId" type="hidden">
+    <label>廠商類型<input id="vendorType" maxlength="40" placeholder="婚攝、錄影、主持、婚佈、餐廳"></label>
+    <label>廠商名稱<input id="vendorName" maxlength="80" required></label>
+    <label>聯絡人<input id="vendorContact" maxlength="40"></label>
+    <label>電話<input id="vendorPhone" maxlength="30" inputmode="tel"></label>
+    <label>LINE／其他聯絡方式<input id="vendorLine" maxlength="80"></label>
+    <label>到場時間<input id="vendorArrival" type="time"></label>
+    <label>地址<input id="vendorAddress" maxlength="160"></label>
+    <label>負責內容<textarea id="vendorDuty"></textarea></label>
+    <label>備註<textarea id="vendorNotes"></textarea></label>
+    <div class="actions">
+      <button type="button" data-close="vendorDialog">取消</button>
+      <button class="primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script type="module" src="./banquet.js"></script>
+</body>
+</html>

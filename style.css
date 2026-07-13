@@ -35,3 +35,17 @@ dialog{border:0;border-radius:22px 22px 0 0;width:min(560px,100%);padding:0;marg
 @media(max-width:620px){
   .subitems{margin-left:38px;margin-right:8px}
 }
+
+.tab-link{text-decoration:none;display:inline-flex;align-items:center}
+
+/* v11：婚宴中心整合在同一個網站分頁 */
+.banquet-frame{
+  width:100%;
+  min-height:calc(100vh - 230px);
+  border:0;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:var(--shadow);
+}
+#banquet.active{display:block}
+body.banquet-mode .fab{display:none}
