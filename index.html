@@ -23,12 +23,13 @@
   <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
   <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
   <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
-  <link rel="stylesheet" href="./style.css?v=250">
+  <link rel="stylesheet" href="./style.css?v=251">
 </head>
 <body>
 <div class="app">
-  <header class="hero hero-v25">
-    <div class="hero-topline">WEDDING BUTLER · BETA 2.5</div>
+  <header class="hero hero-v251">
+    <div class="hero-topline">WEDDING BUTLER · BETA 2.5.1</div>
+
     <div class="hero-title-line">
       <div>
         <h1 class="brand-title">婚禮管家 <span class="crown-badge">👑</span></h1>
@@ -41,7 +42,7 @@
       <div class="hero-countdown-box">
         <div class="hero-info-label">距離婚禮 💍</div>
         <div><strong id="heroDays">--</strong><span class="hero-days-unit"> 天</span></div>
-        <div id="heroDate" class="hero-date">尚未設定日期</div>
+        <div id="heroDate" class="hero-date">讀取婚禮日期中</div>
       </div>
 
       <div class="hero-user-box">
@@ -59,7 +60,6 @@
 
   <nav id="tabs" class="tabs">
     <button class="tab active" data-view="dashboard">我的行程</button>
-    <button class="tab" data-view="work">工作中心</button>
     <button class="tab" data-view="prepare">婚禮準備</button>
     <button class="tab" data-view="rosters">工作名單</button>
     <button class="tab" data-view="timeline">婚禮流程</button>
@@ -71,14 +71,13 @@
 
   <main>
     <section id="dashboard" class="panel active"></section>
-    <section id="work" class="panel"></section>
     <section id="prepare" class="panel"></section>
     <section id="rosters" class="panel"></section>
     <section id="timeline" class="panel"></section>
     <section id="mine" class="panel"></section>
     <section id="people" class="panel"></section>
     <section id="banquet" class="panel">
-      <iframe id="banquetFrame" class="banquet-frame" src="./banquet.html?v=250" title="婚宴中心"></iframe>
+      <iframe id="banquetFrame" class="banquet-frame" src="./banquet.html?v=251" title="婚宴中心"></iframe>
     </section>
     <section id="overview" class="panel"></section>
     <section id="settings" class="panel"></section>
@@ -146,33 +145,9 @@
   <label>名稱<input id="taskTitle" maxlength="80" required></label>
   <label>大分類<select id="taskCategory"></select></label>
   <label>類型<select id="taskType"><option value="工作">工作</option><option value="物品">準備物品</option></select></label>
-  <div id="workExtraFields" class="work-extra-fields">
-    <label>工作類別
-      <select id="taskWorkKind">
-        <option value="一般">📋 一般</option>
-        <option value="接送">🚗 接送</option>
-        <option value="採買">🛍️ 採買</option>
-        <option value="聯絡">📞 聯絡</option>
-        <option value="協助">🛠️ 協助</option>
-        <option value="其他">⭐ 其他</option>
-      </select>
-    </label>
-    <div class="time-range-grid active">
-      <label>開始時間<input id="taskStartTime" type="time"></label>
-      <label>結束時間<input id="taskEndTime" type="time"></label>
-    </div>
-    <label>地點<input id="taskLocation" maxlength="120" placeholder="例如：桃園高鐵站"></label>
-    <label>重要程度
-      <select id="taskPriority">
-        <option value="1">一般</option>
-        <option value="2">重要</option>
-        <option value="3">非常重要</option>
-      </select>
-    </label>
-  </div>
   <label>DRI／負責人<input id="taskOwner" maxlength="30" list="peopleList" placeholder="可直接輸入姓名"></label>
-  <label>連動到婚禮流程（可不選）<div id="taskFlowPicker" class="chips"></div></label>
-  <div class="hint">接送、採買等獨立工作不必勾選流程；只有需要同步到現場確認時才連動。</div>
+  <label>連動到婚禮流程<div id="taskFlowPicker" class="chips"></div></label>
+  <div class="hint">勾選流程後，系統會自動在該流程建立一筆「現場確認」項目。</div>
   <label>備註<textarea id="taskNotes"></textarea></label>
   <div class="sheet-actions"><button type="button" class="btn" data-close="taskDialog">取消</button><button class="btn primary">儲存</button></div>
 </form></dialog>
@@ -249,6 +224,6 @@
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app-beta-v250.js"></script>
+<script type="module" src="./app-beta-v251.js"></script>
 </body>
 </html>
