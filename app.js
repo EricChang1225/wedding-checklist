@@ -20,7 +20,7 @@ function applyPermissions(){
  document.body.classList.toggle("admin-mode",admin);
  const btn=$("#adminModeButton");
  if(btn){btn.textContent=admin?"👑":"🔒";btn.classList.toggle("active",admin);btn.title=admin?"點擊退出管理模式":"長按標題或點擊輸入管理密碼";}
- const blocked=new Set(["new-category","new-task","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv"]);
+ const blocked=new Set(["new-category","new-task","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
  document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("admin-hidden")});
  document.querySelectorAll(".toolbar").forEach(el=>el.classList.toggle("admin-hidden",!admin));
  const settingsTab=document.querySelector('[data-view="settings"]');if(settingsTab)settingsTab.classList.toggle("admin-hidden",!admin);
@@ -137,9 +137,9 @@ function flowCard(f){
  const completed=list.filter(x=>x.done).length;
  return `<div class="flow-card card">
   <div class="card-head flow-head">
-   <button class="flow-toggle" data-action="toggle-flow" data-id="${f.id}">${collapsed?"▶":"▼"}</button>
-   <div class="main">
-    <div class="card-title">${formatFlowTime(f)?`${esc(formatFlowTime(f))}　`:""}${esc(f.icon||"📍")} ${esc(f.name)}</div>
+   <button class="flow-toggle" data-action="toggle-flow" data-id="${f.id}" aria-label="${collapsed?"展開流程":"收合流程"}">${collapsed?"▶":"▼"}</button>
+   <div class="main flow-click-area" data-action="toggle-flow" data-id="${f.id}" role="button" tabindex="0">
+    <div class="card-title">${formatFlowTime(f)?`${esc(formatFlowTime(f))}　`:""}${esc(f.icon||"📍")} ${esc(f.name)} <span class="flow-state-text">${collapsed?"（點擊展開）":"（點擊收合）"}</span></div>
     <div class="meta">負責人：${esc(f.owner||"未指定")}・確認 ${completed}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>
     ${list.length?`<div class="progress compact-progress"><span style="width:${Math.round(completed/list.length*100)}%"></span></div>`:""}
     ${url?`<a class="map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}
@@ -180,13 +180,20 @@ function renderTimeline(){
    <div class="group-body ${collapsed?"collapsed":""}"><div class="timeline-line">${list.map(flowCard).join("")||'<div class="empty">此階段尚無流程</div>'}</div></div>
   </div>`;
  }).join("")}
- ${ungrouped.map(flowCard).join("")}`;
+ ${ungrouped.length?`<div class="ungrouped-flows">${ungrouped.map(flowCard).join("")}</div>`:""}`;
 }
 function renderMine(){const work=tasks.filter(x=>x.owner===currentUser&&x.type==="工作"),items=tasks.filter(x=>x.owner===currentUser&&x.type==="物品");$("#mine").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">📝 我的工作</div><div class="pill ${work.length&&work.every(x=>x.done)?"ok":""}">${work.filter(x=>x.done).length}/${work.length}</div></div>${work.map(taskRow).join("")||'<div class="empty">目前沒有工作</div>'}</div><div class="card"><div class="card-head"><div class="card-title">📦 我的準備物品</div><div class="pill ${items.length&&items.every(x=>x.done)?"ok":""}">${items.filter(x=>x.done).length}/${items.length}</div></div>${items.map(taskRow).join("")||'<div class="empty">目前沒有準備物品</div>'}</div>`}
 function renderPeople(){$("#people").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-person">新增人員</button></div><div id="peopleSortList">${people.map(p=>`<div class="person-card" data-person-card="${p.id}"><div class="drag-handle" data-drag-person="${p.id}" title="拖曳排序">☰</div><div class="main"><strong>${esc(p.name)}</strong><div class="meta">${esc(p.role||"未設定角色")}・工作 ${tasks.filter(x=>x.owner===p.name&&x.type==="工作").length}・物品 ${tasks.filter(x=>x.owner===p.name&&x.type==="物品").length}</div></div><div class="actions"><button class="small" data-action="show-person" data-id="${p.id}">查看</button><button class="small" data-action="edit-person" data-id="${p.id}">修改</button><button class="small danger" data-action="delete-person" data-id="${p.id}">刪除</button></div></div>`).join("")||'<div class="empty">尚未建立人員</div>'}</div>`;initPersonDrag()}
 function renderSettings(){$("#settings").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">設定</div></div><div style="padding:16px"><label>網站名稱<input id="settingTitle" value="${esc(settings.title||"")}"></label><label>婚禮日期<input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></label><div class="actions"><button class="primary" data-action="save-settings">儲存設定</button><button id="changeUser">更改目前使用者</button><button data-action="change-admin-password">修改管理密碼</button><button data-action="logout-admin">退出管理模式</button><button data-action="export-csv">匯出 CSV</button><button data-action="print">列印</button></div></div></div>`;$("#changeUser").onclick=openUser}
 function render(){renderHeader();const renderer={dashboard:renderDashboard,prepare:renderPrepare,timeline:renderTimeline,mine:renderMine,people:renderPeople,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
 document.body.addEventListener("click",e=>{const j=e.target.closest("[data-jump]");if(j)setView(j.dataset.jump)});
+document.body.addEventListener("keydown",e=>{
+ const area=e.target.closest?.(".flow-click-area");
+ if(!area||!["Enter"," "].includes(e.key))return;
+ e.preventDefault();
+ area.click();
+});
+
 function close(id){const d=document.getElementById(id);if(d?.open)d.close()}document.body.addEventListener("click",e=>{const c=e.target.closest("[data-close]");if(c){close(c.dataset.close);return}if(e.target.tagName==="DIALOG")e.target.close()});
 
 $("#adminModeButton").onclick=requestAdmin;
@@ -307,7 +314,9 @@ function csvExport(){const rows=[["類型","名稱","分類/流程","負責人",
 
 function initPersonDrag(){let draggedId=null,startY=0;document.querySelectorAll("[data-drag-person]").forEach(h=>{h.onpointerdown=e=>{draggedId=h.dataset.dragPerson;startY=e.clientY;h.setPointerCapture(e.pointerId);document.querySelector(`[data-person-card="${draggedId}"]`)?.classList.add("dragging")};h.onpointermove=e=>{if(!draggedId)return;const cards=[...document.querySelectorAll("[data-person-card]")];cards.forEach(c=>c.classList.remove("drop-target"));const target=cards.find(c=>{const r=c.getBoundingClientRect();return e.clientY>=r.top&&e.clientY<=r.bottom&&c.dataset.personCard!==draggedId});target?.classList.add("drop-target")};h.onpointerup=async e=>{if(!draggedId)return;const target=document.querySelector(".drop-target");document.querySelectorAll("[data-person-card]").forEach(c=>c.classList.remove("dragging","drop-target"));if(target){const from=people.findIndex(p=>p.id===draggedId),to=people.findIndex(p=>p.id===target.dataset.personCard);if(from!==to&&from>=0&&to>=0){const reordered=[...people],moved=reordered.splice(from,1)[0];reordered.splice(to,0,moved);const batch=writeBatch(db);reordered.forEach((p,i)=>batch.update(doc(db,"wccPeople",p.id),{sort:i}));await batch.commit()}}draggedId=null}})}
 
-document.body.addEventListener("click",async e=>{const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action,id=b.dataset.id;
+document.body.addEventListener("click",async e=>{const b=e.target.closest("[data-action]");if(!b)return;
+if(b.classList.contains("flow-click-area")&&e.target.closest("a,button,input,select,textarea"))return;
+const a=b.dataset.action,id=b.dataset.id;
 const managementActions=new Set(["new-category","new-task","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
 if(managementActions.has(a)&&!isAdmin()){requestAdmin();return}
 if(isAdmin())refreshAdminSession();
