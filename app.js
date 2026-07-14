@@ -22,7 +22,7 @@ function applyPermissions(){
  document.body.classList.toggle("admin-mode",admin);
  const btn=$("#adminModeButton");
  if(btn){btn.textContent=admin?"👑":"🔒";btn.classList.toggle("active",admin);btn.title=admin?"點擊退出管理模式":"長按標題或點擊輸入管理密碼";}
- const blocked=new Set(["new-category","new-task","print-prepare-pdf","new-person-task","new-center-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","delete-category","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
+ const blocked=new Set(["new-category","new-task","print-prepare-pdf","new-person-task","new-center-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","add-roster-member","edit-roster-member","delete-roster-member","delete-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","delete-category","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
  document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("admin-hidden")});
  document.querySelectorAll(".toolbar").forEach(el=>el.classList.toggle("admin-hidden",!admin));
  document.querySelectorAll(".admin-only-tab").forEach(tab=>tab.classList.toggle("admin-hidden",!admin))
@@ -34,6 +34,8 @@ function requestAdmin(){
 }
 let currentUser=localStorage.getItem("wccUser")||"",
  collapsedGroups=new Set(JSON.parse(localStorage.getItem("wccCollapsedGroups")||"[]")),
+ collapsedRosters=new Set(JSON.parse(localStorage.getItem("wccCollapsedRosters")||"[]")),
+ rosterSearch=localStorage.getItem("wccRosterSearch")||"",
  collapsedTasks=new Set(JSON.parse(localStorage.getItem("wccCollapsedTasks")||"[]")),
  collapsedFlows=new Set(JSON.parse(localStorage.getItem("wccCollapsedFlows")||"[]")),
  collapsedFlowPackages=new Set(JSON.parse(localStorage.getItem("wccCollapsedFlowPackages")||"[]"));
@@ -676,30 +678,99 @@ function flowCard(f){
 
 
 function renderRosters(){
- $("#rosters").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-roster">新增名單</button></div>
- ${rosters.map(r=>{
-  const members=membersForRoster(r.id),linked=flow(r.flowId);
-  return `<div class="card roster-card">
-   <div class="card-head">
-    <div>
-     <div class="card-title">${esc(r.icon||"📋")} ${esc(r.name)}</div>
-     <div class="meta">${members.length} 人${r.time?`・${esc(r.time)}`:""}${r.location?`・${esc(r.location)}`:""}${linked?`<br>流程：${esc(linked.name)}`:""}${r.duty?`<br>共同工作：${esc(r.duty)}`:""}</div>
-    </div>
-    <div class="actions">
-     <button class="small" data-action="add-roster-member" data-id="${r.id}">加入成員</button>
-     <button class="small" data-action="edit-roster" data-id="${r.id}">修改</button>
-     <button class="small danger" data-action="delete-roster" data-id="${r.id}">刪除</button>
+ const query=rosterSearch.trim().toLowerCase();
+ const cards=rosters.map(r=>{
+  const members=membersForRoster(r.id);
+  const filtered=query
+   ? members.filter(m=>{
+      const p=personById(m.personId);
+      return [p?.name,m.duty,r.duty,m.notes,r.name]
+       .filter(Boolean)
+       .some(v=>String(v).toLowerCase().includes(query));
+     })
+   : members;
+  const linked=flow(r.flowId);
+  const collapsed=collapsedRosters.has(r.id);
+  const hasMatches=!query||filtered.length>0||String(r.name||"").toLowerCase().includes(query);
+  if(!hasMatches)return "";
+
+  return `<section class="card roster-card roster-accordion ${collapsed?"is-collapsed":""}">
+   <header class="roster-summary">
+    <button class="roster-toggle" data-action="toggle-roster" data-id="${r.id}" aria-expanded="${!collapsed}">
+     <span class="roster-toggle-icon">${collapsed?"▶":"▼"}</span>
+     <span class="roster-summary-main">
+      <span class="card-title">${esc(r.icon||"📋")} ${esc(r.name)}</span>
+      <span class="meta">
+       ${members.length} 人
+       ${r.time?`・${esc(r.time)}`:""}
+       ${r.location?`・📍 ${esc(r.location)}`:""}
+       ${linked?`<br>流程：${esc(linked.name)}`:""}
+       ${r.duty?`<br>共同工作：${esc(r.duty)}`:""}
+      </span>
+     </span>
+    </button>
+
+    <details class="roster-menu">
+     <summary aria-label="名單操作">⋯</summary>
+     <div class="roster-menu-panel">
+      <button class="small" data-action="add-roster-member" data-id="${r.id}">加入成員</button>
+      <button class="small" data-action="edit-roster" data-id="${r.id}">修改名單</button>
+      <button class="small danger" data-action="delete-roster" data-id="${r.id}">刪除名單</button>
+     </div>
+    </details>
+   </header>
+
+   <div class="roster-body ${collapsed?"collapsed":""}">
+    ${query?`<div class="roster-search-result">符合搜尋：${filtered.length} 人</div>`:""}
+    <div class="roster-member-list">
+     ${filtered.map(m=>{const p=personById(m.personId);return `<div class="roster-member-row">
+       <div class="roster-order">${esc(m.order||"")}</div>
+       <div class="main">
+        <div class="name">${esc(p?.name||"已刪除人員")}</div>
+        <div class="meta">${esc(m.duty||r.duty||"未設定工作")}${m.notes?`<br>${esc(m.notes)}`:""}</div>
+       </div>
+       <details class="roster-member-menu">
+        <summary aria-label="成員操作">⋯</summary>
+        <div>
+         <button class="small" data-action="edit-roster-member" data-id="${m.id}">修改</button>
+         <button class="small danger" data-action="delete-roster-member" data-id="${m.id}">移除</button>
+        </div>
+       </details>
+      </div>`}).join("")||'<div class="empty">沒有符合的成員</div>'}
     </div>
    </div>
-   <div class="roster-member-list">
-    ${members.map(m=>{const p=personById(m.personId);return `<div class="row">
-      <div class="roster-order">${esc(m.order||"")}</div>
-      <div class="main"><div class="name">${esc(p?.name||"已刪除人員")}</div><div class="meta">${esc(m.duty||r.duty||"未設定工作")}${m.notes?`<br>${esc(m.notes)}`:""}</div></div>
-      <div class="actions"><button class="small" data-action="edit-roster-member" data-id="${m.id}">修改</button><button class="small danger" data-action="delete-roster-member" data-id="${m.id}">移除</button></div>
-    </div>`}).join("")||'<div class="empty">尚未加入成員</div>'}
+  </section>`;
+ }).join("");
+
+ $("#rosters").innerHTML=`
+  <div class="roster-toolbar">
+   <label class="roster-search-box">
+    <span>🔍</span>
+    <input id="rosterSearchInput" type="search" value="${esc(rosterSearch)}" placeholder="搜尋姓名或工作">
+   </label>
+   <div class="roster-toolbar-actions">
+    <button class="small" data-action="expand-all-rosters">全部展開</button>
+    <button class="small" data-action="collapse-all-rosters">全部收合</button>
+    <button class="primary" data-action="new-roster">新增名單</button>
    </div>
-  </div>`;
- }).join("")||'<div class="empty">尚未建立名單</div>'}`;
+  </div>
+  ${cards||'<div class="empty">尚未建立名單，或沒有符合搜尋的結果</div>'}`;
+
+ const input=$("#rosterSearchInput");
+ if(input){
+  input.oninput=e=>{
+   rosterSearch=e.target.value;
+   localStorage.setItem("wccRosterSearch",rosterSearch);
+   renderRosters();
+   requestAnimationFrame(()=>{
+    const next=$("#rosterSearchInput");
+    if(next){
+     next.focus();
+     next.setSelectionRange(next.value.length,next.value.length);
+    }
+   });
+  };
+ }
 }
 
 function renderTimeline(){
@@ -883,7 +954,7 @@ function renderOverview(){
  `;
 }
 
-function renderSettings(){$("#settings").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">設定</div></div><div style="padding:16px"><label>網站名稱<input id="settingTitle" value="${esc(settings.title||"")}"></label><label>婚禮日期<input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></label><div class="actions"><button class="primary" data-action="save-settings">儲存設定</button><button id="changeUser">更改目前使用者</button><button data-action="change-admin-password">修改管理密碼</button><button data-action="logout-admin">退出管理模式</button><button data-action="export-csv">匯出 CSV</button><button data-action="print">列印</button></div></div></div>`;$("#changeUser").onclick=openUser}
+function renderSettings(){$("#settings").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">設定</div></div><div style="padding:16px"><label>網站名稱<input id="settingTitle" value="${esc(settings.title||"")}"></label><label>婚禮日期<input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></label><div class="actions"><button class="primary" data-action="save-settings">儲存設定</button><button data-action="change-admin-password">修改管理密碼</button><button data-action="logout-admin">退出管理模式</button><button data-action="export-csv">匯出 CSV</button><button data-action="print">列印</button></div></div></div>`}
 function render(){renderHeader();const renderer={dashboard:renderDashboard,taskcenter:renderTaskCenter,prepare:renderPrepare,rosters:renderRosters,timeline:renderTimeline,mine:renderMine,people:renderPeople,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
 document.body.addEventListener("click",e=>{const j=e.target.closest("[data-jump]");if(j)setView(j.dataset.jump)});
 document.body.addEventListener("keydown",e=>{
@@ -921,7 +992,6 @@ $("#adminLoginForm").onsubmit=async e=>{
  close("adminLoginDialog");render();
 };
 
-function openUser(){$("#userName").value=currentUser;$("#userDialog").showModal()}$("#userForm").onsubmit=e=>{e.preventDefault();currentUser=$("#userName").value.trim();localStorage.setItem("wccUser",currentUser);close("userDialog");render()};
 
 function fillCategorySelect(){$("#taskCategory").innerHTML=categories.map(c=>`<option value="${c.id}">${esc(c.icon)} ${esc(c.name)}</option>`).join("")}
 function renderTaskFlowPicker(){$("#taskFlowPicker").innerHTML=flows.map(f=>`<button type="button" class="chip ${taskFlowSelection.has(f.id)?"selected":""}" data-task-flow="${f.id}">${esc(formatFlowTime(f))} ${esc(f.name)}</button>`).join("")}
@@ -1234,6 +1304,24 @@ if(a==="toggle-all-packages"){
  localStorage.setItem("wccCollapsedFlowPackages",JSON.stringify([...collapsedFlowPackages]));
  renderTimeline();
 }
+if(a==="toggle-roster"){
+ collapsedRosters.has(id)?collapsedRosters.delete(id):collapsedRosters.add(id);
+ localStorage.setItem("wccCollapsedRosters",JSON.stringify([...collapsedRosters]));
+ renderRosters();
+ return;
+}
+if(a==="expand-all-rosters"){
+ collapsedRosters.clear();
+ localStorage.setItem("wccCollapsedRosters","[]");
+ renderRosters();
+ return;
+}
+if(a==="collapse-all-rosters"){
+ collapsedRosters=new Set(rosters.map(r=>r.id));
+ localStorage.setItem("wccCollapsedRosters",JSON.stringify([...collapsedRosters]));
+ renderRosters();
+ return;
+}
 if(a==="new-roster")openRoster();
 if(a==="edit-roster")openRoster(rosters.find(x=>x.id===id));
 if(a==="delete-roster"&&confirm("刪除此名單與所有成員？")){const batch=writeBatch(db);membersForRoster(id).forEach(m=>batch.delete(doc(db,"wccRosterMembers",m.id)));batch.delete(doc(db,"wccRosters",id));await batch.commit()}
@@ -1252,5 +1340,5 @@ if(a==="save-settings")await setDoc(doc(db,"wccSettings","main"),{title:$("#sett
 $("#fab").onclick=()=>{if(view==="banquet")return;view==="prepare"?openTask():view==="rosters"?openRoster():view==="timeline"?openFlow():view==="people"?openPerson():openTask()};
 
 async function bootstrap(){const ref=doc(db,"wccSettings","main"),snap=await getDoc(ref);if(snap.exists()&&snap.data().initialized)return;const cs=await getDocs(collection(db,"wccCategories"));if(!cs.empty){await setDoc(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮管家"},{merge:true});return}const batch=writeBatch(db),catRefs={},groupRefs={};defaults.categories.forEach(([n,i],x)=>{const r=doc(collection(db,"wccCategories"));catRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.groups.forEach(([n,i],x)=>{const r=doc(collection(db,"wccFlowGroups"));groupRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.flows.forEach(([time,n,i,g],x)=>{const r=doc(collection(db,"wccFlows"));batch.set(r,{timeMode:"single",time,startTime:"",endTime:"",name:n,icon:i,groupId:groupRefs[g].id,owner:"",location:"",address:"",mapUrl:"",notes:"",sort:x,createdAt:serverTimestamp()})});batch.set(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮管家",weddingDate:""});await batch.commit()}
-async function start(){if(!currentUser)openUser();const app=initializeApp(firebaseConfig),auth=getAuth(app);db=getFirestore(app);await signInAnonymously(auth);$("#syncState").className="sync ok";$("#syncState").textContent="已連線・多人即時同步";await bootstrap();onSnapshot(query(collection(db,"wccTasks"),orderBy("sort","asc")),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccTaskItems"),orderBy("sort","asc")),s=>{taskItems=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccCategories"),orderBy("sort","asc")),s=>{categories=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowGroups"),orderBy("sort","asc")),s=>{groups=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccRosters"),orderBy("sort","asc")),s=>{rosters=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(collection(db,"wccRosterMembers"),s=>{rosterMembers=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlows"),orderBy("sort","asc")),s=>{flows=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowChecks"),orderBy("sort","asc")),s=>{checks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccPeople"),orderBy("sort","asc")),s=>{people=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(doc(db,"wccSettings","main"),s=>{if(s.exists())settings={...settings,...s.data()};render();if(!settings.adminPasswordHash&&!adminSetupShown){adminSetupShown=true;setTimeout(()=>{$("#adminSetupTitle").textContent="建立管理密碼";$("#adminSetupDialog").showModal()},300)}})}
+async function start(){const app=initializeApp(firebaseConfig),auth=getAuth(app);db=getFirestore(app);await signInAnonymously(auth);$("#syncState").className="sync ok";$("#syncState").textContent="已連線・多人即時同步";await bootstrap();onSnapshot(query(collection(db,"wccTasks"),orderBy("sort","asc")),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccTaskItems"),orderBy("sort","asc")),s=>{taskItems=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccCategories"),orderBy("sort","asc")),s=>{categories=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowGroups"),orderBy("sort","asc")),s=>{groups=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccRosters"),orderBy("sort","asc")),s=>{rosters=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(collection(db,"wccRosterMembers"),s=>{rosterMembers=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlows"),orderBy("sort","asc")),s=>{flows=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowChecks"),orderBy("sort","asc")),s=>{checks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccPeople"),orderBy("sort","asc")),s=>{people=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(doc(db,"wccSettings","main"),s=>{if(s.exists())settings={...settings,...s.data()};render();if(!settings.adminPasswordHash&&!adminSetupShown){adminSetupShown=true;setTimeout(()=>{$("#adminSetupTitle").textContent="建立管理密碼";$("#adminSetupDialog").showModal()},300)}})}
 start().catch(err=>{$("#syncState").className="sync bad";$("#syncState").textContent="連線失敗";alert(err.message)});

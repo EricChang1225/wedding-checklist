@@ -1136,3 +1136,164 @@ body:not(.admin-mode) [data-action="delete-group"]{
     gap:4px;
   }
 }
+
+
+/* V3.3：工作名單收合、搜尋與簡化操作 */
+.roster-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+.roster-search-box{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:260px;
+  max-width:420px;
+  flex:1;
+  padding:0 12px;
+  border:1px solid #eadedf;
+  border-radius:14px;
+  background:#fff;
+}
+.roster-search-box input{
+  width:100%;
+  min-height:44px;
+  border:0;
+  outline:0;
+  background:transparent;
+}
+.roster-toolbar-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.roster-accordion{
+  overflow:visible;
+  margin-bottom:12px;
+}
+.roster-summary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+}
+.roster-toggle{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  border:0;
+  padding:15px 16px;
+  background:transparent;
+  text-align:left;
+  cursor:pointer;
+}
+.roster-toggle-icon{
+  flex:none;
+  width:22px;
+  color:#9a7d81;
+}
+.roster-summary-main{
+  min-width:0;
+}
+.roster-summary-main .card-title,
+.roster-summary-main .meta{
+  display:block;
+}
+.roster-menu,
+.roster-member-menu{
+  position:relative;
+  margin-right:12px;
+}
+.roster-menu summary,
+.roster-member-menu summary{
+  list-style:none;
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border:1px solid #eadedf;
+  border-radius:50%;
+  background:#fff;
+  cursor:pointer;
+  font-weight:900;
+}
+.roster-menu summary::-webkit-details-marker,
+.roster-member-menu summary::-webkit-details-marker{
+  display:none;
+}
+.roster-menu-panel,
+.roster-member-menu>div{
+  position:absolute;
+  right:0;
+  top:44px;
+  z-index:50;
+  width:150px;
+  display:grid;
+  gap:7px;
+  padding:9px;
+  border:1px solid #eadedf;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 14px 34px rgba(80,50,55,.16);
+}
+.roster-body{
+  border-top:1px solid #eee5e6;
+}
+.roster-search-result{
+  padding:10px 16px;
+  color:#8b777a;
+  font-size:13px;
+  background:#fff9f9;
+}
+.roster-member-row{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  padding:12px 16px;
+  border-bottom:1px solid #eee8e8;
+}
+.roster-member-row:last-child{
+  border-bottom:0;
+}
+.roster-order{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#f2dfe1;
+  font-weight:900;
+}
+.roster-member-menu{
+  margin-right:0;
+}
+@media(max-width:720px){
+  .roster-toolbar{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .roster-search-box{
+    min-width:0;
+    max-width:none;
+  }
+  .roster-toolbar-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .roster-toolbar-actions .primary{
+    grid-column:1/-1;
+  }
+  .roster-member-row{
+    grid-template-columns:38px minmax(0,1fr) auto;
+    padding:11px 12px;
+  }
+}
+
+
+/* V3.3.1：移除「設定目前使用者」彈窗
+   使用者統一由首頁 Header 下拉選單切換。 */
