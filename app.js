@@ -22,7 +22,7 @@ function applyPermissions(){
  document.body.classList.toggle("admin-mode",admin);
  const btn=$("#adminModeButton");
  if(btn){btn.textContent=admin?"👑":"🔒";btn.classList.toggle("active",admin);btn.title=admin?"點擊退出管理模式":"長按標題或點擊輸入管理密碼";}
- const blocked=new Set(["new-category","new-task","new-person-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
+ const blocked=new Set(["new-category","new-task","new-person-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","delete-category","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
  document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("admin-hidden")});
  document.querySelectorAll(".toolbar").forEach(el=>el.classList.toggle("admin-hidden",!admin));
  document.querySelectorAll(".admin-only-tab").forEach(tab=>tab.classList.toggle("admin-hidden",!admin))
@@ -261,6 +261,12 @@ function renderPrepare(){
     }).join("")}
    </div>
    <div class="prepare-toolbar-actions">
+    ${prepareCategoryFilter!=="all"?`
+      <button class="small" data-action="move-category-up" data-id="${prepareCategoryFilter}">上移</button>
+      <button class="small" data-action="move-category-down" data-id="${prepareCategoryFilter}">下移</button>
+      <button class="small" data-action="edit-category" data-id="${prepareCategoryFilter}">修改大項</button>
+      <button class="small danger" data-action="delete-category" data-id="${prepareCategoryFilter}">刪除大項</button>
+    `:""}
     <button class="primary" data-action="new-category">＋新增大項</button>
     <button class="primary" data-action="new-task">＋新增準備內容</button>
    </div>
@@ -762,8 +768,40 @@ $("#flowForm").onsubmit=async e=>{
 };
 function openCheck(ch=null,flowId=""){$("#checkDialogTitle").textContent=ch?"修改流程確認項目":"新增流程確認項目";$("#checkId").value=ch?.id||"";$("#checkFlowId").value=ch?.flowId||flowId;$("#checkTitle").value=ch?.title||"";$("#checkOwner").value=ch?.owner||"";$("#checkTaskLink").innerHTML='<option value="">不連結</option>'+tasks.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join("");$("#checkTaskLink").value=ch?.taskId||"";$("#checkDialog").showModal()}$("#checkForm").onsubmit=async e=>{e.preventDefault();const id=$("#checkId").value,p={flowId:$("#checkFlowId").value,title:$("#checkTitle").value.trim(),owner:$("#checkOwner").value.trim(),taskId:$("#checkTaskLink").value,autoFromTask:false,updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccFlowChecks",id),p):await addDoc(collection(db,"wccFlowChecks"),{...p,done:false,sort:checks.filter(x=>x.flowId===p.flowId).length,createdAt:serverTimestamp()});close("checkDialog")};
 function openPerson(p=null){$("#personDialogTitle").textContent=p?"修改人員":"新增人員";$("#personId").value=p?.id||"";$("#personName").value=p?.name||"";$("#personRole").value=p?.role||"";$("#personDialog").showModal()}$("#personForm").onsubmit=async e=>{e.preventDefault();const id=$("#personId").value,p={name:$("#personName").value.trim(),role:$("#personRole").value.trim(),updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccPeople",id),p):await addDoc(collection(db,"wccPeople"),{...p,sort:people.length,createdAt:serverTimestamp()});close("personDialog")};
-function openCategory(c=null){$("#categoryDialogTitle").textContent=c?"修改分類":"新增分類";$("#categoryId").value=c?.id||"";$("#categoryName").value=c?.name||"";$("#categoryIcon").value=c?.icon||"📂";$("#categoryDialog").showModal()}$("#categoryForm").onsubmit=async e=>{e.preventDefault();const id=$("#categoryId").value,p={name:$("#categoryName").value.trim(),icon:$("#categoryIcon").value.trim()||"📂",updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccCategories",id),p):await addDoc(collection(db,"wccCategories"),{...p,sort:categories.length,createdAt:serverTimestamp()});close("categoryDialog")};
+function openCategory(c=null){$("#categoryDialogTitle").textContent=c?"修改大項":"新增大項";$("#categoryId").value=c?.id||"";$("#categoryName").value=c?.name||"";$("#categoryIcon").value=c?.icon||"📂";$("#categoryDialog").showModal()}$("#categoryForm").onsubmit=async e=>{e.preventDefault();const id=$("#categoryId").value,p={name:$("#categoryName").value.trim(),icon:$("#categoryIcon").value.trim()||"📂",updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccCategories",id),p):await addDoc(collection(db,"wccCategories"),{...p,sort:categories.length,createdAt:serverTimestamp()});close("categoryDialog")};
 
+async function deletePreparationCategory(id){
+ const c=categories.find(x=>x.id===id);
+ if(!c)return;
+
+ const categoryTasks=tasks.filter(t=>t.categoryId===id);
+ const count=categoryTasks.length;
+ const message=count
+   ? `「${c.name}」底下還有 ${count} 筆準備內容。\n\n按「確定」會連同這些準備內容與細項一起刪除。`
+   : `確定刪除大項「${c.name}」？`;
+
+ if(!confirm(message))return;
+
+ const batch=writeBatch(db);
+ const taskIds=new Set(categoryTasks.map(t=>t.id));
+
+ taskItems
+   .filter(i=>taskIds.has(i.taskId))
+   .forEach(i=>batch.delete(doc(db,"wccTaskItems",i.id)));
+
+ checks
+   .filter(ch=>ch.autoFromTask&&taskIds.has(ch.taskId))
+   .forEach(ch=>batch.delete(doc(db,"wccFlowChecks",ch.id)));
+
+ categoryTasks.forEach(t=>batch.delete(doc(db,"wccTasks",t.id)));
+ batch.delete(doc(db,"wccCategories",id));
+
+ await batch.commit();
+
+ prepareCategoryFilter="all";
+ localStorage.setItem("wccPrepareFilter","all");
+ renderPrepare();
+}
 async function swapOrder(list,coll,id,dir){const i=list.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=list.length)return;const a=list[i],b=list[j],batch=writeBatch(db);batch.update(doc(db,coll,a.id),{sort:b.sort??j});batch.update(doc(db,coll,b.id),{sort:a.sort??i});await batch.commit()}
 function csvExport(){const rows=[["類型","名稱","分類/流程","負責人","完成"]];tasks.forEach(t=>{const p=taskProgress(t);rows.push([t.type,t.title,category(t.categoryId)?.name||"",taskOwnerText(t),(p.total?p.complete:t.done)?"是":"否"]);p.list.forEach(i=>rows.push(["細項",`↳ ${i.title}`,t.title,taskOwnerText(t),i.done?"是":"否"]))});checks.forEach(c=>rows.push(["流程確認",c.title,flow(c.flowId)?.name||"",c.owner||"",c.done?"是":"否"]));const csv="\ufeff"+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="wedding-control-center.csv";a.click();URL.revokeObjectURL(a.href)}
 
@@ -834,7 +872,7 @@ if(a==="new-group")openGroup();if(a==="edit-group")openGroup(groups.find(x=>x.id
 if(a==="new-flow")openFlow();if(a==="edit-flow")openFlow(flows.find(x=>x.id===id));if(a==="delete-flow"&&confirm("刪除此流程與確認項目？")){const batch=writeBatch(db);checks.filter(x=>x.flowId===id).forEach(x=>batch.delete(doc(db,"wccFlowChecks",x.id)));tasks.filter(t=>(t.flowIds||[]).includes(id)).forEach(t=>batch.update(doc(db,"wccTasks",t.id),{flowIds:(t.flowIds||[]).filter(x=>x!==id)}));batch.delete(doc(db,"wccFlows",id));await batch.commit()}
 if(a==="add-check")openCheck(null,id);if(a==="edit-check")openCheck(checks.find(x=>x.id===id));if(a==="delete-check"&&confirm("刪除此確認項目？"))await deleteDoc(doc(db,"wccFlowChecks",id));if(a==="toggle-check")await updateDoc(doc(db,"wccFlowChecks",id),{done:b.checked,updatedAt:serverTimestamp(),checkedBy:currentUser});
 if(a==="new-person")openPerson();if(a==="edit-person")openPerson(people.find(x=>x.id===id));if(a==="delete-person"&&confirm("刪除此人員？"))await deleteDoc(doc(db,"wccPeople",id));if(a==="show-person"){const p=people.find(x=>x.id===id);if(p){currentUser=p.name;localStorage.setItem("wccUser",p.name);setView("mine")}}
-if(a==="new-category")openCategory();if(a==="edit-category")openCategory(categories.find(x=>x.id===id));if(a==="move-category-up")await swapOrder(categories,"wccCategories",id,-1);if(a==="move-category-down")await swapOrder(categories,"wccCategories",id,1);
+if(a==="new-category")openCategory();if(a==="edit-category")openCategory(categories.find(x=>x.id===id));if(a==="delete-category")await deletePreparationCategory(id);if(a==="move-category-up")await swapOrder(categories,"wccCategories",id,-1);if(a==="move-category-down")await swapOrder(categories,"wccCategories",id,1);
 if(a==="move-group-up")await swapOrder(groups,"wccFlowGroups",id,-1);if(a==="move-group-down")await swapOrder(groups,"wccFlowGroups",id,1);
 if(a==="move-flow-up"){const list=flows.filter(f=>f.groupId===(flow(id)?.groupId||""));await swapOrder(list,"wccFlows",id,-1)}if(a==="move-flow-down"){const list=flows.filter(f=>f.groupId===(flow(id)?.groupId||""));await swapOrder(list,"wccFlows",id,1)}
 if(a==="save-settings")await setDoc(doc(db,"wccSettings","main"),{title:$("#settingTitle").value.trim(),weddingDate:$("#settingDate").value,initialized:true},{merge:true});if(a==="export-csv")csvExport();if(a==="print")window.print();
