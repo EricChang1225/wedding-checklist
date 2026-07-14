@@ -5,7 +5,7 @@ import {getFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot
 
 const $=s=>document.querySelector(s), esc=(v="")=>String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 let prepareCategoryFilter=localStorage.getItem("wccPrepareFilter")||"all";
-let db,view="dashboard",tasks=[],taskItems=[],categories=[],groups=[],flows=[],checks=[],people=[],rosters=[],rosterMembers=[],settings={title:"駿瑋 & 忞靜 婚禮管家",weddingDate:"",initialized:false},taskFlowSelection=new Set(),taskOwnerSelection=new Set();
+let db,view="dashboard",tasks=[],taskItems=[],categories=[],groups=[],flows=[],checks=[],people=[],rosters=[],rosterMembers=[],settings={title:"駿瑋 & 忞靜 婚禮管家",weddingDate:"",initialized:false},taskFlowSelection=new Set(),taskOwnerSelection=new Set(),flowOwnerSelection=new Set();
 
 let adminSetupShown=false;
 const ADMIN_DURATION_MS=30*60*1000;
@@ -22,7 +22,7 @@ function applyPermissions(){
  document.body.classList.toggle("admin-mode",admin);
  const btn=$("#adminModeButton");
  if(btn){btn.textContent=admin?"👑":"🔒";btn.classList.toggle("active",admin);btn.title=admin?"點擊退出管理模式":"長按標題或點擊輸入管理密碼";}
- const blocked=new Set(["new-category","new-task","new-person-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","delete-category","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
+ const blocked=new Set(["new-category","new-task","new-person-task","new-center-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","delete-category","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
  document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("admin-hidden")});
  document.querySelectorAll(".toolbar").forEach(el=>el.classList.toggle("admin-hidden",!admin));
  document.querySelectorAll(".admin-only-tab").forEach(tab=>tab.classList.toggle("admin-hidden",!admin))
@@ -46,6 +46,13 @@ const taskOwnerNames=t=>{
 };
 const taskHasOwner=(t,name)=>Boolean(name&&taskOwnerNames(t).includes(name));
 const taskOwnerText=t=>taskOwnerNames(t).join("、")||"未指定";
+const flowOwnerNames=f=>{
+ const list=Array.isArray(f?.owners)?f.owners.filter(Boolean):[];
+ if(list.length)return [...new Set(list)];
+ return f?.owner?[f.owner]:[];
+};
+const flowHasOwner=(f,name)=>Boolean(name&&flowOwnerNames(f).includes(name));
+const flowOwnerText=f=>flowOwnerNames(f).join("、")||"未指定";
 const normalizeFlowTimeMode=f=>{
  if(f?.timeMode)return f.timeMode;
  if(f?.startTime&&f?.endTime)return "range";
@@ -126,7 +133,7 @@ function renderDashboard(){
  const myItems=tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="物品");
 
  const relatedFlows=flows
-  .filter(f=>f.owner===currentUser||checks.some(c=>c.flowId===f.id&&c.owner===currentUser))
+  .filter(f=>flowHasOwner(f,currentUser)||checks.some(c=>c.flowId===f.id&&c.owner===currentUser))
   .sort((a,b)=>scheduleTimeValue(formatFlowTime(a))-scheduleTimeValue(formatFlowTime(b)));
 
  const today=new Date();
@@ -237,6 +244,85 @@ function taskRow(t){
    </div>`).join("")}
   </div>`:""}
  </div>`;
+}
+function renderTaskCenter(){
+ const workTasks=tasks.filter(t=>t.type==="工作");
+ const linked=new Map();
+ const unlinked=[];
+
+ workTasks.forEach(t=>{
+   const ids=(t.flowIds||[]).filter(id=>flow(id));
+   if(!ids.length){unlinked.push(t);return;}
+   ids.forEach(id=>{
+     if(!linked.has(id))linked.set(id,[]);
+     linked.get(id).push(t);
+   });
+ });
+
+ const orderedFlows=[...flows].sort((a,b)=>scheduleTimeValue(formatFlowTime(a))-scheduleTimeValue(formatFlowTime(b)));
+ const completed=workTasks.filter(t=>t.done).length;
+
+ const taskCard=t=>`<div class="task-center-task ${t.done?"done":""}">
+   <input class="check" type="checkbox" data-action="toggle-task" data-id="${t.id}" ${t.done?"checked":""}>
+   <div class="main">
+    <div class="name">${esc(t.title)}</div>
+    <div class="meta">
+     負責：${esc(taskOwnerText(t))}
+     ${t.startTime?`・${esc(t.startTime)}${t.endTime?`－${esc(t.endTime)}`:""}`:""}
+     ${t.location?`<br>地點：${esc(t.location)}`:""}
+    </div>
+   </div>
+   <div class="actions">
+    <button class="small" data-action="edit-task" data-id="${t.id}">修改</button>
+   </div>
+  </div>`;
+
+ $("#taskcenter").innerHTML=`
+  <div class="task-center-summary card">
+   <div>
+    <div class="card-title">📋 任務中心</div>
+    <div class="meta">依婚禮流程時間統整所有人的任務</div>
+   </div>
+   <div class="task-center-progress">
+    <strong>${completed}/${workTasks.length}</strong>
+    <span>已完成</span>
+   </div>
+  </div>
+
+  <div class="toolbar">
+   <button class="primary" data-action="new-center-task">＋新增任務</button>
+  </div>
+
+  ${orderedFlows.map(f=>{
+    const list=linked.get(f.id)||[];
+    if(!list.length)return "";
+    const g=group(f.groupId);
+    const done=list.filter(t=>t.done).length;
+    return `<section class="card task-center-flow">
+      <div class="task-center-flow-head">
+       <div class="task-center-time">${esc(formatFlowTime(f)||"未定")}</div>
+       <div class="main">
+        <div class="card-title">${esc(f.icon||"📍")} ${esc(f.name)}</div>
+        <div class="meta">${g?`${esc(g.icon||"🗂️")} ${esc(g.name)}・`:""}${f.location?esc(f.location):"未設定地點"}・任務 ${done}/${list.length}</div>
+       </div>
+       <button class="small" data-action="go-flow" data-id="${f.id}">查看流程</button>
+      </div>
+      <div class="task-center-list">${list.sort((a,b)=>(a.startTime||"99:99").localeCompare(b.startTime||"99:99")).map(taskCard).join("")}</div>
+    </section>`;
+  }).join("")}
+
+  ${unlinked.length?`<section class="card task-center-flow unlinked">
+    <div class="task-center-flow-head">
+     <div class="task-center-time">未連結</div>
+     <div class="main">
+      <div class="card-title">🧩 尚未連結流程</div>
+      <div class="meta">這些任務仍會出現在負責人的「我的行程」，但不會出現在特定時間點。</div>
+     </div>
+    </div>
+    <div class="task-center-list">${unlinked.map(taskCard).join("")}</div>
+   </section>`:""}
+
+  ${!workTasks.length?'<div class="empty">尚未建立任務</div>':""}`;
 }
 function renderPrepare(){
  const itemTasks=tasks.filter(t=>t.type==="物品");
@@ -360,7 +446,7 @@ function linkedPreparationCard(ch){
    <input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}>
    <div class="main">
     <div class="name">${esc(ch.title)}</div>
-    <div class="meta">負責：${esc(ch.owner||t.owner||"未指定")}・前置狀態：${ready?"✅ 已準備":"⚠️ 尚未準備"}${p.total?`（${p.done}/${p.total}）`:""}</div>
+    <div class="meta">負責：${esc(ch.owner||taskOwnerText(t)||"未指定")}・前置狀態：${ready?"✅ 已準備":"⚠️ 尚未準備"}${p.total?`（${p.done}/${p.total}）`:""}</div>
     ${p.total?`<div class="progress compact-progress"><span style="width:${Math.round(p.done/p.total*100)}%"></span></div>`:""}
    </div>
    <div class="actions">
@@ -385,7 +471,7 @@ function flowCard(f){
    <button class="flow-toggle" data-action="toggle-flow" data-id="${f.id}" aria-label="${collapsed?"展開流程":"收合流程"}">${collapsed?"▶":"▼"}</button>
    <div class="main flow-click-area" data-action="toggle-flow" data-id="${f.id}" role="button" tabindex="0">
     <div class="card-title">${formatFlowTime(f)?`${esc(formatFlowTime(f))}　`:""}${esc(f.icon||"📍")} ${esc(f.name)} <span class="flow-state-text">${collapsed?"（點擊展開）":"（點擊收合）"}</span></div>
-    <div class="meta">負責人：${esc(f.owner||"未指定")}・確認 ${completed}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>
+    <div class="meta">負責人：${esc(flowOwnerText(f))}・確認 ${completed}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>
     ${list.length?`<div class="progress compact-progress"><span style="width:${Math.round(completed/list.length*100)}%"></span></div>`:""}
     ${url?`<a class="map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}
     ${f.notes?`<div class="meta">${esc(f.notes)}</div>`:""}
@@ -480,7 +566,7 @@ function myFlowRow(f){
   <div class="flow-time-badge">${esc(formatFlowTime(f)||"未定")}</div>
   <div class="main">
    <div class="name">${esc(f.icon||"📍")} ${esc(f.name)}</div>
-   <div class="meta">負責：${esc(f.owner||"未指定")}・確認 ${done}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>
+   <div class="meta">負責：${esc(flowOwnerText(f))}・確認 ${done}/${list.length}${f.location?`<br>地點：${esc(f.location)}`:""}${f.address?`<br>地址：${esc(f.address)}`:""}</div>
    ${list.length?`<div class="progress compact-progress"><span style="width:${Math.round(done/list.length*100)}%"></span></div>`:""}
    ${url?`<a class="map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}
   </div>
@@ -555,7 +641,7 @@ function renderOverview(){
 }
 
 function renderSettings(){$("#settings").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">設定</div></div><div style="padding:16px"><label>網站名稱<input id="settingTitle" value="${esc(settings.title||"")}"></label><label>婚禮日期<input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></label><div class="actions"><button class="primary" data-action="save-settings">儲存設定</button><button id="changeUser">更改目前使用者</button><button data-action="change-admin-password">修改管理密碼</button><button data-action="logout-admin">退出管理模式</button><button data-action="export-csv">匯出 CSV</button><button data-action="print">列印</button></div></div></div>`;$("#changeUser").onclick=openUser}
-function render(){renderHeader();const renderer={dashboard:renderDashboard,prepare:renderPrepare,rosters:renderRosters,timeline:renderTimeline,mine:renderMine,people:renderPeople,overview:renderOverview,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
+function render(){renderHeader();const renderer={dashboard:renderDashboard,taskcenter:renderTaskCenter,prepare:renderPrepare,rosters:renderRosters,timeline:renderTimeline,mine:renderMine,people:renderPeople,overview:renderOverview,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
 document.body.addEventListener("click",e=>{const j=e.target.closest("[data-jump]");if(j)setView(j.dataset.jump)});
 document.body.addEventListener("keydown",e=>{
  const area=e.target.closest?.(".flow-click-area");
@@ -730,6 +816,25 @@ $("#rosterMemberForm").onsubmit=async e=>{
 };
 
 function openGroup(g=null){$("#groupDialogTitle").textContent=g?"修改流程群組":"新增流程群組";$("#groupId").value=g?.id||"";$("#groupName").value=g?.name||"";$("#groupIcon").value=g?.icon||"🗂️";$("#groupDialog").showModal()}$("#groupForm").onsubmit=async e=>{e.preventDefault();const id=$("#groupId").value,p={name:$("#groupName").value.trim(),icon:$("#groupIcon").value.trim()||"🗂️",updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccFlowGroups",id),p):await addDoc(collection(db,"wccFlowGroups"),{...p,sort:groups.length,createdAt:serverTimestamp()});close("groupDialog")};
+function renderFlowOwnerPicker(){
+ const box=$("#flowOwnerPicker");
+ if(!box)return;
+ box.innerHTML=people.map(p=>{
+   const selected=flowOwnerSelection.has(p.name);
+   return `<button type="button" class="owner-chip ${selected?"selected":""}" data-flow-owner="${esc(p.name)}">
+    ${selected?"✓ ":""}${esc(p.name)}
+   </button>`;
+ }).join("")||'<div class="hint">請先到「人員」新增成員</div>';
+
+ box.onclick=e=>{
+   const b=e.target.closest("[data-flow-owner]");
+   if(!b)return;
+   const name=b.dataset.flowOwner;
+   flowOwnerSelection.has(name)?flowOwnerSelection.delete(name):flowOwnerSelection.add(name);
+   $("#flowOwner").value=[...flowOwnerSelection].join("、");
+   renderFlowOwnerPicker();
+ };
+}
 function openFlow(f=null){
  $("#flowDialogTitle").textContent=f?"修改流程":"新增流程";
  $("#flowId").value=f?.id||"";
@@ -743,7 +848,13 @@ function openFlow(f=null){
  updateFlowTimeFields();
  $("#flowName").value=f?.name||"";
  $("#flowIcon").value=f?.icon||"📍";
- $("#flowOwner").value=f?.owner||"";
+ flowOwnerSelection=new Set(
+   Array.isArray(f?.owners)&&f.owners.length
+     ? f.owners
+     : (f?.owner?[f.owner]:[])
+ );
+ $("#flowOwner").value=[...flowOwnerSelection].join("、");
+ renderFlowOwnerPicker();
  $("#flowLocation").value=f?.location||"";
  $("#flowAddress").value=f?.address||"";
  $("#flowMapUrl").value=f?.mapUrl||"";
@@ -770,7 +881,8 @@ $("#flowForm").onsubmit=async e=>{
   endTime,
   name:$("#flowName").value.trim(),
   icon:$("#flowIcon").value.trim()||"📍",
-  owner:$("#flowOwner").value.trim(),
+  owners:[...flowOwnerSelection],
+  owner:[...flowOwnerSelection][0]||"",
   location:$("#flowLocation").value.trim(),
   address:$("#flowAddress").value.trim(),
   mapUrl:$("#flowMapUrl").value.trim(),
@@ -838,6 +950,7 @@ if(a==="change-admin-password"){$("#adminSetupTitle").textContent="修改管理�
 if(a==="logout-admin"){localStorage.removeItem("wccAdminUntil");setView("dashboard");return}
 
 if(a==="new-person-task")openTask(null,"工作");
+if(a==="new-center-task")openTask(null,"工作");
 if(a==="new-person-item")openTask(null,"物品");
 if(a==="new-task")openTask(null,"物品");
 if(a==="edit-task")openTask(tasks.find(x=>x.id===id));

@@ -791,3 +791,76 @@ body:not(.admin-mode) [data-action="delete-group"]{
     grid-template-columns:1fr 1fr;
   }
 }
+
+
+/* v3.0.14：任務中心時間軸總覽 */
+.task-center-summary{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+}
+.task-center-progress{
+  text-align:right;
+}
+.task-center-progress strong{
+  display:block;
+  font-size:26px;
+}
+.task-center-progress span{
+  color:var(--muted);
+  font-size:12px;
+}
+.task-center-flow{
+  margin-top:14px;
+  overflow:hidden;
+}
+.task-center-flow-head{
+  display:grid;
+  grid-template-columns:86px minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  padding:14px 16px;
+  background:#fff8f8;
+  border-bottom:1px solid #eee1e2;
+}
+.task-center-time{
+  font-size:18px;
+  font-weight:950;
+  color:#bd626c;
+}
+.task-center-list{
+  padding:0 14px;
+}
+.task-center-task{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  padding:13px 2px;
+  border-bottom:1px solid #eee8e8;
+}
+.task-center-task:last-child{border-bottom:0}
+.task-center-task.done{opacity:.6}
+.task-center-task .main{min-width:0;flex:1}
+.task-center-task .name{font-weight:900}
+.task-center-flow.unlinked{
+  border-style:dashed;
+}
+@media(max-width:680px){
+  .task-center-flow-head{
+    grid-template-columns:68px minmax(0,1fr);
+  }
+  .task-center-flow-head>.small{
+    grid-column:1/-1;
+    width:100%;
+  }
+  .task-center-task .actions{
+    flex:none;
+  }
+}
+
+
+/* v3.0.15：婚禮流程多人負責人 */
+#flowOwnerPicker{
+  margin-top:8px;
+}

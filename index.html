@@ -23,7 +23,7 @@
   <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
   <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
   <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
-  <link rel="stylesheet" href="./style.css?v=3013">
+  <link rel="stylesheet" href="./style.css?v=3015">
 </head>
 <body>
 <div class="app">
@@ -60,6 +60,7 @@
 
   <nav id="tabs" class="tabs">
     <button class="tab active" data-view="dashboard">我的行程</button>
+    <button class="tab" data-view="taskcenter">任務中心</button>
     <button class="tab" data-view="prepare">婚禮準備</button>
     <button class="tab" data-view="rosters">工作名單</button>
     <button class="tab" data-view="timeline">婚禮流程</button>
@@ -71,6 +72,7 @@
 
   <main>
     <section id="dashboard" class="panel active"></section>
+    <section id="taskcenter" class="panel"></section>
     <section id="prepare" class="panel"></section>
     <section id="rosters" class="panel"></section>
     <section id="timeline" class="panel"></section>
@@ -218,7 +220,10 @@
   </div>
   <label>流程名稱<input id="flowName" maxlength="50" required></label>
   <label>圖示<input id="flowIcon" maxlength="4" value="📍"></label>
-  <label>負責人<input id="flowOwner" maxlength="30" list="peopleList"></label>
+  <label>負責人（可複選）
+    <div id="flowOwnerPicker" class="owner-picker"></div>
+    <input id="flowOwner" type="hidden">
+  </label>
   <label>地點名稱<input id="flowLocation" maxlength="80" placeholder="例如：女方家、飯店"></label>
   <label>地址<input id="flowAddress" maxlength="160" placeholder="輸入地址即可產生 Google 地圖連結"></label>
   <label>Google Maps 連結<input id="flowMapUrl" type="url" placeholder="可留空，系統會依地址產生"></label>
@@ -252,6 +257,6 @@
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app.js?v=3013"></script>
+<script type="module" src="./app.js?v=3015"></script>
 </body>
 </html>
