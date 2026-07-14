@@ -18,11 +18,11 @@ async function hashPassword(value){
 function refreshAdminSession(){if(isAdmin())localStorage.setItem("wccAdminUntil",String(Date.now()+ADMIN_DURATION_MS))}
 function applyPermissions(){
  const admin=isAdmin();
- if(!admin&&["settings","overview"].includes(view)){view="dashboard";document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.view==="dashboard"));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id==="dashboard"));}
+ if(!admin&&["settings"].includes(view)){view="dashboard";document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.view==="dashboard"));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id==="dashboard"));}
  document.body.classList.toggle("admin-mode",admin);
  const btn=$("#adminModeButton");
  if(btn){btn.textContent=admin?"👑":"🔒";btn.classList.toggle("active",admin);btn.title=admin?"點擊退出管理模式":"長按標題或點擊輸入管理密碼";}
- const blocked=new Set(["new-category","new-task","new-person-task","new-center-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","delete-category","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
+ const blocked=new Set(["new-category","new-task","print-prepare-pdf","new-person-task","new-center-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","delete-category","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
  document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("admin-hidden")});
  document.querySelectorAll(".toolbar").forEach(el=>el.classList.toggle("admin-hidden",!admin));
  document.querySelectorAll(".admin-only-tab").forEach(tab=>tab.classList.toggle("admin-hidden",!admin))
@@ -313,16 +313,172 @@ function renderTaskCenter(){
 
   ${unlinked.length?`<section class="card task-center-flow unlinked">
     <div class="task-center-flow-head">
-     <div class="task-center-time">未連結</div>
+     <div class="task-center-time">尚未安排</div>
      <div class="main">
-      <div class="card-title">🧩 尚未連結流程</div>
-      <div class="meta">這些任務仍會出現在負責人的「我的行程」，但不會出現在特定時間點。</div>
+      <div class="card-title">🧩 尚尚未安排流程</div>
+      <div class="meta">這些任務仍會出現在負責人的「我的行程」，但尚未指定婚禮流程時間點。</div>
      </div>
     </div>
     <div class="task-center-list">${unlinked.map(taskCard).join("")}</div>
    </section>`:""}
 
   ${!workTasks.length?'<div class="empty">尚未建立任務</div>':""}`;
+}
+function printPreparePdf(){
+ const selectedCategoryId=prepareCategoryFilter==="all"?null:prepareCategoryFilter;
+ const categoryList=selectedCategoryId
+   ? categories.filter(c=>c.id===selectedCategoryId)
+   : categories.filter(c=>tasks.some(t=>t.type==="物品"&&t.categoryId===c.id));
+
+ const escPrint=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+ const weddingTitle=settings.title||"婚禮準備工作清單";
+ const weddingDate=settings.weddingDate||"";
+ const dateText=weddingDate?new Date(`${weddingDate}T00:00:00`).toLocaleDateString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit"}):"";
+
+ const sections=categoryList.map(c=>{
+   const categoryTasks=tasks
+     .filter(t=>t.type==="物品"&&t.categoryId===c.id)
+     .sort((a,b)=>(a.sort??0)-(b.sort??0));
+
+   if(!categoryTasks.length)return "";
+
+   const rows=categoryTasks.map(t=>{
+     const items=taskItems
+       .filter(i=>i.taskId===t.id)
+       .sort((a,b)=>(a.sort??0)-(b.sort??0));
+     const owners=taskOwnerText(t);
+     const rowCount=Math.max(items.length,1);
+
+     if(!items.length){
+       return `<tr>
+         <td class="check-cell">☐</td>
+         <td class="main-cell"><strong>${escPrint(t.title)}</strong>${t.notes?`<div class="note">${escPrint(t.notes)}</div>`:""}</td>
+         <td class="sub-cell">—</td>
+         <td class="owner-cell">${escPrint(owners)}</td>
+         <td class="note-cell"></td>
+       </tr>`;
+     }
+
+     return items.map((i,idx)=>`<tr>
+       ${idx===0?`<td class="check-cell" rowspan="${rowCount}">☐</td>`:""}
+       ${idx===0?`<td class="main-cell" rowspan="${rowCount}"><strong>${escPrint(t.title)}</strong>${t.notes?`<div class="note">${escPrint(t.notes)}</div>`:""}</td>`:""}
+       <td class="sub-cell">☐ ${escPrint(i.title)}${i.notes?`<div class="note">${escPrint(i.notes)}</div>`:""}</td>
+       ${idx===0?`<td class="owner-cell" rowspan="${rowCount}">${escPrint(owners)}</td>`:""}
+       <td class="note-cell"></td>
+     </tr>`).join("");
+   }).join("");
+
+   return `<section class="print-section">
+     <h2>${escPrint(c.icon||"📦")} ${escPrint(c.name)}</h2>
+     <table>
+       <thead><tr><th>✓</th><th>準備內容</th><th>細項</th><th>負責人</th><th>備註</th></tr></thead>
+       <tbody>${rows}</tbody>
+     </table>
+   </section>`;
+ }).join("");
+
+ if(!sections){
+   alert("目前沒有可輸出的婚禮準備內容");
+   return;
+ }
+
+ const win=window.open("","_blank","noopener,noreferrer");
+ if(!win){
+   alert("瀏覽器封鎖了列印視窗，請允許彈出式視窗後再試一次。");
+   return;
+ }
+
+ win.document.write(`<!doctype html>
+ <html lang="zh-Hant">
+ <head>
+  <meta charset="utf-8">
+  <title>${escPrint(weddingTitle)}－婚禮準備工作清單</title>
+  <style>
+   @page{size:A4 portrait;margin:14mm 12mm}
+   *{box-sizing:border-box}
+   body{
+     margin:0;
+     color:#3d3032;
+     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+     font-size:11pt;
+     line-height:1.45;
+     background:#fff;
+   }
+   .cover{
+     border-bottom:2px solid #d8a9ae;
+     margin-bottom:18px;
+     padding-bottom:10px;
+     display:flex;
+     justify-content:space-between;
+     align-items:flex-end;
+     gap:20px;
+   }
+   .brand{font-size:10pt;letter-spacing:.18em;color:#9b7d80}
+   h1{margin:4px 0 0;font-size:22pt}
+   .date{text-align:right;color:#786669}
+   .print-section{page-break-before:always}
+   .print-section:first-of-type{page-break-before:auto}
+   h2{
+     margin:0 0 10px;
+     padding:8px 12px;
+     border-left:6px solid #c97881;
+     background:#fbefef;
+     font-size:16pt;
+   }
+   table{
+     width:100%;
+     border-collapse:collapse;
+     table-layout:fixed;
+   }
+   th,td{
+     border:1px solid #cabfc1;
+     padding:8px 9px;
+     vertical-align:top;
+   }
+   th{
+     background:#f7eeee;
+     font-weight:800;
+     text-align:left;
+   }
+   th:nth-child(1),td:nth-child(1){width:7%;text-align:center}
+   th:nth-child(2),td:nth-child(2){width:24%}
+   th:nth-child(3),td:nth-child(3){width:32%}
+   th:nth-child(4),td:nth-child(4){width:20%}
+   th:nth-child(5),td:nth-child(5){width:17%}
+   .main-cell,.owner-cell{background:#fffafa}
+   .main-cell strong{font-size:11.5pt}
+   .check-cell{font-size:16pt;font-weight:700}
+   .note{margin-top:4px;color:#7e7072;font-size:9pt}
+   .note-cell{height:34px}
+   .footer{
+     margin-top:14px;
+     color:#9b898c;
+     font-size:9pt;
+     text-align:right;
+   }
+   @media print{
+     .print-section{break-inside:auto}
+     tr{break-inside:avoid}
+   }
+  </style>
+ </head>
+ <body>
+  <header class="cover">
+   <div>
+    <div class="brand">WEDDING BUTLER</div>
+    <h1>婚禮準備工作清單</h1>
+   </div>
+   <div class="date">
+    <div>${escPrint(weddingTitle)}</div>
+    ${dateText?`<div>${escPrint(dateText)}</div>`:""}
+   </div>
+  </header>
+  ${sections}
+  <div class="footer">由 Wedding Butler 產生</div>
+  <script>window.onload=()=>setTimeout(()=>window.print(),250);<\/script>
+ </body>
+ </html>`);
+ win.document.close();
 }
 function renderPrepare(){
  const itemTasks=tasks.filter(t=>t.type==="物品");
@@ -369,6 +525,7 @@ function renderPrepare(){
     <div class="prepare-toolbar-actions">
      <button class="primary" data-action="new-category">＋新增大項</button>
      <button class="primary" data-action="new-task">＋新增準備內容</button>
+     <button class="small" data-action="print-prepare-pdf">🖨️ PDF 工作清單</button>
     </div>
    </div>
   </div>
@@ -641,7 +798,7 @@ function renderOverview(){
 }
 
 function renderSettings(){$("#settings").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">設定</div></div><div style="padding:16px"><label>網站名稱<input id="settingTitle" value="${esc(settings.title||"")}"></label><label>婚禮日期<input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></label><div class="actions"><button class="primary" data-action="save-settings">儲存設定</button><button id="changeUser">更改目前使用者</button><button data-action="change-admin-password">修改管理密碼</button><button data-action="logout-admin">退出管理模式</button><button data-action="export-csv">匯出 CSV</button><button data-action="print">列印</button></div></div></div>`;$("#changeUser").onclick=openUser}
-function render(){renderHeader();const renderer={dashboard:renderDashboard,taskcenter:renderTaskCenter,prepare:renderPrepare,rosters:renderRosters,timeline:renderTimeline,mine:renderMine,people:renderPeople,overview:renderOverview,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
+function render(){renderHeader();const renderer={dashboard:renderDashboard,taskcenter:renderTaskCenter,prepare:renderPrepare,rosters:renderRosters,timeline:renderTimeline,mine:renderMine,people:renderPeople,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
 document.body.addEventListener("click",e=>{const j=e.target.closest("[data-jump]");if(j)setView(j.dataset.jump)});
 document.body.addEventListener("keydown",e=>{
  const area=e.target.closest?.(".flow-click-area");
@@ -951,6 +1108,7 @@ if(a==="logout-admin"){localStorage.removeItem("wccAdminUntil");setView("dashboa
 
 if(a==="new-person-task")openTask(null,"工作");
 if(a==="new-center-task")openTask(null,"工作");
+if(a==="print-prepare-pdf"){printPreparePdf();return;}
 if(a==="new-person-item")openTask(null,"物品");
 if(a==="new-task")openTask(null,"物品");
 if(a==="edit-task")openTask(tasks.find(x=>x.id===id));

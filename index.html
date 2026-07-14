@@ -23,21 +23,20 @@
   <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
   <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
   <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
-  <link rel="stylesheet" href="./style.css?v=3015">
+  <link rel="stylesheet" href="./style.css?v=3100">
 </head>
 <body>
 <div class="app">
   <header class="hero hero-v25">
     <div class="hero-topline">WEDDING BUTLER · V3</div>
-    <div class="hero-title-line">
+    <div class="hero-title-line compact-title-line">
       <div>
-        <h1 id="appTitle" class="brand-title">婚禮管家 <span class="crown-badge">👑</span></h1>
-        <div id="coupleTitle" class="couple-title">駿瑋 &amp; 忞靜 婚禮</div>
+        <div id="coupleTitle" class="couple-title compact-couple-title">駿瑋 &amp; 忞靜 婚禮</div>
       </div>
       <button id="adminModeButton" class="admin-mode-button" type="button">🔒</button>
     </div>
 
-    <div class="hero-info-grid">
+    <div class="hero-info-grid compact-hero-grid">
       <div class="hero-countdown-box">
         <div class="hero-info-label">距離婚禮 💍</div>
         <div><strong id="heroDays">--</strong><span class="hero-days-unit"> 天</span></div>
@@ -66,7 +65,6 @@
     <button class="tab" data-view="timeline">婚禮流程</button>
     <button class="tab" data-view="banquet">婚宴資訊</button>
     <button class="tab" data-view="people">人員</button>
-    <button class="tab admin-only-tab" data-view="overview">總覽</button>
     <button class="tab admin-only-tab" data-view="settings">設定</button>
   </nav>
 
@@ -81,7 +79,6 @@
     <section id="banquet" class="panel">
       <iframe id="banquetFrame" class="banquet-frame" src="./banquet.html?v=3000" title="婚宴中心"></iframe>
     </section>
-    <section id="overview" class="panel"></section>
     <section id="settings" class="panel"></section>
   </main>
 </div>
@@ -257,6 +254,6 @@
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app.js?v=3015"></script>
+<script type="module" src="./app.js?v=3100"></script>
 </body>
 </html>

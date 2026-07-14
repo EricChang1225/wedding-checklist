@@ -864,3 +864,80 @@ body:not(.admin-mode) [data-action="delete-group"]{
 #flowOwnerPicker{
   margin-top:8px;
 }
+
+
+/* v3.0.16：婚禮準備 PDF 工作清單 */
+.prepare-toolbar-actions [data-action="print-prepare-pdf"]{
+  white-space:nowrap;
+}
+
+
+/* V3.1：精簡 Header */
+.hero-v251,
+.hero-v25,
+.hero{
+  padding-top:14px;
+  padding-bottom:12px;
+}
+
+.compact-title-line{
+  align-items:center;
+  margin-bottom:8px;
+}
+
+.compact-couple-title{
+  margin-top:0;
+  font-size:22px;
+  font-weight:950;
+  line-height:1.2;
+}
+
+.compact-hero-grid{
+  margin-top:10px;
+  gap:10px;
+}
+
+.hero-countdown-box,
+.hero-user-box{
+  padding:12px 14px;
+  border-radius:16px;
+}
+
+#heroDays{
+  font-size:34px;
+}
+
+.hero-date{
+  margin-top:5px;
+  font-size:12px;
+}
+
+.hero-user-select{
+  min-height:42px;
+  font-size:16px;
+}
+
+.hero-status-line{
+  margin-top:9px;
+}
+
+.brand-title,
+.crown-badge{
+  display:none!important;
+}
+
+@media(max-width:620px){
+  .compact-couple-title{
+    font-size:20px;
+  }
+  .compact-hero-grid{
+    grid-template-columns:1fr 1fr;
+  }
+  .hero-countdown-box,
+  .hero-user-box{
+    padding:11px 12px;
+  }
+  #heroDays{
+    font-size:31px;
+  }
+}
