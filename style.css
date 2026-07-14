@@ -491,3 +491,12 @@ body:not(.admin-mode) [data-action="delete-group"]{
 .tab[data-view="work"]{
   display:none!important;
 }
+
+
+/* v3.0.7：首頁新增任務／物品 */
+.dashboard-card-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.dashboard-card-tools .primary{white-space:nowrap}
+@media(max-width:620px){
+  .dashboard-card-tools{width:100%;justify-content:space-between;margin-top:8px}
+  #dashboard .card-head{flex-wrap:wrap}
+}

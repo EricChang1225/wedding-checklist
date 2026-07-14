@@ -21,7 +21,7 @@ function applyPermissions(){
  document.body.classList.toggle("admin-mode",admin);
  const btn=$("#adminModeButton");
  if(btn){btn.textContent=admin?"👑":"🔒";btn.classList.toggle("active",admin);btn.title=admin?"點擊退出管理模式":"長按標題或點擊輸入管理密碼";}
- const blocked=new Set(["new-category","new-task","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
+ const blocked=new Set(["new-category","new-task","new-person-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
  document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("admin-hidden")});
  document.querySelectorAll(".toolbar").forEach(el=>el.classList.toggle("admin-hidden",!admin));
  document.querySelectorAll(".admin-only-tab").forEach(tab=>tab.classList.toggle("admin-hidden",!admin))
@@ -175,7 +175,10 @@ function renderDashboard(){
  <section class="card compact-detail-card">
   <div class="card-head">
    <div class="card-title">✅ 任務</div>
-   <div class="pill">${myTasks.filter(x=>x.done).length}/${myTasks.length}</div>
+   <div class="dashboard-card-tools">
+    <div class="pill">${myTasks.filter(x=>x.done).length}/${myTasks.length}</div>
+    <button class="small primary" data-action="new-person-task">＋新增任務</button>
+   </div>
   </div>
   ${myTasks.map(taskRow).join("")||'<div class="empty">目前沒有任務</div>'}
  </section>
@@ -183,7 +186,10 @@ function renderDashboard(){
  <section class="card compact-detail-card">
   <div class="card-head">
    <div class="card-title">📦 準備物品</div>
-   <div class="pill">${myItems.filter(x=>x.done).length}/${myItems.length}</div>
+   <div class="dashboard-card-tools">
+    <div class="pill">${myItems.filter(x=>x.done).length}/${myItems.length}</div>
+    <button class="small primary" data-action="new-person-item">＋新增物品</button>
+   </div>
   </div>
   ${myItems.map(taskRow).join("")||'<div class="empty">目前沒有準備物品</div>'}
  </section>`;
@@ -515,7 +521,7 @@ function openTask(t=null,forcedType=""){
  $("#taskEndTime").value=t?.endTime||"";
  $("#taskLocation").value=t?.location||"";
  $("#taskPriority").value=String(t?.priority||1);
- $("#taskOwner").value=t?.owner||"";
+ $("#taskOwner").value=t?.owner||currentUser||"";
  $("#taskNotes").value=t?.notes||"";
  taskFlowSelection=new Set(t?.flowIds||[]);
  renderTaskFlowPicker();
@@ -666,12 +672,14 @@ function initPersonDrag(){let draggedId=null,startY=0;document.querySelectorAll(
 document.body.addEventListener("click",async e=>{const b=e.target.closest("[data-action]");if(!b)return;
 if(b.classList.contains("flow-click-area")&&e.target.closest("a,button,input,select,textarea"))return;
 const a=b.dataset.action,id=b.dataset.id;
-const managementActions=new Set(["new-category","new-task","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
+const managementActions=new Set(["new-category","new-task","new-person-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
 if(managementActions.has(a)&&!isAdmin()){requestAdmin();return}
 if(isAdmin())refreshAdminSession();
 if(a==="change-admin-password"){$("#adminSetupTitle").textContent="修改管理密碼";$("#adminSetupPassword").value="";$("#adminSetupConfirm").value="";$("#adminSetupDialog").showModal();return}
 if(a==="logout-admin"){localStorage.removeItem("wccAdminUntil");setView("dashboard");return}
 
+if(a==="new-person-task")openTask(null,"工作");
+if(a==="new-person-item")openTask(null,"物品");
 if(a==="new-task")openTask(null,"物品");
 if(a==="edit-task")openTask(tasks.find(x=>x.id===id));
 if(a==="add-subitem")openSubItem(null,id);
