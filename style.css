@@ -655,3 +655,42 @@ body:not(.admin-mode) [data-action="delete-group"]{
     grid-row:5;
   }
 }
+
+
+/* v3.0.10：任務地址與地圖 */
+.task-map-link{
+  display:inline-block;
+  margin-top:8px;
+  font-weight:850;
+}
+
+
+/* v3.0.11：多位負責人 */
+.owner-picker{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:8px;
+  padding:10px;
+  min-height:52px;
+  border:1px solid #eadcdc;
+  border-radius:14px;
+  background:#fff;
+}
+.owner-chip{
+  border:1px solid #e8d7d9;
+  border-radius:999px;
+  padding:9px 13px;
+  background:#fff;
+  font-weight:800;
+  cursor:pointer;
+}
+.owner-chip.selected{
+  background:#c97881;
+  border-color:#c97881;
+  color:#fff;
+}
+.task-shell .map-link{
+  display:inline-block;
+  margin-top:8px;
+}

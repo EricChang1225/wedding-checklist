@@ -23,7 +23,7 @@
   <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
   <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
   <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
-  <link rel="stylesheet" href="./style.css?v=3009">
+  <link rel="stylesheet" href="./style.css?v=3011">
 </head>
 <body>
 <div class="app">
@@ -161,6 +161,7 @@
       <label>結束時間<input id="taskEndTime" type="time"></label>
     </div>
     <label>地點<input id="taskLocation" maxlength="120" placeholder="例如：桃園高鐵站"></label>
+    <label>地址<input id="taskAddress" maxlength="180" placeholder="例如：桃園市桃園區中正路1號"></label>
     <label>重要程度
       <select id="taskPriority">
         <option value="1">一般</option>
@@ -169,7 +170,10 @@
       </select>
     </label>
   </div>
-  <label>DRI／負責人<input id="taskOwner" maxlength="30" list="peopleList" placeholder="可直接輸入姓名"></label>
+  <label>DRI／負責人（可複選）
+    <div id="taskOwnerPicker" class="owner-picker"></div>
+    <input id="taskOwner" type="hidden">
+  </label>
   <label>連動到婚禮流程（可不選）<div id="taskFlowPicker" class="chips"></div></label>
   <div class="hint">接送、採買等獨立工作不必勾選流程；只有需要同步到現場確認時才連動。</div>
   <label>備註<textarea id="taskNotes"></textarea></label>
@@ -248,6 +252,6 @@
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app.js?v=3009"></script>
+<script type="module" src="./app.js?v=3011"></script>
 </body>
 </html>
