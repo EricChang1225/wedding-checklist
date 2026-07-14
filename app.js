@@ -126,11 +126,26 @@ function renderHeader(){
 }
 function workKindIcon(kind){return {"接送":"🚗","採買":"🛍️","聯絡":"📞","協助":"🛠️","其他":"⭐","一般":"📋"}[kind]||"📋"}
 function taskTimeLabel(t){return t.startTime?(t.endTime?`${t.startTime}－${t.endTime}`:t.startTime):"未定"}
+function taskOrderValue(t){
+ if(t.startTime&&/^\d{2}:\d{2}$/.test(t.startTime))return scheduleTimeValue(t.startTime);
+ const linked=(t.flowIds||[]).map(id=>flow(id)).filter(Boolean);
+ if(linked.length){
+   return Math.min(...linked.map(f=>scheduleTimeValue(formatFlowTime(f))));
+ }
+ return 999999;
+}
+function sortTasksBySchedule(list){
+ return [...list].sort((a,b)=>{
+   const timeDiff=taskOrderValue(a)-taskOrderValue(b);
+   if(timeDiff!==0)return timeDiff;
+   return String(a.title||"").localeCompare(String(b.title||""),"zh-Hant");
+ });
+}
 function pct(list){return list.length?Math.round(list.filter(x=>x.done).length/list.length*100):0}
 function daysLeft(){if(!settings.weddingDate)return "未設定";const n=new Date();n.setHours(0,0,0,0);return Math.ceil((new Date(settings.weddingDate+"T00:00:00")-n)/86400000)}
 function renderDashboard(){
- const myTasks=tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="工作");
- const myItems=tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="物品");
+ const myTasks=sortTasksBySchedule(tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="工作"));
+ const myItems=sortTasksBySchedule(tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="物品"));
 
  const relatedFlows=flows
   .filter(f=>flowHasOwner(f,currentUser)||checks.some(c=>c.flowId===f.id&&c.owner===currentUser))
@@ -688,26 +703,97 @@ function renderRosters(){
 }
 
 function renderTimeline(){
- const ungrouped=flows.filter(f=>!f.groupId||!group(f.groupId));
- $("#timeline").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-group">新增階段</button><button class="primary" data-action="new-flow">新增流程</button></div>
- ${groups.map(g=>{
-  const list=flows.filter(f=>f.groupId===g.id),collapsed=collapsedGroups.has(g.id);
-  const stageChecks=checks.filter(c=>list.some(f=>f.id===c.flowId));
-  return `<div class="group-card">
-   <div class="group-head">
-    <button class="group-toggle" data-action="toggle-group" data-id="${g.id}">${collapsed?"▶":"▼"}</button>
-    <div class="main"><div class="card-title">${esc(g.icon||"🗂️")} ${esc(g.name)}</div><div class="meta">${list.length} 個流程・確認 ${stageChecks.filter(c=>c.done).length}/${stageChecks.length}</div></div>
-    <div class="actions">
-     <button class="small" data-action="move-group-up" data-id="${g.id}">上移</button>
-     <button class="small" data-action="move-group-down" data-id="${g.id}">下移</button>
-     <button class="small" data-action="edit-group" data-id="${g.id}">修改</button>
-     <button class="small danger" data-action="delete-group" data-id="${g.id}">刪除</button>
+ const orderedGroups=[...groups].sort((a,b)=>(a.sort??0)-(b.sort??0));
+ const ungrouped=flows.filter(f=>!f.groupId||!group(f.groupId))
+   .sort((a,b)=>scheduleTimeValue(formatFlowTime(a))-scheduleTimeValue(formatFlowTime(b)));
+
+ const timelineItem=f=>{
+   const list=checks.filter(x=>x.flowId===f.id);
+   const done=list.filter(x=>x.done).length;
+   const collapsed=collapsedFlows.has(f.id);
+   const url=mapUrl(f);
+   const time=formatFlowTime(f)||"未定";
+   const hasDetails=Boolean(list.length||f.notes||url||f.address);
+
+   return `<article class="clean-timeline-item ${collapsed?"is-collapsed":""}">
+    <div class="clean-timeline-time">${esc(time)}</div>
+    <div class="clean-timeline-rail"><span></span></div>
+    <div class="clean-timeline-card">
+     <button class="clean-timeline-main" data-action="toggle-flow" data-id="${f.id}" aria-expanded="${!collapsed}">
+      <div class="clean-timeline-title-row">
+       <div class="clean-timeline-title">${esc(f.icon||"📍")} ${esc(f.name)}</div>
+       ${hasDetails?`<span class="clean-timeline-chevron">${collapsed?"⌄":"⌃"}</span>`:""}
+      </div>
+      <div class="clean-timeline-meta">
+       ${f.location?`<span>📍 ${esc(f.location)}</span>`:""}
+       <span>👤 ${esc(flowOwnerText(f))}</span>
+       <span>☑ ${done}/${list.length}</span>
+      </div>
+     </button>
+
+     <div class="clean-timeline-details ${collapsed?"collapsed":""}">
+      ${url?`<a class="map-link clean-map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}
+      ${f.notes?`<div class="clean-timeline-note">${esc(f.notes)}</div>`:""}
+      ${list.length?`<div class="clean-check-list">
+       ${list.map(ch=>`<label class="clean-check-row ${ch.done?"done":""}">
+        <input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}>
+        <span>${esc(ch.title)}</span>
+        ${ch.owner?`<small>${esc(ch.owner)}</small>`:""}
+       </label>`).join("")}
+      </div>`:""}
+
+      <div class="clean-timeline-admin">
+       <button class="small" data-action="add-check" data-id="${f.id}">加確認項</button>
+       <button class="small" data-action="move-flow-up" data-id="${f.id}">上移</button>
+       <button class="small" data-action="move-flow-down" data-id="${f.id}">下移</button>
+       <button class="small" data-action="edit-flow" data-id="${f.id}">修改</button>
+       <button class="small danger" data-action="delete-flow" data-id="${f.id}">刪除</button>
+      </div>
+     </div>
     </div>
-   </div>
-   <div class="group-body ${collapsed?"collapsed":""}"><div class="timeline-line">${list.map(flowCard).join("")||'<div class="empty">此階段尚無流程</div>'}</div></div>
+   </article>`;
+ };
+
+ const stageBlock=g=>{
+   const list=flows.filter(f=>f.groupId===g.id)
+     .sort((a,b)=>scheduleTimeValue(formatFlowTime(a))-scheduleTimeValue(formatFlowTime(b)));
+   const collapsed=collapsedGroups.has(g.id);
+   const stageChecks=checks.filter(c=>list.some(f=>f.id===c.flowId));
+   return `<section class="clean-stage">
+    <header class="clean-stage-head">
+     <button class="group-toggle" data-action="toggle-group" data-id="${g.id}">${collapsed?"▶":"▼"}</button>
+     <div>
+      <h2>${esc(g.icon||"🗂️")} ${esc(g.name)}</h2>
+      <div class="meta">${list.length} 個流程・完成 ${stageChecks.filter(c=>c.done).length}/${stageChecks.length}</div>
+     </div>
+     <details class="clean-stage-menu">
+      <summary>⋯</summary>
+      <div>
+       <button class="small" data-action="move-group-up" data-id="${g.id}">上移</button>
+       <button class="small" data-action="move-group-down" data-id="${g.id}">下移</button>
+       <button class="small" data-action="edit-group" data-id="${g.id}">修改</button>
+       <button class="small danger" data-action="delete-group" data-id="${g.id}">刪除</button>
+      </div>
+     </details>
+    </header>
+    <div class="clean-stage-body ${collapsed?"collapsed":""}">
+     ${list.map(timelineItem).join("")||'<div class="empty">此階段尚無流程</div>'}
+    </div>
+   </section>`;
+ };
+
+ $("#timeline").innerHTML=`
+  <div class="toolbar clean-timeline-toolbar">
+   <button class="primary" data-action="new-group">新增階段</button>
+   <button class="primary" data-action="new-flow">新增流程</button>
+  </div>
+  <div class="clean-timeline">
+   ${orderedGroups.map(stageBlock).join("")}
+   ${ungrouped.length?`<section class="clean-stage">
+    <header class="clean-stage-head"><div><h2>📌 其他流程</h2><div class="meta">${ungrouped.length} 個流程</div></div></header>
+    <div class="clean-stage-body">${ungrouped.map(timelineItem).join("")}</div>
+   </section>`:""}
   </div>`;
- }).join("")}
- ${ungrouped.length?`<div class="ungrouped-flows">${ungrouped.map(flowCard).join("")}</div>`:""}`;
 }
 function minutesFromNowForFlow(f){
  const mode=normalizeFlowTimeMode(f);
@@ -731,8 +817,8 @@ function myFlowRow(f){
  </div>`;
 }
 function renderMine(){
- const myWork=tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="工作");
- const myItems=tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="物品");
+ const myWork=sortTasksBySchedule(tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="工作"));
+ const myItems=sortTasksBySchedule(tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="物品"));
  const myFlows=flows.filter(x=>x.owner===currentUser);
  const myChecks=checks.filter(x=>x.owner===currentUser);
  const upcoming=myFlows

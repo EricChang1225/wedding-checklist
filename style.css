@@ -941,3 +941,198 @@ body:not(.admin-mode) [data-action="delete-group"]{
     font-size:31px;
   }
 }
+
+
+/* V3.2：婚禮流程時間軸 */
+.clean-timeline-toolbar{
+  justify-content:flex-end;
+  margin-bottom:12px;
+}
+.clean-stage{
+  margin-bottom:18px;
+}
+.clean-stage-head{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  padding:12px 14px;
+  border:1px solid #eadedf;
+  border-radius:18px;
+  background:#fff;
+}
+.clean-stage-head h2{
+  margin:0;
+  font-size:19px;
+}
+.clean-stage-body{
+  position:relative;
+  padding:14px 0 2px;
+}
+.clean-stage-menu{
+  position:relative;
+}
+.clean-stage-menu summary{
+  list-style:none;
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border:1px solid #eadedf;
+  border-radius:50%;
+  cursor:pointer;
+  background:#fff;
+}
+.clean-stage-menu summary::-webkit-details-marker{display:none}
+.clean-stage-menu>div{
+  position:absolute;
+  right:0;
+  top:44px;
+  z-index:40;
+  width:150px;
+  display:grid;
+  gap:7px;
+  padding:9px;
+  border:1px solid #eadedf;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 14px 34px rgba(80,50,55,.16);
+}
+.clean-timeline-item{
+  display:grid;
+  grid-template-columns:86px 24px minmax(0,1fr);
+  align-items:stretch;
+  min-height:92px;
+}
+.clean-timeline-time{
+  padding:18px 10px 0 0;
+  text-align:right;
+  font-weight:950;
+  color:#bd626c;
+  font-size:16px;
+  white-space:nowrap;
+}
+.clean-timeline-rail{
+  position:relative;
+}
+.clean-timeline-rail:before{
+  content:"";
+  position:absolute;
+  left:11px;
+  top:0;
+  bottom:0;
+  width:2px;
+  background:#ead7d9;
+}
+.clean-timeline-rail span{
+  position:absolute;
+  left:5px;
+  top:22px;
+  width:14px;
+  height:14px;
+  border:3px solid #c97881;
+  border-radius:50%;
+  background:#fff;
+  z-index:2;
+}
+.clean-timeline-item:last-child .clean-timeline-rail:before{
+  bottom:45%;
+}
+.clean-timeline-card{
+  margin:6px 0 12px;
+  border:1px solid #eadedf;
+  border-radius:17px;
+  background:#fff;
+  overflow:hidden;
+  box-shadow:0 6px 18px rgba(80,55,58,.05);
+}
+.clean-timeline-main{
+  width:100%;
+  border:0;
+  background:transparent;
+  padding:14px 16px;
+  text-align:left;
+  cursor:pointer;
+}
+.clean-timeline-title-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.clean-timeline-title{
+  font-size:18px;
+  font-weight:950;
+}
+.clean-timeline-chevron{
+  color:#9d8588;
+  font-size:20px;
+}
+.clean-timeline-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px 14px;
+  margin-top:7px;
+  color:#7f6f72;
+  font-size:13px;
+}
+.clean-timeline-details{
+  padding:0 16px 14px;
+  border-top:1px solid #f0e7e8;
+}
+.clean-timeline-details.collapsed{display:none}
+.clean-map-link{
+  display:inline-block;
+  margin:12px 0 6px;
+}
+.clean-timeline-note{
+  margin:8px 0;
+  padding:10px 12px;
+  background:#fff8ec;
+  border-radius:12px;
+  color:#745f43;
+}
+.clean-check-list{
+  margin-top:9px;
+}
+.clean-check-row{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  padding:10px 2px;
+  border-bottom:1px solid #f0e8e8;
+}
+.clean-check-row:last-child{border-bottom:0}
+.clean-check-row.done{
+  opacity:.58;
+  text-decoration:line-through;
+}
+.clean-check-row small{
+  color:#8d7c7f;
+}
+.clean-timeline-admin{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:12px;
+}
+@media(max-width:680px){
+  .clean-timeline-item{
+    grid-template-columns:62px 20px minmax(0,1fr);
+  }
+  .clean-timeline-time{
+    font-size:14px;
+    padding-right:6px;
+  }
+  .clean-timeline-card{
+    margin-right:0;
+  }
+  .clean-timeline-title{
+    font-size:16px;
+  }
+  .clean-timeline-meta{
+    display:grid;
+    gap:4px;
+  }
+}
