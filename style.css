@@ -710,3 +710,84 @@ body:not(.admin-mode) [data-action="delete-group"]{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
+
+
+/* v3.0.13：大項篩選與管理分行，避免互相壓縮 */
+.prepare-list-toolbar{display:block}
+.prepare-filter-scroll{width:100%;max-width:100%}
+.prepare-toolbar-second-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-top:10px;
+}
+.prepare-current-category{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.prepare-current-label{
+  font-weight:900;
+  color:var(--text);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.prepare-category-menu{
+  position:relative;
+  flex:none;
+}
+.prepare-category-menu summary{
+  list-style:none;
+  width:40px;
+  height:40px;
+  display:grid;
+  place-items:center;
+  border:1px solid #eadcdc;
+  border-radius:50%;
+  background:#fff;
+  font-size:22px;
+  font-weight:900;
+  cursor:pointer;
+  user-select:none;
+}
+.prepare-category-menu summary::-webkit-details-marker{display:none}
+.prepare-category-menu-panel{
+  position:absolute;
+  z-index:60;
+  left:0;
+  top:46px;
+  width:180px;
+  padding:10px;
+  display:grid;
+  gap:8px;
+  background:#fff;
+  border:1px solid #eadcdc;
+  border-radius:16px;
+  box-shadow:0 16px 36px rgba(76,49,53,.18);
+}
+.prepare-category-menu-panel .small{
+  width:100%;
+  min-height:40px;
+  text-align:left;
+  padding:9px 12px;
+}
+.prepare-toolbar-actions{
+  display:flex;
+  gap:8px;
+  flex:none;
+}
+@media(max-width:820px){
+  .prepare-toolbar-second-row{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .prepare-current-category{justify-content:space-between}
+  .prepare-category-menu-panel{left:auto;right:0}
+  .prepare-toolbar-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+}

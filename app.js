@@ -260,15 +260,30 @@ function renderPrepare(){
       </button>`;
     }).join("")}
    </div>
-   <div class="prepare-toolbar-actions">
-    ${prepareCategoryFilter!=="all"?`
-      <button class="small" data-action="move-category-up" data-id="${prepareCategoryFilter}">上移</button>
-      <button class="small" data-action="move-category-down" data-id="${prepareCategoryFilter}">下移</button>
-      <button class="small" data-action="edit-category" data-id="${prepareCategoryFilter}">修改大項</button>
-      <button class="small danger" data-action="delete-category" data-id="${prepareCategoryFilter}">刪除大項</button>
-    `:""}
-    <button class="primary" data-action="new-category">＋新增大項</button>
-    <button class="primary" data-action="new-task">＋新增準備內容</button>
+
+   <div class="prepare-toolbar-second-row">
+    <div class="prepare-current-category">
+     ${prepareCategoryFilter==="all"
+       ? `<span class="prepare-current-label">目前：全部大項</span>`
+       : (()=>{const c=categories.find(x=>x.id===prepareCategoryFilter);return `
+          <span class="prepare-current-label">目前大項：${esc(c?.icon||"📦")} ${esc(c?.name||"")}</span>
+          <details class="prepare-category-menu">
+           <summary aria-label="大項操作選單">⋯</summary>
+           <div class="prepare-category-menu-panel">
+            <button class="small" data-action="move-category-up" data-id="${prepareCategoryFilter}">上移</button>
+            <button class="small" data-action="move-category-down" data-id="${prepareCategoryFilter}">下移</button>
+            <button class="small" data-action="edit-category" data-id="${prepareCategoryFilter}">修改大項</button>
+            <button class="small danger" data-action="delete-category" data-id="${prepareCategoryFilter}">刪除大項</button>
+           </div>
+          </details>`;
+        })()
+     }
+    </div>
+
+    <div class="prepare-toolbar-actions">
+     <button class="primary" data-action="new-category">＋新增大項</button>
+     <button class="primary" data-action="new-task">＋新增準備內容</button>
+    </div>
    </div>
   </div>
 
