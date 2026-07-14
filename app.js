@@ -4,6 +4,7 @@ import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/12.1
 import {getFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot,serverTimestamp,query,orderBy,getDoc,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const $=s=>document.querySelector(s), esc=(v="")=>String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+let prepareCategoryFilter=localStorage.getItem("wccPrepareFilter")||"all";
 let db,view="dashboard",tasks=[],taskItems=[],categories=[],groups=[],flows=[],checks=[],people=[],rosters=[],rosterMembers=[],settings={title:"駿瑋 & 忞靜 婚禮管家",weddingDate:"",initialized:false},taskFlowSelection=new Set();
 
 let adminSetupShown=false;
@@ -222,31 +223,86 @@ function taskRow(t){
  </div>`;
 }
 function renderPrepare(){
+ const itemTasks=tasks.filter(t=>t.type==="物品");
+ if(prepareCategoryFilter!=="all"&&!categories.some(c=>c.id===prepareCategoryFilter)){
+   prepareCategoryFilter="all";
+ }
+ const visible=prepareCategoryFilter==="all"
+   ? itemTasks
+   : itemTasks.filter(t=>t.categoryId===prepareCategoryFilter);
+
  $("#prepare").innerHTML=`
-  <div class="toolbar">
-   <button class="primary" data-action="new-category">新增大分類</button>
-   <button class="primary" data-action="new-task">新增準備物品</button>
+  <div class="prepare-list-toolbar">
+   <div class="prepare-filter-scroll" aria-label="婚禮準備大項篩選">
+    <button class="prepare-filter ${prepareCategoryFilter==="all"?"active":""}" data-action="filter-prepare" data-id="all">
+      全部 <span>${itemTasks.length}</span>
+    </button>
+    ${categories.map(c=>{
+      const count=itemTasks.filter(t=>t.categoryId===c.id).length;
+      return `<button class="prepare-filter ${prepareCategoryFilter===c.id?"active":""}" data-action="filter-prepare" data-id="${c.id}">
+        ${esc(c.icon||"📦")} ${esc(c.name)} <span>${count}</span>
+      </button>`;
+    }).join("")}
+   </div>
+   <div class="prepare-toolbar-actions">
+    <button class="primary" data-action="new-category">＋新增大項</button>
+    <button class="primary" data-action="new-task">＋新增準備內容</button>
+   </div>
   </div>
-  ${categories.map(c=>{
-    const list=tasks.filter(t=>t.categoryId===c.id&&t.type==="物品");
-    const done=list.filter(x=>x.done).length;
-    const pctValue=list.length?Math.round(done/list.length*100):0;
-    return `<div class="card prepare-category-card">
-      <div class="card-head">
-       <div>
-        <div class="card-title">${esc(c.icon||"📦")} ${esc(c.name)}</div>
-        <div class="meta">${done}/${list.length} 已完成</div>
-        <div class="progress"><span style="width:${pctValue}%"></span></div>
+
+  <div class="card prepare-list-card">
+   <div class="prepare-list-head">
+    <div>完成</div>
+    <div>準備內容</div>
+    <div>誰準備</div>
+    <div>大項</div>
+    <div>進度</div>
+    <div>操作</div>
+   </div>
+
+   <div class="prepare-list-body">
+    ${visible.map(t=>{
+      const c=category(t.categoryId),p=taskProgress(t),collapsed=collapsedTasks.has(t.id);
+      const effectiveDone=p.total?p.complete:t.done;
+      return `<div class="prepare-list-item ${effectiveDone?"done":""}">
+       <div class="prepare-col-check">
+        <input class="check" type="checkbox" data-action="toggle-task" data-id="${t.id}" ${effectiveDone?"checked":""}>
        </div>
-       <div class="actions">
-        <button class="small" data-action="move-category-up" data-id="${c.id}">上移</button>
-        <button class="small" data-action="move-category-down" data-id="${c.id}">下移</button>
-        <button class="small" data-action="edit-category" data-id="${c.id}">修改</button>
+       <div class="prepare-col-title">
+        <button class="prepare-title-button" data-action="toggle-task-expand" data-id="${t.id}">
+         <strong>${esc(t.title)}</strong>
+         ${p.total?`<span>${collapsed?"▶":"▼"} ${p.done}/${p.total} 細項</span>`:""}
+        </button>
+        ${t.notes?`<div class="meta">${esc(t.notes)}</div>`:""}
        </div>
-      </div>
-      ${list.map(taskRow).join("")||'<div class="empty">此分類尚無準備物品</div>'}
-    </div>`;
-  }).join("")}`;
+       <div class="prepare-col-owner">${esc(t.owner||"未指定")}</div>
+       <div class="prepare-col-category">${c?`${esc(c.icon||"📦")} ${esc(c.name)}`:"未分類"}</div>
+       <div class="prepare-col-progress">
+        <span class="sub-progress ${effectiveDone?"ok":""}">${p.total?`${p.done}/${p.total}`:(t.done?"完成":"未完成")}</span>
+       </div>
+       <div class="prepare-col-actions">
+        <button class="small" data-action="add-subitem" data-id="${t.id}">加細項</button>
+        <button class="small" data-action="edit-task" data-id="${t.id}">修改</button>
+        <button class="small danger" data-action="delete-task" data-id="${t.id}">刪除</button>
+       </div>
+       ${p.total?`<div class="prepare-subitems ${collapsed?"collapsed":""}">
+        ${p.list.map(i=>`<div class="prepare-sub-row ${i.done?"done":""}">
+          <input class="check" type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}>
+          <div class="main"><div class="name">${esc(i.title)}</div>${i.notes?`<div class="meta">${esc(i.notes)}</div>`:""}</div>
+          <div class="actions">
+           <button class="small" data-action="edit-subitem" data-id="${i.id}">修改</button>
+           <button class="small danger" data-action="delete-subitem" data-id="${i.id}">刪除</button>
+          </div>
+        </div>`).join("")}
+       </div>`:""}
+      </div>`;
+    }).join("")||'<div class="empty">這個大項目前沒有準備內容</div>'}
+   </div>
+  </div>
+
+  <div class="prepare-link-hint">
+   指定「負責人」後，該準備內容會自動出現在該使用者的「我的行程 → 準備物品」，不需要重複建立。
+  </div>`;
 }
 function mapUrl(f){if(f.mapUrl)return f.mapUrl;if(f.address)return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`;return ""}
 function linkedPreparationCard(ch){
@@ -510,7 +566,7 @@ function updateWorkExtraFields(){
 }
 function openTask(t=null,forcedType=""){
  const type=forcedType||t?.type||"工作";
- $("#taskDialogTitle").textContent=t?"修改項目":type==="工作"?"新增獨立工作":"新增準備項目";
+ $("#taskDialogTitle").textContent=t?"修改項目":type==="工作"?"新增任務":"新增準備內容";
  $("#taskId").value=t?.id||"";
  fillCategorySelect();
  $("#taskCategory").value=t?.categoryId||categories[0]?.id||"";
@@ -675,6 +731,12 @@ const a=b.dataset.action,id=b.dataset.id;
 const managementActions=new Set(["new-category","new-task","new-person-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
 if(managementActions.has(a)&&!isAdmin()){requestAdmin();return}
 if(isAdmin())refreshAdminSession();
+if(a==="filter-prepare"){
+ prepareCategoryFilter=id||"all";
+ localStorage.setItem("wccPrepareFilter",prepareCategoryFilter);
+ renderPrepare();
+ return;
+}
 if(a==="change-admin-password"){$("#adminSetupTitle").textContent="修改管理密碼";$("#adminSetupPassword").value="";$("#adminSetupConfirm").value="";$("#adminSetupDialog").showModal();return}
 if(a==="logout-admin"){localStorage.removeItem("wccAdminUntil");setView("dashboard");return}
 

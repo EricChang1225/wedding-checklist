@@ -500,3 +500,158 @@ body:not(.admin-mode) [data-action="delete-group"]{
   .dashboard-card-tools{width:100%;justify-content:space-between;margin-top:8px}
   #dashboard .card-head{flex-wrap:wrap}
 }
+
+
+/* v3.0.9：婚禮準備清單 List */
+.prepare-list-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:14px;
+}
+.prepare-filter-scroll{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:4px 2px 8px;
+  scrollbar-width:thin;
+}
+.prepare-filter{
+  flex:none;
+  border:1px solid #eadcdc;
+  background:#fff;
+  border-radius:999px;
+  padding:10px 14px;
+  font-weight:850;
+  white-space:nowrap;
+}
+.prepare-filter span{
+  margin-left:5px;
+  color:var(--muted);
+  font-size:12px;
+}
+.prepare-filter.active{
+  color:#fff;
+  background:#c97881;
+  border-color:#c97881;
+}
+.prepare-filter.active span{color:#fff}
+.prepare-toolbar-actions{
+  display:flex;
+  gap:8px;
+  flex:none;
+}
+
+.prepare-list-card{overflow:hidden}
+.prepare-list-head,
+.prepare-list-item{
+  display:grid;
+  grid-template-columns:64px minmax(220px,2fr) minmax(110px,1fr) minmax(110px,1fr) 90px minmax(210px,auto);
+  align-items:center;
+  gap:12px;
+}
+.prepare-list-head{
+  padding:12px 16px;
+  background:#fbf5f5;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:900;
+  border-bottom:1px solid #eee0e1;
+}
+.prepare-list-item{
+  position:relative;
+  padding:14px 16px;
+  border-bottom:1px solid #eee5e5;
+}
+.prepare-list-item:last-child{border-bottom:0}
+.prepare-list-item.done{opacity:.65}
+.prepare-title-button{
+  border:0;
+  padding:0;
+  background:transparent;
+  text-align:left;
+  cursor:pointer;
+}
+.prepare-title-button strong{
+  display:block;
+  font-size:16px;
+}
+.prepare-title-button span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+.prepare-col-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.prepare-subitems{
+  grid-column:2/-1;
+  margin-top:4px;
+  border:1px solid #eee0e1;
+  border-radius:12px;
+  overflow:hidden;
+}
+.prepare-subitems.collapsed{display:none}
+.prepare-sub-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-bottom:1px solid #f0e6e6;
+  background:#fffafa;
+}
+.prepare-sub-row:last-child{border-bottom:0}
+.prepare-sub-row.done{opacity:.6}
+.prepare-link-hint{
+  margin-top:12px;
+  padding:12px 14px;
+  border-radius:12px;
+  background:#fff7e9;
+  color:#7b6548;
+  font-size:13px;
+}
+
+@media(max-width:820px){
+  .prepare-list-toolbar{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .prepare-toolbar-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .prepare-list-head{display:none}
+  .prepare-list-item{
+    grid-template-columns:38px minmax(0,1fr) auto;
+    gap:8px 10px;
+    align-items:start;
+  }
+  .prepare-col-check{grid-column:1;grid-row:1/4;padding-top:3px}
+  .prepare-col-title{grid-column:2;grid-row:1}
+  .prepare-col-progress{grid-column:3;grid-row:1}
+  .prepare-col-owner{
+    grid-column:2/4;
+    grid-row:2;
+  }
+  .prepare-col-owner:before{content:"負責人：";color:var(--muted)}
+  .prepare-col-category{
+    grid-column:2/4;
+    grid-row:3;
+  }
+  .prepare-col-category:before{content:"大項：";color:var(--muted)}
+  .prepare-col-actions{
+    grid-column:2/4;
+    grid-row:4;
+    justify-content:flex-start;
+    margin-top:4px;
+  }
+  .prepare-subitems{
+    grid-column:1/-1;
+    grid-row:5;
+  }
+}
