@@ -336,3 +336,158 @@ body:not(.admin-mode) [data-action="delete-group"]{
   outline-offset:2px;
 }
 .dashboard-shortcuts{display:none!important}
+
+
+/* v3.0.3：簡化首頁 */
+#dashboard{
+  max-width:980px;
+  margin:0 auto;
+}
+#dashboard .compact-detail-card{
+  margin-top:14px;
+}
+.prepare-category-card .progress{
+  max-width:280px;
+  margin-top:8px;
+}
+
+
+/* v3.0.4：7/18 即時行程 */
+.realtime-card{
+  margin-top:14px;
+  border:2px solid #edd4d7;
+}
+.realtime-main{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:14px 16px;
+  border-top:1px solid #f1e4e5;
+  background:linear-gradient(135deg,#fff7f7,#fff);
+}
+.realtime-time{
+  min-width:72px;
+  padding:10px 12px;
+  border-radius:14px;
+  background:#f8e8ea;
+  color:#b65e68;
+  font-size:18px;
+  font-weight:950;
+  text-align:center;
+}
+.realtime-title{
+  font-size:18px;
+  font-weight:950;
+}
+.realtime-status{
+  margin-top:6px;
+  font-weight:850;
+  color:#b55d67;
+}
+@media(max-width:620px){
+  .realtime-main{
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .realtime-main>.main{
+    min-width:0;
+    flex:1;
+  }
+  .realtime-main>.small{
+    width:100%;
+  }
+}
+
+
+/* v3.0.5：手機版流程操作收進 ⋯ 選單 */
+.flow-mobile-menu{display:none}
+
+@media(max-width:720px){
+  .flow-card .flow-head{
+    display:grid;
+    grid-template-columns:44px minmax(0,1fr) 42px;
+    align-items:start;
+    gap:10px;
+  }
+
+  .flow-card .flow-click-area{
+    min-width:0;
+    width:100%;
+  }
+
+  .flow-card .card-title,
+  .flow-card .meta,
+  .flow-card .map-link{
+    white-space:normal;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+  }
+
+  .flow-card .card-title{
+    line-height:1.35;
+  }
+
+  .flow-desktop-actions{
+    display:none!important;
+  }
+
+  .flow-mobile-menu{
+    display:block;
+    position:relative;
+    align-self:start;
+  }
+
+  .flow-mobile-menu summary{
+    list-style:none;
+    width:40px;
+    height:40px;
+    display:grid;
+    place-items:center;
+    border:1px solid #eadfe0;
+    border-radius:50%;
+    background:#f7f3f3;
+    font-size:24px;
+    font-weight:900;
+    cursor:pointer;
+    user-select:none;
+  }
+
+  .flow-mobile-menu summary::-webkit-details-marker{
+    display:none;
+  }
+
+  .flow-mobile-menu-panel{
+    position:absolute;
+    z-index:40;
+    top:46px;
+    right:0;
+    width:190px;
+    padding:10px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+    background:#fff;
+    border:1px solid #eadfe0;
+    border-radius:16px;
+    box-shadow:0 16px 36px rgba(76,49,53,.18);
+  }
+
+  .flow-mobile-menu-panel .small{
+    width:100%;
+    min-height:42px;
+    text-align:left;
+    padding:10px 12px;
+  }
+
+  .flow-card .map-link{
+    display:inline-block;
+    margin-top:8px;
+  }
+}
+
+
+/* v3.0.6：移除工作中心 */
+#work,
+.tab[data-view="work"]{
+  display:none!important;
+}

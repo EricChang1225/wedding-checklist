@@ -21,7 +21,7 @@ function applyPermissions(){
  document.body.classList.toggle("admin-mode",admin);
  const btn=$("#adminModeButton");
  if(btn){btn.textContent=admin?"👑":"🔒";btn.classList.toggle("active",admin);btn.title=admin?"點擊退出管理模式":"長按標題或點擊輸入管理密碼";}
- const blocked=new Set(["new-category","new-task","new-independent-work","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
+ const blocked=new Set(["new-category","new-task","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
  document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("admin-hidden")});
  document.querySelectorAll(".toolbar").forEach(el=>el.classList.toggle("admin-hidden",!admin));
  document.querySelectorAll(".admin-only-tab").forEach(tab=>tab.classList.toggle("admin-hidden",!admin))
@@ -114,117 +114,79 @@ function taskTimeLabel(t){return t.startTime?(t.endTime?`${t.startTime}－${t.en
 function pct(list){return list.length?Math.round(list.filter(x=>x.done).length/list.length*100):0}
 function daysLeft(){if(!settings.weddingDate)return "未設定";const n=new Date();n.setHours(0,0,0,0);return Math.ceil((new Date(settings.weddingDate+"T00:00:00")-n)/86400000)}
 function renderDashboard(){
- const myWork=tasks.filter(x=>x.owner===currentUser&&x.type==="工作");
+ const myTasks=tasks.filter(x=>x.owner===currentUser&&x.type==="工作");
  const myItems=tasks.filter(x=>x.owner===currentUser&&x.type==="物品");
- const myFlows=flows.filter(x=>x.owner===currentUser);
- const myChecks=checks.filter(x=>x.owner===currentUser);
- const rosterEntries=myRosterEntries();
 
- const workEntries=[
-  ...myWork.map(t=>({
-    kind:"task",
-    time:t.startTime||"",
-    title:t.title,
-    meta:`${workKindIcon(t.workKind)} ${t.workKind||"一般"}${t.location?`・${t.location}`:""}${t.endTime?`・至 ${t.endTime}`:""}`,
-    done:t.done,
-    task:t
-  })),
-  ...rosterEntries.map(({roster,member,flow})=>({
-    kind:"roster",
-    time:roster.time||formatFlowTime(flow)||"",
-    title:member.duty||roster.duty||roster.name,
-    meta:`${roster.name}${member.order?`・第 ${member.order} 位`:""}${roster.location?`・${roster.location}`:""}`,
-    done:false,
-    roster,member,flow
-  })),
-  ...myChecks.map(ch=>({
-    kind:"check",
-    time:formatFlowTime(flow(ch.flowId))||"",
-    title:ch.title,
-    meta:flow(ch.flowId)?.name||"流程確認",
-    done:ch.done,
-    check:ch
-  }))
- ].sort((a,b)=>scheduleTimeValue(a.time)-scheduleTimeValue(b.time));
-
- const relatedFlows=[
-  ...myFlows,
-  ...rosterEntries.map(x=>x.flow).filter(Boolean)
- ].filter((f,i,arr)=>f&&arr.findIndex(x=>x.id===f.id)===i)
+ const relatedFlows=flows
+  .filter(f=>f.owner===currentUser||checks.some(c=>c.flowId===f.id&&c.owner===currentUser))
   .sort((a,b)=>scheduleTimeValue(formatFlowTime(a))-scheduleTimeValue(formatFlowTime(b)));
 
+ const today=new Date();
+ const todayKey=[
+  today.getFullYear(),
+  String(today.getMonth()+1).padStart(2,"0"),
+  String(today.getDate()).padStart(2,"0")
+ ].join("-");
  const weddingDate=settings.weddingDate||"";
- const weddingDateObj=weddingDate?new Date(`${weddingDate}T00:00:00`):null;
- const weddingLabel=weddingDateObj?weddingDateObj.toLocaleDateString("zh-TW",{month:"numeric",day:"numeric",weekday:"short"}):"婚禮當天";
- const todayKey=new Date().toISOString().slice(0,10);
- const isWeddingDay=weddingDate&&todayKey===weddingDate;
+ const isWeddingDay=Boolean(weddingDate&&todayKey===weddingDate);
 
- let next=null;
- if(relatedFlows.length){
-  if(isWeddingDay){
-   next=relatedFlows.map(f=>({f,min:minutesFromNowForFlow(f)})).filter(x=>x.min!==null&&x.min>=0).sort((a,b)=>a.min-b.min)[0]?.f||relatedFlows[0];
-  }else{
-   next=relatedFlows[0];
-  }
+ let realtimeFlow=null;
+ let realtimeStatus="";
+ let realtimeMinutes=null;
+
+ if(isWeddingDay){
+  const candidates=relatedFlows
+   .map(f=>({f,min:minutesFromNowForFlow(f)}))
+   .filter(x=>x.min!==null)
+   .sort((a,b)=>a.min-b.min);
+
+  realtimeFlow=candidates.find(x=>x.min>=0)?.f||relatedFlows[relatedFlows.length-1]||null;
+  const matched=candidates.find(x=>x.f?.id===realtimeFlow?.id);
+  realtimeMinutes=matched?.min??null;
+
+  if(realtimeMinutes===0)realtimeStatus="🔴 進行中";
+  else if(realtimeMinutes>0)realtimeStatus=`⏱️ 還有 ${realtimeMinutes} 分鐘`;
+  else realtimeStatus="✅ 今日流程已結束";
  }
 
  $("#dashboard").innerHTML=`
- <section class="wedding-day-card card">
-  <div class="wedding-day-heading">
-    <div>
-      <div class="card-title">🗓️ ${esc(weddingLabel)} 我的行程</div>
-      <div class="meta">只顯示婚禮當天（${weddingDate?esc(weddingDate.replaceAll("-","/")):"尚未設定日期"}）</div>
+ <section class="card realtime-card">
+  <div class="card-head">
+   <div>
+    <div class="card-title">📍 7/18 即時行程</div>
+    <div class="meta">婚禮當天自動顯示目前或下一個流程</div>
+   </div>
+  </div>
+
+  ${isWeddingDay&&realtimeFlow?`
+   <div class="realtime-main">
+    <div class="realtime-time">${esc(formatFlowTime(realtimeFlow)||"未定")}</div>
+    <div class="main">
+     <div class="realtime-title">${esc(realtimeFlow.icon||"📍")} ${esc(realtimeFlow.name)}</div>
+     <div class="meta">${realtimeFlow.location?`📍 ${esc(realtimeFlow.location)}`:"未設定地點"}</div>
+     <div class="realtime-status">${esc(realtimeStatus)}</div>
+     ${mapUrl(realtimeFlow)?`<a class="map-link" href="${esc(mapUrl(realtimeFlow))}" target="_blank" rel="noopener">🗺️ 開啟導航</a>`:""}
     </div>
-    <span class="date-pill">${esc(weddingLabel)}</span>
-  </div>
-
-  ${next?`<div class="next-mini-card">
-    <div class="next-mini-label">下一個行程</div>
-    <div class="next-mini-time">${esc(formatFlowTime(next)||"未定")}</div>
-    <div class="next-mini-title">${esc(next.icon||"📍")} ${esc(next.name)}</div>
-    ${next.location?`<div class="next-mini-location">📍 ${esc(next.location)}</div>`:""}
-    ${mapUrl(next)?`<a class="map-link" href="${esc(mapUrl(next))}" target="_blank" rel="noopener">開啟導航</a>`:""}
-  </div>`:""}
-
-  <div class="day-timeline">
-   ${relatedFlows.map(f=>`<div class="day-timeline-row">
-     <div class="day-time">${esc(formatFlowTime(f)||"未定")}</div>
-     <div class="day-dot"></div>
-     <div class="day-event">
-       <div class="day-event-icon">${esc(f.icon||"📍")}</div>
-       <div class="main">
-         <div class="name">${esc(f.name)}</div>
-         <div class="meta">${f.location?`📍 ${esc(f.location)}`:"未設定地點"}</div>
-       </div>
-       <button class="small" data-action="go-flow" data-id="${f.id}">查看</button>
-     </div>
-   </div>`).join("")||'<div class="empty">目前使用者尚未有 7/18 婚禮行程</div>'}
-  </div>
- </section>
-
-
- <section class="card compact-detail-card">
-  <div class="card-head"><div class="card-title">✅ 任務</div><div class="pill">${workEntries.filter(x=>x.done).length}/${workEntries.length}</div></div>
-  ${workEntries.map(x=>{
-    if(x.kind==="task")return `<div class="row ${x.done?"done":""}">
-      <input class="check" type="checkbox" data-action="toggle-task" data-id="${x.task.id}" ${x.done?"checked":""}>
-      <div class="flow-time-badge">${esc(x.time||"未定")}</div>
-      <div class="main"><div class="name">${workKindIcon(x.task.workKind)} ${esc(x.title)}</div><div class="meta">${esc(x.meta)}</div></div>
-    </div>`;
-    if(x.kind==="check")return `<div class="row ${x.done?"done":""}">
-      <input class="check" type="checkbox" data-action="toggle-check" data-id="${x.check.id}" ${x.done?"checked":""}>
-      <div class="main"><div class="name">${x.time?`${esc(x.time)}　`:""}${esc(x.title)}</div><div class="meta">${esc(x.meta)}</div></div>
-    </div>`;
-    return `<div class="row"><div class="flow-time-badge">${esc(x.time||"未定")}</div><div class="main"><div class="name">${esc(x.title)}</div><div class="meta">${esc(x.meta)}</div></div></div>`;
-  }).join("")||'<div class="empty">目前沒有任務</div>'}
+    <button class="small" data-action="go-flow" data-id="${realtimeFlow.id}">查看流程</button>
+   </div>
+  `:`<div class="empty">婚禮當天將自動顯示即時行程</div>`}
  </section>
 
  <section class="card compact-detail-card">
-  <div class="card-head"><div class="card-title">📦 準備物品</div><div class="pill">${myItems.filter(x=>x.done).length}/${myItems.length}</div></div>
+  <div class="card-head">
+   <div class="card-title">✅ 任務</div>
+   <div class="pill">${myTasks.filter(x=>x.done).length}/${myTasks.length}</div>
+  </div>
+  ${myTasks.map(taskRow).join("")||'<div class="empty">目前沒有任務</div>'}
+ </section>
+
+ <section class="card compact-detail-card">
+  <div class="card-head">
+   <div class="card-title">📦 準備物品</div>
+   <div class="pill">${myItems.filter(x=>x.done).length}/${myItems.length}</div>
+  </div>
   ${myItems.map(taskRow).join("")||'<div class="empty">目前沒有準備物品</div>'}
  </section>`;
-
- const oldChange=$("#todayChangeUser");if(oldChange)oldChange.onclick=openUser;
 }
 function taskRow(t){
  const c=category(t.categoryId),p=taskProgress(t),collapsed=collapsedTasks.has(t.id);
@@ -253,24 +215,33 @@ function taskRow(t){
   </div>`:""}
  </div>`;
 }
-function renderWork(){
- const list=tasks.filter(t=>t.type==="工作").sort((a,b)=>(a.startTime||"99:99").localeCompare(b.startTime||"99:99"));
- $("#work").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-independent-work">新增獨立工作</button></div>
- <div class="card">
-  <div class="card-head"><div><div class="card-title">📋 工作中心</div><div class="meta">接送、採買、聯絡、臨時協助可獨立維護，不必放進正式流程。</div></div></div>
-  ${list.map(t=>`<div class="row ${t.done?"done":""}">
-    <input class="check" type="checkbox" data-action="toggle-task" data-id="${t.id}" ${t.done?"checked":""}>
-    <div class="flow-time-badge">${esc(taskTimeLabel(t))}</div>
-    <div class="main">
-      <div class="name">${workKindIcon(t.workKind)} ${esc(t.title)}${Number(t.priority||1)>=3?` <span class="priority-high">重要</span>`:""}</div>
-      <div class="meta">負責：${esc(t.owner||"未指定")}${t.location?`<br>地點：${esc(t.location)}`:""}${(t.flowIds||[]).length?`<br>關聯流程：${t.flowIds.map(id=>esc(flow(id)?.name||"已刪除")).join("、")}`:""}${t.notes?`<br>${esc(t.notes)}`:""}</div>
-      ${t.location?`<a class="map-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.location)}" target="_blank" rel="noopener">🗺️ 導航</a>`:""}
-    </div>
-    <div class="actions"><button class="small" data-action="edit-task" data-id="${t.id}">修改</button><button class="small danger" data-action="delete-task" data-id="${t.id}">刪除</button></div>
-  </div>`).join("")||'<div class="empty">尚未建立獨立工作</div>'}
- </div>`;
+function renderPrepare(){
+ $("#prepare").innerHTML=`
+  <div class="toolbar">
+   <button class="primary" data-action="new-category">新增大分類</button>
+   <button class="primary" data-action="new-task">新增準備物品</button>
+  </div>
+  ${categories.map(c=>{
+    const list=tasks.filter(t=>t.categoryId===c.id&&t.type==="物品");
+    const done=list.filter(x=>x.done).length;
+    const pctValue=list.length?Math.round(done/list.length*100):0;
+    return `<div class="card prepare-category-card">
+      <div class="card-head">
+       <div>
+        <div class="card-title">${esc(c.icon||"📦")} ${esc(c.name)}</div>
+        <div class="meta">${done}/${list.length} 已完成</div>
+        <div class="progress"><span style="width:${pctValue}%"></span></div>
+       </div>
+       <div class="actions">
+        <button class="small" data-action="move-category-up" data-id="${c.id}">上移</button>
+        <button class="small" data-action="move-category-down" data-id="${c.id}">下移</button>
+        <button class="small" data-action="edit-category" data-id="${c.id}">修改</button>
+       </div>
+      </div>
+      ${list.map(taskRow).join("")||'<div class="empty">此分類尚無準備物品</div>'}
+    </div>`;
+  }).join("")}`;
 }
-function renderPrepare(){$("#prepare").innerHTML=`<div class="toolbar"><button class="primary" data-action="new-category">新增分類</button><button class="primary" data-action="new-task">新增項目</button></div>${categories.map(c=>{const list=tasks.filter(t=>t.categoryId===c.id);return `<div class="card"><div class="card-head"><div><div class="card-title">${esc(c.icon||"📂")} ${esc(c.name)}</div><div class="meta">${list.filter(x=>x.done).length}/${list.length}</div></div><div class="actions"><button class="small" data-action="move-category-up" data-id="${c.id}">上移</button><button class="small" data-action="move-category-down" data-id="${c.id}">下移</button><button class="small" data-action="edit-category" data-id="${c.id}">修改</button></div></div>${list.map(taskRow).join("")||'<div class="empty">此分類沒有項目</div>'}</div>`}).join("")}`}
 function mapUrl(f){if(f.mapUrl)return f.mapUrl;if(f.address)return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`;return ""}
 function linkedPreparationCard(ch){
  const t=linkedTask(ch.taskId);
@@ -320,7 +291,7 @@ function flowCard(f){
     ${url?`<a class="map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}
     ${f.notes?`<div class="meta">${esc(f.notes)}</div>`:""}
    </div>
-   <div class="actions">
+   <div class="actions flow-desktop-actions">
     <button class="small" data-action="toggle-all-packages" data-id="${f.id}">全部展開／收合</button>
     <button class="small" data-action="move-flow-up" data-id="${f.id}">上移</button>
     <button class="small" data-action="move-flow-down" data-id="${f.id}">下移</button>
@@ -328,6 +299,17 @@ function flowCard(f){
     <button class="small" data-action="edit-flow" data-id="${f.id}">修改</button>
     <button class="small danger" data-action="delete-flow" data-id="${f.id}">刪除</button>
    </div>
+   <details class="flow-mobile-menu">
+    <summary aria-label="流程操作選單">⋯</summary>
+    <div class="flow-mobile-menu-panel">
+     <button class="small" data-action="toggle-all-packages" data-id="${f.id}">全部展開／收合</button>
+     <button class="small" data-action="add-check" data-id="${f.id}">加確認項</button>
+     <button class="small" data-action="edit-flow" data-id="${f.id}">修改</button>
+     <button class="small" data-action="move-flow-up" data-id="${f.id}">上移</button>
+     <button class="small" data-action="move-flow-down" data-id="${f.id}">下移</button>
+     <button class="small danger" data-action="delete-flow" data-id="${f.id}">刪除</button>
+    </div>
+   </details>
   </div>
   <div class="flow-body ${collapsed?"collapsed":""}">
    ${list.map(linkedPreparationCard).join("")||'<div class="empty">尚未建立確認項目</div>'}
@@ -474,7 +456,7 @@ function renderOverview(){
 }
 
 function renderSettings(){$("#settings").innerHTML=`<div class="card"><div class="card-head"><div class="card-title">設定</div></div><div style="padding:16px"><label>網站名稱<input id="settingTitle" value="${esc(settings.title||"")}"></label><label>婚禮日期<input id="settingDate" type="date" value="${esc(settings.weddingDate||"")}"></label><div class="actions"><button class="primary" data-action="save-settings">儲存設定</button><button id="changeUser">更改目前使用者</button><button data-action="change-admin-password">修改管理密碼</button><button data-action="logout-admin">退出管理模式</button><button data-action="export-csv">匯出 CSV</button><button data-action="print">列印</button></div></div></div>`;$("#changeUser").onclick=openUser}
-function render(){renderHeader();const renderer={dashboard:renderDashboard,work:renderWork,prepare:renderPrepare,rosters:renderRosters,timeline:renderTimeline,mine:renderMine,people:renderPeople,overview:renderOverview,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
+function render(){renderHeader();const renderer={dashboard:renderDashboard,prepare:renderPrepare,rosters:renderRosters,timeline:renderTimeline,mine:renderMine,people:renderPeople,overview:renderOverview,settings:renderSettings,banquet:()=>{}}[view];if(renderer)renderer();applyPermissions();if(view==="banquet")$("#banquetFrame")?.contentWindow?.postMessage({type:"wcc-admin",admin:isAdmin()},"*")}
 document.body.addEventListener("click",e=>{const j=e.target.closest("[data-jump]");if(j)setView(j.dataset.jump)});
 document.body.addEventListener("keydown",e=>{
  const area=e.target.closest?.(".flow-click-area");
@@ -690,7 +672,7 @@ if(isAdmin())refreshAdminSession();
 if(a==="change-admin-password"){$("#adminSetupTitle").textContent="修改管理密碼";$("#adminSetupPassword").value="";$("#adminSetupConfirm").value="";$("#adminSetupDialog").showModal();return}
 if(a==="logout-admin"){localStorage.removeItem("wccAdminUntil");setView("dashboard");return}
 
-if(a==="new-task")openTask();
+if(a==="new-task")openTask(null,"物品");
 if(a==="edit-task")openTask(tasks.find(x=>x.id===id));
 if(a==="add-subitem")openSubItem(null,id);
 if(a==="edit-subitem")openSubItem(taskItems.find(x=>x.id===id));
@@ -738,13 +720,12 @@ if(a==="new-group")openGroup();if(a==="edit-group")openGroup(groups.find(x=>x.id
 if(a==="new-flow")openFlow();if(a==="edit-flow")openFlow(flows.find(x=>x.id===id));if(a==="delete-flow"&&confirm("刪除此流程與確認項目？")){const batch=writeBatch(db);checks.filter(x=>x.flowId===id).forEach(x=>batch.delete(doc(db,"wccFlowChecks",x.id)));tasks.filter(t=>(t.flowIds||[]).includes(id)).forEach(t=>batch.update(doc(db,"wccTasks",t.id),{flowIds:(t.flowIds||[]).filter(x=>x!==id)}));batch.delete(doc(db,"wccFlows",id));await batch.commit()}
 if(a==="add-check")openCheck(null,id);if(a==="edit-check")openCheck(checks.find(x=>x.id===id));if(a==="delete-check"&&confirm("刪除此確認項目？"))await deleteDoc(doc(db,"wccFlowChecks",id));if(a==="toggle-check")await updateDoc(doc(db,"wccFlowChecks",id),{done:b.checked,updatedAt:serverTimestamp(),checkedBy:currentUser});
 if(a==="new-person")openPerson();if(a==="edit-person")openPerson(people.find(x=>x.id===id));if(a==="delete-person"&&confirm("刪除此人員？"))await deleteDoc(doc(db,"wccPeople",id));if(a==="show-person"){const p=people.find(x=>x.id===id);if(p){currentUser=p.name;localStorage.setItem("wccUser",p.name);setView("mine")}}
-if(a==="new-independent-work")openTask(null,"工作");
 if(a==="new-category")openCategory();if(a==="edit-category")openCategory(categories.find(x=>x.id===id));if(a==="move-category-up")await swapOrder(categories,"wccCategories",id,-1);if(a==="move-category-down")await swapOrder(categories,"wccCategories",id,1);
 if(a==="move-group-up")await swapOrder(groups,"wccFlowGroups",id,-1);if(a==="move-group-down")await swapOrder(groups,"wccFlowGroups",id,1);
 if(a==="move-flow-up"){const list=flows.filter(f=>f.groupId===(flow(id)?.groupId||""));await swapOrder(list,"wccFlows",id,-1)}if(a==="move-flow-down"){const list=flows.filter(f=>f.groupId===(flow(id)?.groupId||""));await swapOrder(list,"wccFlows",id,1)}
 if(a==="save-settings")await setDoc(doc(db,"wccSettings","main"),{title:$("#settingTitle").value.trim(),weddingDate:$("#settingDate").value,initialized:true},{merge:true});if(a==="export-csv")csvExport();if(a==="print")window.print();
 });
-$("#fab").onclick=()=>{if(view==="banquet")return;view==="work"?openTask(null,"工作"):view==="prepare"?openTask():view==="rosters"?openRoster():view==="timeline"?openFlow():view==="people"?openPerson():openTask()};
+$("#fab").onclick=()=>{if(view==="banquet")return;view==="prepare"?openTask():view==="rosters"?openRoster():view==="timeline"?openFlow():view==="people"?openPerson():openTask()};
 
 async function bootstrap(){const ref=doc(db,"wccSettings","main"),snap=await getDoc(ref);if(snap.exists()&&snap.data().initialized)return;const cs=await getDocs(collection(db,"wccCategories"));if(!cs.empty){await setDoc(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮管家"},{merge:true});return}const batch=writeBatch(db),catRefs={},groupRefs={};defaults.categories.forEach(([n,i],x)=>{const r=doc(collection(db,"wccCategories"));catRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.groups.forEach(([n,i],x)=>{const r=doc(collection(db,"wccFlowGroups"));groupRefs[n]=r;batch.set(r,{name:n,icon:i,sort:x,createdAt:serverTimestamp()})});defaults.flows.forEach(([time,n,i,g],x)=>{const r=doc(collection(db,"wccFlows"));batch.set(r,{timeMode:"single",time,startTime:"",endTime:"",name:n,icon:i,groupId:groupRefs[g].id,owner:"",location:"",address:"",mapUrl:"",notes:"",sort:x,createdAt:serverTimestamp()})});batch.set(ref,{initialized:true,title:"駿瑋 & 忞靜 婚禮管家",weddingDate:""});await batch.commit()}
 async function start(){if(!currentUser)openUser();const app=initializeApp(firebaseConfig),auth=getAuth(app);db=getFirestore(app);await signInAnonymously(auth);$("#syncState").className="sync ok";$("#syncState").textContent="已連線・多人即時同步";await bootstrap();onSnapshot(query(collection(db,"wccTasks"),orderBy("sort","asc")),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccTaskItems"),orderBy("sort","asc")),s=>{taskItems=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccCategories"),orderBy("sort","asc")),s=>{categories=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowGroups"),orderBy("sort","asc")),s=>{groups=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccRosters"),orderBy("sort","asc")),s=>{rosters=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(collection(db,"wccRosterMembers"),s=>{rosterMembers=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlows"),orderBy("sort","asc")),s=>{flows=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccFlowChecks"),orderBy("sort","asc")),s=>{checks=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(query(collection(db,"wccPeople"),orderBy("sort","asc")),s=>{people=s.docs.map(d=>({id:d.id,...d.data()}));render()});onSnapshot(doc(db,"wccSettings","main"),s=>{if(s.exists())settings={...settings,...s.data()};render();if(!settings.adminPasswordHash&&!adminSetupShown){adminSetupShown=true;setTimeout(()=>{$("#adminSetupTitle").textContent="建立管理密碼";$("#adminSetupDialog").showModal()},300)}})}
