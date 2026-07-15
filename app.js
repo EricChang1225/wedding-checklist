@@ -1,11 +1,12 @@
 import {firebaseConfig} from "./firebase-config.js";
+import {INITIAL_SEATING_DATA} from "./seating-data.js";
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import {getFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot,serverTimestamp,query,orderBy,getDoc,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const $=s=>document.querySelector(s), esc=(v="")=>String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 let prepareCategoryFilter=localStorage.getItem("wccPrepareFilter")||"all";
-let db,view="dashboard",tasks=[],taskItems=[],categories=[],groups=[],flows=[],checks=[],people=[],rosters=[],rosterMembers=[],settings={title:"駿瑋 & 忞靜 婚禮管家",weddingDate:"",initialized:false},taskFlowSelection=new Set(),taskOwnerSelection=new Set(),flowOwnerSelection=new Set();
+let db,view="dashboard",tasks=[],taskItems=[],categories=[],groups=[],flows=[],checks=[],people=[],rosters=[],rosterMembers=[],settings={title:"駿瑋 & 忞靜 婚禮管家",weddingDate:"",initialized:false},taskFlowSelection=new Set(),taskOwnerSelection=new Set(),flowOwnerSelection=new Set(),rosterTableSelection=new Set();
 
 let adminSetupShown=false;
 const ADMIN_DURATION_MS=30*60*1000;
@@ -79,6 +80,31 @@ function updateFlowTimeFields(){
 
 const itemsForTask=id=>taskItems.filter(x=>x.taskId===id).sort((a,b)=>(a.sort??0)-(b.sort??0));
 const membersForRoster=id=>rosterMembers.filter(x=>x.rosterId===id).sort((a,b)=>(a.order??0)-(b.order??0));
+const seatingTables=[...INITIAL_SEATING_DATA].sort((a,b)=>Number(a.tableNo)-Number(b.tableNo));
+const tableLabel=no=>{
+ const t=seatingTables.find(x=>String(x.tableNo)===String(no));
+ return t?`${t.tableNo}桌${t.tableName?`・${t.tableName}`:""}`:`${no}桌`;
+};
+const memberTables=m=>Array.isArray(m?.tableNos)?m.tableNos.map(String):[];
+function renderRosterTablePicker(){
+ const box=$("#rosterTablePicker");
+ if(!box)return;
+ box.innerHTML=seatingTables.map(t=>{
+  const no=String(t.tableNo),selected=rosterTableSelection.has(no);
+  return `<button type="button" class="table-chip ${selected?"selected":""}" data-table-no="${esc(no)}">
+   ${selected?"✓ ":""}${esc(t.tableNo)}桌
+   ${t.tableName?`<small>${esc(t.tableName)}</small>`:""}
+  </button>`;
+ }).join("");
+ box.onclick=e=>{
+  const b=e.target.closest("[data-table-no]");
+  if(!b)return;
+  const no=b.dataset.tableNo;
+  rosterTableSelection.has(no)?rosterTableSelection.delete(no):rosterTableSelection.add(no);
+  $("#rosterMemberTables").value=[...rosterTableSelection].join(",");
+  renderRosterTablePicker();
+ };
+}
 const personById=id=>people.find(x=>x.id===id);
 
 const currentPerson=()=>people.find(p=>p.name===currentUser);
@@ -203,6 +229,32 @@ function renderDashboard(){
    </div>
   `:`<div class="empty">婚禮當天將自動顯示即時行程</div>`}
  </section>
+
+ ${(()=>{
+  const person=people.find(p=>p.name===currentUser);
+  const assignments=person?rosterMembers.filter(m=>m.personId===person.id&&memberTables(m).length):[];
+  if(!assignments.length)return "";
+  const rows=assignments.flatMap(m=>{
+   const roster=rosters.find(r=>r.id===m.rosterId);
+   return memberTables(m).map(no=>({no,roster,m}));
+  });
+  return `<section class="card assigned-tables-card">
+   <div class="card-head">
+    <div>
+     <div class="card-title">🪑 我的負責桌次</div>
+     <div class="meta">招待帶位時可直接查看桌次</div>
+    </div>
+    <div class="pill">${rows.length} 桌</div>
+   </div>
+   <div class="assigned-table-grid">
+    ${rows.map(x=>`<a class="assigned-table-card" href="./banquet.html#table-${encodeURIComponent(x.no)}" target="_blank" rel="noopener">
+      <strong>${esc(x.no)}桌</strong>
+      <span>${esc(tableLabel(x.no).replace(`${x.no}桌・`,""))}</span>
+      <small>${esc(x.roster?.name||"工作名單")}${x.m.duty?`・${esc(x.m.duty)}`:""}</small>
+    </a>`).join("")}
+   </div>
+  </section>`;
+ })()}
 
  <section class="card compact-detail-card">
   <div class="card-head">
@@ -728,6 +780,7 @@ function renderRosters(){
        <div class="main">
         <div class="name">${esc(p?.name||"已刪除人員")}</div>
         <div class="meta">${esc(m.duty||r.duty||"未設定工作")}${m.notes?`<br>${esc(m.notes)}`:""}</div>
+        ${memberTables(m).length?`<div class="assigned-table-list">${memberTables(m).map(no=>`<a href="./banquet.html#table-${encodeURIComponent(no)}" target="_blank" rel="noopener">${esc(no)}桌</a>`).join("")}</div>`:""}
        </div>
        <details class="roster-member-menu">
         <summary aria-label="成員操作">⋯</summary>
@@ -1118,12 +1171,15 @@ function openRosterMember(m=null,rosterId=""){
  $("#rosterMemberPerson").value=m?.personId||people[0]?.id||"";
  $("#rosterMemberOrder").value=m?.order||membersForRoster(rosterId).length+1;
  $("#rosterMemberDuty").value=m?.duty||"";
+ rosterTableSelection=new Set(memberTables(m));
+ $("#rosterMemberTables").value=[...rosterTableSelection].join(",");
+ renderRosterTablePicker();
  $("#rosterMemberNotes").value=m?.notes||"";
  $("#rosterMemberDialog").showModal();
 }
 $("#rosterMemberForm").onsubmit=async e=>{
  e.preventDefault();
- const id=$("#rosterMemberId").value,p={rosterId:$("#rosterMemberRosterId").value,personId:$("#rosterMemberPerson").value,order:Number($("#rosterMemberOrder").value)||1,duty:$("#rosterMemberDuty").value.trim(),notes:$("#rosterMemberNotes").value.trim(),updatedAt:serverTimestamp()};
+ const id=$("#rosterMemberId").value,p={rosterId:$("#rosterMemberRosterId").value,personId:$("#rosterMemberPerson").value,order:Number($("#rosterMemberOrder").value)||1,duty:$("#rosterMemberDuty").value.trim(),tableNos:[...rosterTableSelection],notes:$("#rosterMemberNotes").value.trim(),updatedAt:serverTimestamp()};
  if(id)await updateDoc(doc(db,"wccRosterMembers",id),p);else await addDoc(collection(db,"wccRosterMembers"),{...p,createdAt:serverTimestamp()});
  close("rosterMemberDialog");
 };

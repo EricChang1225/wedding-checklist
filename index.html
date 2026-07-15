@@ -23,7 +23,7 @@
   <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
   <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
   <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
-  <link rel="stylesheet" href="./style.css?v=3310">
+  <link rel="stylesheet" href="./style.css?v=3400">
 </head>
 <body>
 <div class="app">
@@ -128,6 +128,10 @@
   <label>選擇人員<select id="rosterMemberPerson"></select></label>
   <label>順序<input id="rosterMemberOrder" type="number" min="1"></label>
   <label>個人工作<input id="rosterMemberDuty" maxlength="100" placeholder="例如：第 3 位喝茶、入口左側帶位"></label>
+  <label>負責桌次（可複選）
+    <div id="rosterTablePicker" class="table-picker"></div>
+    <input id="rosterMemberTables" type="hidden">
+  </label>
   <label>備註<textarea id="rosterMemberNotes"></textarea></label>
   <div class="sheet-actions"><button type="button" class="btn" data-close="rosterMemberDialog">取消</button><button class="btn primary">儲存</button></div>
 </form></dialog>
@@ -247,6 +251,6 @@
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app.js?v=3310"></script>
+<script type="module" src="./app.js?v=3400"></script>
 </body>
 </html>

@@ -1297,3 +1297,88 @@ body:not(.admin-mode) [data-action="delete-group"]{
 
 /* V3.3.1：移除「設定目前使用者」彈窗
    使用者統一由首頁 Header 下拉選單切換。 */
+
+
+/* V3.4：招待負責桌次 */
+.table-picker{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:8px;
+  max-height:290px;
+  overflow:auto;
+  margin-top:8px;
+  padding:10px;
+  border:1px solid #eadedf;
+  border-radius:14px;
+  background:#fff;
+}
+.table-chip{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  min-height:50px;
+  padding:8px 10px;
+  border:1px solid #e7d9db;
+  border-radius:12px;
+  background:#fff;
+  cursor:pointer;
+  text-align:left;
+  font-weight:850;
+}
+.table-chip small{
+  color:#887578;
+  font-size:11px;
+  font-weight:500;
+}
+.table-chip.selected{
+  color:#fff;
+  border-color:#c97881;
+  background:#c97881;
+}
+.table-chip.selected small{color:#fff5f6}
+.assigned-table-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:7px;
+}
+.assigned-table-list a{
+  padding:4px 9px;
+  border-radius:999px;
+  background:#f7e9ea;
+  color:#ad555f;
+  font-weight:850;
+  text-decoration:none;
+}
+.assigned-table-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:10px;
+  padding:4px 0;
+}
+.assigned-table-card{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  padding:13px;
+  border:1px solid #eadedf;
+  border-radius:14px;
+  background:#fff9f9;
+  color:inherit;
+  text-decoration:none;
+}
+.assigned-table-card strong{
+  color:#bd626c;
+  font-size:19px;
+}
+.assigned-table-card span{
+  font-weight:850;
+}
+.assigned-table-card small{
+  color:#877578;
+}
+@media(max-width:560px){
+  .table-picker{grid-template-columns:1fr 1fr}
+  .assigned-table-grid{grid-template-columns:1fr 1fr}
+}
