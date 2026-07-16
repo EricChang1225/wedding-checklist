@@ -19,7 +19,7 @@ async function hashPassword(value){
 function refreshAdminSession(){if(isAdmin())localStorage.setItem("wccAdminUntil",String(Date.now()+ADMIN_DURATION_MS))}
 function applyPermissions(){
  const admin=isAdmin();
- const adminOnlyViews=new Set(["taskcenter","prepare","people","settings"]);
+ const adminOnlyViews=new Set(["settings"]);
  if(!admin&&adminOnlyViews.has(view)){
   view="dashboard";
   document.body.classList.remove("banquet-mode");
@@ -133,7 +133,7 @@ const scheduleTimeValue=value=>{
 const taskProgress=t=>{const list=itemsForTask(t.id);const done=list.filter(x=>x.done).length;return {list,done,total:list.length,complete:list.length>0&&done===list.length};};
 
 function setView(v){
- const adminOnlyViews=new Set(["taskcenter","prepare","people","settings"]);
+ const adminOnlyViews=new Set(["settings"]);
  if(adminOnlyViews.has(v)&&!isAdmin()){requestAdmin();return;}
  view=v;document.body.classList.toggle("banquet-mode",v==="banquet");document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.view===v));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===v));render()}
 $("#tabs").onclick=e=>{const b=e.target.closest("[data-view]");if(b)setView(b.dataset.view)};
