@@ -1536,3 +1536,26 @@ body:not(.admin-mode) [data-action="delete-group"]{
   min-height:38px;
   cursor:pointer;
 }
+
+
+/* V4：一般模式精簡導覽 */
+.tabs .admin-only-tab[hidden],
+.tabs .admin-hidden{
+  display:none!important;
+}
+
+.tabs{
+  scrollbar-width:thin;
+}
+
+@media(max-width:720px){
+  .tabs{
+    gap:7px;
+    padding-inline:10px;
+  }
+
+  .tabs .tab{
+    flex:0 0 auto;
+    min-width:max-content;
+  }
+}

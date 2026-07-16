@@ -19,14 +19,24 @@ async function hashPassword(value){
 function refreshAdminSession(){if(isAdmin())localStorage.setItem("wccAdminUntil",String(Date.now()+ADMIN_DURATION_MS))}
 function applyPermissions(){
  const admin=isAdmin();
- if(!admin&&["settings"].includes(view)){view="dashboard";document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.view==="dashboard"));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id==="dashboard"));}
+ const adminOnlyViews=new Set(["taskcenter","prepare","people","settings"]);
+ if(!admin&&adminOnlyViews.has(view)){
+  view="dashboard";
+  document.body.classList.remove("banquet-mode");
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.view==="dashboard"));
+  document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id==="dashboard"));
+ }
  document.body.classList.toggle("admin-mode",admin);
  const btn=$("#adminModeButton");
  if(btn){btn.textContent=admin?"👑":"🔒";btn.classList.toggle("active",admin);btn.title=admin?"點擊退出管理模式":"長按標題或點擊輸入管理密碼";}
  const blocked=new Set(["new-category","new-task","print-prepare-pdf","new-person-task","new-center-task","new-person-item","add-subitem","edit-subitem","delete-subitem","edit-task","delete-task","new-roster","edit-roster","add-roster-member","edit-roster-member","delete-roster-member","delete-roster","delete-roster","add-roster-member","edit-roster-member","delete-roster-member","new-group","edit-group","delete-group","new-flow","edit-flow","delete-flow","add-check","edit-check","delete-check","new-person","edit-person","delete-person","move-category-up","move-category-down","delete-category","move-group-up","move-group-down","move-flow-up","move-flow-down","save-settings","export-csv","change-admin-password"]);
  document.querySelectorAll("[data-action]").forEach(el=>{if(blocked.has(el.dataset.action))el.classList.add("admin-hidden")});
  document.querySelectorAll(".toolbar").forEach(el=>el.classList.toggle("admin-hidden",!admin));
- document.querySelectorAll(".admin-only-tab").forEach(tab=>tab.classList.toggle("admin-hidden",!admin))
+ document.querySelectorAll(".admin-only-tab").forEach(tab=>{
+  tab.classList.toggle("admin-hidden",!admin);
+  tab.hidden=!admin;
+  tab.tabIndex=admin?0:-1;
+ })
  $("#fab")?.classList.toggle("admin-hidden",!admin||view==="banquet");
 }
 function requestAdmin(){
@@ -122,7 +132,10 @@ const scheduleTimeValue=value=>{
 
 const taskProgress=t=>{const list=itemsForTask(t.id);const done=list.filter(x=>x.done).length;return {list,done,total:list.length,complete:list.length>0&&done===list.length};};
 
-function setView(v){view=v;document.body.classList.toggle("banquet-mode",v==="banquet");document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.view===v));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===v));render()}
+function setView(v){
+ const adminOnlyViews=new Set(["taskcenter","prepare","people","settings"]);
+ if(adminOnlyViews.has(v)&&!isAdmin()){requestAdmin();return;}
+ view=v;document.body.classList.toggle("banquet-mode",v==="banquet");document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.view===v));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===v));render()}
 $("#tabs").onclick=e=>{const b=e.target.closest("[data-view]");if(b)setView(b.dataset.view)};
 function renderHeader(){
  const title=settings.title||"駿瑋 & 忞靜 婚禮管家";
