@@ -1382,3 +1382,38 @@ body:not(.admin-mode) [data-action="delete-group"]{
   .table-picker{grid-template-columns:1fr 1fr}
   .assigned-table-grid{grid-template-columns:1fr 1fr}
 }
+
+
+/* V3.6：工作名單收合修正 */
+.roster-body.collapsed{
+  display:none!important;
+}
+
+.roster-accordion.is-collapsed .roster-summary{
+  border-bottom:0;
+}
+
+.roster-accordion.is-collapsed{
+  min-height:auto;
+}
+
+.roster-toggle{
+  min-height:64px;
+}
+
+.roster-toggle:active{
+  background:#fff8f8;
+}
+
+.roster-toggle-icon{
+  transition:transform .18s ease;
+}
+
+.roster-body{
+  animation:rosterOpen .18s ease;
+}
+
+@keyframes rosterOpen{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:translateY(0)}
+}

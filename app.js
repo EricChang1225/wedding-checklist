@@ -824,6 +824,17 @@ function renderRosters(){
    });
   };
  }
+
+ document.querySelectorAll(".roster-toggle").forEach(btn=>{
+  btn.onclick=e=>{
+   e.preventDefault();
+   e.stopPropagation();
+   const id=btn.dataset.id;
+   collapsedRosters.has(id)?collapsedRosters.delete(id):collapsedRosters.add(id);
+   localStorage.setItem("wccCollapsedRosters",JSON.stringify([...collapsedRosters]));
+   renderRosters();
+  };
+ });
 }
 
 function renderTimeline(){
@@ -1361,6 +1372,7 @@ if(a==="toggle-all-packages"){
  renderTimeline();
 }
 if(a==="toggle-roster"){
+ if(e.defaultPrevented)return;
  collapsedRosters.has(id)?collapsedRosters.delete(id):collapsedRosters.add(id);
  localStorage.setItem("wccCollapsedRosters",JSON.stringify([...collapsedRosters]));
  renderRosters();

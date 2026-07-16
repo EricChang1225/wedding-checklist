@@ -31,3 +31,66 @@ body{background:transparent}
 .banquet-admin-badge{font-size:12px;font-weight:800;background:#f3eeee;padding:6px 9px;border-radius:99px;color:#8b7777}
 .banquet-admin-badge.active{background:#f5d99d;color:#6a4a14}
 body:not(.banquet-admin) .banquet-admin-only{display:none!important}
+
+
+/* V3.5：原始桌圖＋互動桌號 */
+.table-map-area{
+  padding:12px;
+}
+.interactive-map{
+  position:relative;
+  display:inline-block;
+  width:100%;
+  overflow:hidden;
+  border-radius:16px;
+  background:#f7f2f2;
+}
+.interactive-map img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:72vh;
+  object-fit:contain;
+}
+.map-overlay{
+  position:absolute;
+  inset:0;
+}
+.map-table-pin{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  width:42px;
+  height:42px;
+  border:3px solid #fff;
+  border-radius:50%;
+  background:#c97881;
+  color:#fff;
+  font-weight:950;
+  box-shadow:0 4px 14px rgba(80,40,50,.3);
+  cursor:pointer;
+  touch-action:none;
+}
+.interactive-map.editing .map-table-pin{
+  cursor:grab;
+  animation:mapPinPulse 1.5s infinite;
+}
+.map-hint{
+  margin-top:8px;
+  color:#806f72;
+  font-size:13px;
+  text-align:center;
+}
+@keyframes mapPinPulse{
+  50%{transform:translate(-50%,-50%) scale(1.08)}
+}
+.table-card:target{
+  outline:3px solid #d68d95;
+  scroll-margin-top:90px;
+}
+@media(max-width:600px){
+  .map-table-pin{
+    width:36px;
+    height:36px;
+    font-size:13px;
+  }
+}

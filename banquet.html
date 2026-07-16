@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#c97f86">
   <meta name="description" content="駿瑋與忞靜婚宴中心｜桌位查詢、婚宴菜單與協同廠商">
   <title>婚宴中心</title>
-  <link rel="stylesheet" href="./banquet.css">
+  <link rel="stylesheet" href="./banquet.css?v=3500">
 </head>
 <body>
 <div class="app">
@@ -35,8 +35,12 @@
       <section class="card">
         <div class="card-head">
           <div>
-            <h2>🪑 婚宴桌圖</h2>
-            <p>可在「更多設定」填入你上傳至 GitHub 的桌圖檔名或網址。</p>
+            <h2>🪑 婚宴會場圖</h2>
+            <p>可查看飯店原始桌圖，也可在管理模式拖曳桌號到正確位置。</p>
+          </div>
+          <div class="actions">
+            <button id="toggleMapEdit">編輯桌號位置</button>
+            <button id="resetMapPositions">重設位置</button>
           </div>
         </div>
         <div id="tableMapArea" class="table-map-area"></div>
@@ -61,10 +65,14 @@
     <section id="settings" class="panel">
       <section class="card settings-card">
         <h2>桌圖與資料</h2>
-        <label>桌圖檔名或網址
+        <label>上傳飯店桌圖
+          <input id="tableMapFile" type="file" accept="image/jpeg,image/png,image/webp">
+        </label>
+        <p class="hint">選擇 JPG／PNG 後，系統會自動縮小並儲存。建議使用清楚的橫式或直式桌圖。</p>
+
+        <label>或輸入桌圖網址
           <input id="tableMapUrl" placeholder="例如：table-map.jpg 或 https://...">
         </label>
-        <p class="hint">最簡單的做法：把桌圖 JPG／PNG 上傳到 GitHub 根目錄，再輸入檔名。</p>
 
         <label>重新匯入桌位 Excel
           <input id="excelFile" type="file" accept=".xlsx,.xls">
@@ -123,6 +131,6 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script type="module" src="./banquet.js"></script>
+<script type="module" src="./banquet.js?v=3500"></script>
 </body>
 </html>
