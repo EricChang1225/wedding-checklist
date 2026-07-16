@@ -1559,3 +1559,75 @@ body:not(.admin-mode) [data-action="delete-group"]{
     min-width:max-content;
   }
 }
+
+
+/* V5.2：總招待「我的招待」 */
+.chief-usher-card{
+  overflow:hidden;
+}
+.chief-usher-rosters{
+  display:grid;
+  gap:10px;
+}
+.chief-usher-roster,
+.chief-usher-member{
+  border:1px solid #eadedf;
+  border-radius:14px;
+  background:#fff;
+  overflow:hidden;
+}
+.chief-usher-roster>summary,
+.chief-usher-member>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 14px;
+  cursor:pointer;
+  font-weight:900;
+}
+.chief-usher-roster>summary small,
+.chief-usher-member>summary small{
+  display:block;
+  margin-top:2px;
+  color:#867579;
+  font-weight:500;
+}
+.chief-usher-members{
+  border-top:1px solid #eee5e6;
+  padding:8px;
+  background:#fffafa;
+}
+.chief-usher-member{
+  margin-bottom:8px;
+}
+.chief-usher-member:last-child{
+  margin-bottom:0;
+}
+.chief-table-count{
+  flex:none;
+  padding:4px 9px;
+  border-radius:999px;
+  background:#f5e5e7;
+  color:#ad5963;
+  font-size:12px;
+}
+.chief-member-detail{
+  padding:0 14px 13px;
+  color:#65575a;
+  line-height:1.55;
+}
+.chief-table-badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:9px;
+}
+.chief-table-badges a{
+  padding:6px 10px;
+  border-radius:999px;
+  background:#c97881;
+  color:#fff;
+  text-decoration:none;
+  font-weight:900;
+}

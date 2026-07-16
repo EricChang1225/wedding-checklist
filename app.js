@@ -270,6 +270,51 @@ function renderDashboard(){
   </section>`;
  })()}
 
+ ${(()=>{
+  const managed=rosters.filter(r=>r.chiefUsher===currentUser);
+  if(!managed.length)return "";
+  return `<section class="card chief-usher-card">
+   <div class="card-head">
+    <div>
+     <div class="card-title">👥 我的招待</div>
+     <div class="meta">查看每位招待的工作與負責桌次</div>
+    </div>
+    <div class="pill">${managed.reduce((sum,r)=>sum+membersForRoster(r.id).length,0)} 人</div>
+   </div>
+   <div class="chief-usher-rosters">
+    ${managed.map(r=>{
+      const members=membersForRoster(r.id);
+      return `<details class="chief-usher-roster" open>
+       <summary>
+        <span>${esc(r.icon||"📋")} ${esc(r.name)}</span>
+        <small>${members.length} 位招待</small>
+       </summary>
+       <div class="chief-usher-members">
+        ${members.map(m=>{
+          const p=personById(m.personId);
+          const tables=memberTables(m);
+          return `<details class="chief-usher-member">
+           <summary>
+            <span>
+             <strong>${esc(p?.name||"已刪除人員")}</strong>
+             ${m.duty?`<small>${esc(m.duty)}</small>`:""}
+            </span>
+            <span class="chief-table-count">${tables.length?`${tables.length} 桌`:"未分桌"}</span>
+           </summary>
+           <div class="chief-member-detail">
+            ${m.duty?`<div><b>工作：</b>${esc(m.duty)}</div>`:""}
+            ${m.notes?`<div><b>備註：</b>${esc(m.notes)}</div>`:""}
+            ${tables.length?`<div class="chief-table-badges">${tables.map(no=>`<a href="./banquet.html#table-${encodeURIComponent(no)}" target="_blank" rel="noopener">${esc(no)}桌</a>`).join("")}</div>`:'<div class="meta">尚未指定負責桌次</div>'}
+           </div>
+          </details>`;
+        }).join("")||'<div class="empty">此名單尚未加入招待</div>'}
+       </div>
+      </details>`;
+    }).join("")}
+   </div>
+  </section>`;
+ })()}
+
  <section class="card compact-detail-card">
   <div class="card-head">
    <div class="card-title">✅ 任務</div>
@@ -771,6 +816,7 @@ function renderRosters(){
        ${r.time?`・${esc(r.time)}`:""}
        ${r.location?`・📍 ${esc(r.location)}`:""}
        ${linked?`<br>流程：${esc(linked.name)}`:""}
+       ${r.chiefUsher?`<br>👤 總招待：${esc(r.chiefUsher)}`:""}
        ${r.duty?`<br>共同工作：${esc(r.duty)}`:""}
       </span>
      </span>
@@ -1200,13 +1246,18 @@ function openRoster(r=null){
  $("#rosterLocation").value=r?.location||"";
  $("#rosterFlow").innerHTML='<option value="">不連結流程</option>'+flows.map(f=>`<option value="${f.id}">${esc(formatFlowTime(f))} ${esc(f.name)}</option>`).join("");
  $("#rosterFlow").value=r?.flowId||"";
+ $("#rosterChiefUsher").innerHTML='<option value="">未指定</option>'+people.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}${p.role?`（${esc(p.role)}）`:""}</option>`).join("");
+ if(r?.chiefUsher&&!people.some(p=>p.name===r.chiefUsher)){
+  $("#rosterChiefUsher").insertAdjacentHTML("beforeend",`<option value="${esc(r.chiefUsher)}">${esc(r.chiefUsher)}（舊資料）</option>`);
+ }
+ $("#rosterChiefUsher").value=r?.chiefUsher||"";
  $("#rosterDuty").value=r?.duty||"";
  $("#rosterNotes").value=r?.notes||"";
  $("#rosterDialog").showModal();
 }
 $("#rosterForm").onsubmit=async e=>{
  e.preventDefault();
- const id=$("#rosterId").value,p={name:$("#rosterName").value.trim(),icon:$("#rosterIcon").value.trim()||"📋",time:$("#rosterTime").value,location:$("#rosterLocation").value.trim(),flowId:$("#rosterFlow").value,duty:$("#rosterDuty").value.trim(),notes:$("#rosterNotes").value.trim(),updatedAt:serverTimestamp()};
+ const id=$("#rosterId").value,p={name:$("#rosterName").value.trim(),icon:$("#rosterIcon").value.trim()||"📋",time:$("#rosterTime").value,location:$("#rosterLocation").value.trim(),flowId:$("#rosterFlow").value,chiefUsher:$("#rosterChiefUsher").value,duty:$("#rosterDuty").value.trim(),notes:$("#rosterNotes").value.trim(),updatedAt:serverTimestamp()};
  if(id)await updateDoc(doc(db,"wccRosters",id),p);else await addDoc(collection(db,"wccRosters"),{...p,sort:rosters.length,createdAt:serverTimestamp()});
  close("rosterDialog");
 };
