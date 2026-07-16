@@ -1631,3 +1631,85 @@ body:not(.admin-mode) [data-action="delete-group"]{
   text-decoration:none;
   font-weight:900;
 }
+
+
+/* V5.3：招待工作與桌次賓客分開 */
+.assigned-table-guest-list{
+  display:grid;
+  gap:10px;
+}
+.assigned-table-guest-card{
+  overflow:hidden;
+  border:1px solid #eadedf;
+  border-radius:15px;
+  background:#fff;
+}
+.assigned-table-guest-card>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  cursor:pointer;
+  list-style:none;
+}
+.assigned-table-guest-card>summary::-webkit-details-marker{
+  display:none;
+}
+.assigned-table-guest-card>summary strong{
+  display:block;
+  color:#bd626c;
+  font-size:20px;
+}
+.assigned-table-guest-card>summary small{
+  display:block;
+  margin-top:3px;
+  color:#514447;
+  font-size:15px;
+  font-weight:800;
+}
+.assigned-table-person-count{
+  flex:none;
+  padding:5px 9px;
+  border-radius:999px;
+  background:#f7e8ea;
+  color:#a95761;
+  font-size:12px;
+  font-weight:900;
+}
+.assigned-table-guest-detail{
+  padding:0 14px 14px;
+  border-top:1px solid #eee6e7;
+}
+.assigned-table-relation{
+  margin:10px 0 6px;
+  color:#796a6d;
+}
+.assigned-table-note{
+  margin:8px 0;
+  padding:9px 11px;
+  border-radius:11px;
+  background:#fff5df;
+  color:#755d31;
+}
+.assigned-table-guests{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:7px;
+  margin:10px 0;
+}
+.assigned-guest-row{
+  padding:8px 10px;
+  border-radius:10px;
+  background:#fff8f8;
+  border:1px solid #f0e4e5;
+}
+.assigned-table-open{
+  display:inline-block;
+  text-decoration:none;
+}
+@media(max-width:560px){
+  .assigned-table-guests{
+    grid-template-columns:1fr;
+  }
+}

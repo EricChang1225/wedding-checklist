@@ -95,6 +95,15 @@ const tableLabel=no=>{
  const t=seatingTables.find(x=>String(x.tableNo)===String(no));
  return t?`${t.tableNo}桌${t.tableName?`・${t.tableName}`:""}`:`${no}桌`;
 };
+const tableInfo=no=>seatingTables.find(x=>String(x.tableNo)===String(no))||null;
+const guestListForTable=no=>{
+ const t=tableInfo(no);
+ if(!t?.guests)return [];
+ return String(t.guests)
+  .split(/[、,，；;]+/)
+  .map(x=>x.trim())
+  .filter(Boolean);
+};
 const memberTables=m=>Array.isArray(m?.tableNos)?m.tableNos.map(String):[];
 function renderRosterTablePicker(){
  const box=$("#rosterTablePicker");
@@ -256,16 +265,32 @@ function renderDashboard(){
    <div class="card-head">
     <div>
      <div class="card-title">🪑 我的負責桌次</div>
-     <div class="meta">招待帶位時可直接查看桌次</div>
+     <div class="meta">點桌次即可查看桌名、賓客與注意事項</div>
     </div>
     <div class="pill">${rows.length} 桌</div>
    </div>
-   <div class="assigned-table-grid">
-    ${rows.map(x=>`<a class="assigned-table-card" href="./banquet.html#table-${encodeURIComponent(x.no)}" target="_blank" rel="noopener">
-      <strong>${esc(x.no)}桌</strong>
-      <span>${esc(tableLabel(x.no).replace(`${x.no}桌・`,""))}</span>
-      <small>${esc(x.roster?.name||"工作名單")}${x.m.duty?`・${esc(x.m.duty)}`:""}</small>
-    </a>`).join("")}
+   <div class="assigned-table-guest-list">
+    ${rows.map(x=>{
+      const info=tableInfo(x.no);
+      const guests=guestListForTable(x.no);
+      return `<details class="assigned-table-guest-card">
+       <summary>
+        <span>
+         <strong>${esc(x.no)}桌</strong>
+         <small>${esc(info?.tableName||"未設定桌名")}</small>
+        </span>
+        <span class="assigned-table-person-count">👥 ${esc(info?.count??guests.length)}人</span>
+       </summary>
+       <div class="assigned-table-guest-detail">
+        <div class="assigned-table-relation">${info?.relation?`關係：${esc(info.relation)}`:""}</div>
+        ${info?.notes?`<div class="assigned-table-note">⚠️ ${esc(info.notes)}</div>`:""}
+        <div class="assigned-table-guests">
+         ${guests.map(g=>`<div class="assigned-guest-row">👤 ${esc(g)}</div>`).join("")||'<div class="empty">尚未建立賓客名單</div>'}
+        </div>
+        <a class="small assigned-table-open" href="./banquet.html#table-${encodeURIComponent(x.no)}" target="_blank" rel="noopener">開啟完整桌次資料</a>
+       </div>
+      </details>`;
+    }).join("")}
    </div>
   </section>`;
  })()}
@@ -277,7 +302,7 @@ function renderDashboard(){
    <div class="card-head">
     <div>
      <div class="card-title">👥 我的招待</div>
-     <div class="meta">查看每位招待的工作與負責桌次</div>
+     <div class="meta">查看每位招待的分工與負責桌次</div>
     </div>
     <div class="pill">${managed.reduce((sum,r)=>sum+membersForRoster(r.id).length,0)} 人</div>
    </div>
@@ -840,7 +865,7 @@ function renderRosters(){
        <div class="main">
         <div class="name">${esc(p?.name||"已刪除人員")}</div>
         <div class="meta">${esc(m.duty||r.duty||"未設定工作")}${m.notes?`<br>${esc(m.notes)}`:""}</div>
-        ${memberTables(m).length?`<div class="assigned-table-list">${memberTables(m).map(no=>`<a href="./banquet.html#table-${encodeURIComponent(no)}" target="_blank" rel="noopener">${esc(no)}桌</a>`).join("")}</div>`:""}
+
        </div>
        <details class="roster-member-menu">
         <summary aria-label="成員操作">⋯</summary>
