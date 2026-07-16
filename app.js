@@ -840,8 +840,7 @@ function renderRosters(){
 
 function renderTimeline(){
  const orderedGroups=[...groups].sort((a,b)=>(a.sort??0)-(b.sort??0));
- const ungrouped=flows.filter(f=>!f.groupId||!group(f.groupId))
-   .sort((a,b)=>scheduleTimeValue(formatFlowTime(a))-scheduleTimeValue(formatFlowTime(b)));
+ const ungrouped=orderedFlows(flows.filter(f=>!f.groupId||!group(f.groupId)));
 
  const timelineItem=f=>{
    const list=checks.filter(x=>x.flowId===f.id);
@@ -915,8 +914,7 @@ function renderTimeline(){
  };
 
  const stageBlock=g=>{
-   const list=flows.filter(f=>f.groupId===g.id)
-     .sort((a,b)=>scheduleTimeValue(formatFlowTime(a))-scheduleTimeValue(formatFlowTime(b)));
+   const list=orderedFlows(flows.filter(f=>f.groupId===g.id));
    const collapsed=collapsedGroups.has(g.id);
    const stageChecks=checks.filter(c=>list.some(f=>f.id===c.flowId));
    return `<section class="clean-stage">
@@ -1370,6 +1368,35 @@ async function deletePreparationCategory(id){
  renderPrepare();
 }
 async function swapOrder(list,coll,id,dir){const i=list.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=list.length)return;const a=list[i],b=list[j],batch=writeBatch(db);batch.update(doc(db,coll,a.id),{sort:b.sort??j});batch.update(doc(db,coll,b.id),{sort:a.sort??i});await batch.commit()}
+const orderedFlows=list=>[...list].sort((a,b)=>{
+ const sa=Number.isFinite(Number(a.sort))?Number(a.sort):999999;
+ const sb=Number.isFinite(Number(b.sort))?Number(b.sort):999999;
+ if(sa!==sb)return sa-sb;
+ const ta=scheduleTimeValue(formatFlowTime(a));
+ const tb=scheduleTimeValue(formatFlowTime(b));
+ if(ta!==tb)return ta-tb;
+ return String(a.name||"").localeCompare(String(b.name||""),"zh-Hant");
+});
+
+async function moveFlowWithinGroup(id,dir){
+ const current=flow(id);
+ if(!current)return;
+ const groupId=current.groupId||"";
+ const list=orderedFlows(flows.filter(f=>(f.groupId||"")===groupId));
+ const from=list.findIndex(f=>f.id===id);
+ const to=from+dir;
+ if(from<0||to<0||to>=list.length)return;
+
+ const reordered=[...list];
+ const [moved]=reordered.splice(from,1);
+ reordered.splice(to,0,moved);
+
+ const batch=writeBatch(db);
+ reordered.forEach((f,index)=>{
+  batch.update(doc(db,"wccFlows",f.id),{sort:index,updatedAt:serverTimestamp()});
+ });
+ await batch.commit();
+}
 function csvExport(){const rows=[["類型","名稱","分類/流程","負責人","完成"]];tasks.forEach(t=>{const p=taskProgress(t);rows.push([t.type,t.title,category(t.categoryId)?.name||"",taskOwnerText(t),(p.total?p.complete:t.done)?"是":"否"]);p.list.forEach(i=>rows.push(["細項",`↳ ${i.title}`,t.title,taskOwnerText(t),i.done?"是":"否"]))});checks.forEach(c=>rows.push(["流程確認",c.title,flow(c.flowId)?.name||"",c.owner||"",c.done?"是":"否"]));const csv="\ufeff"+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="wedding-control-center.csv";a.click();URL.revokeObjectURL(a.href)}
 
 function initPersonDrag(){let draggedId=null,startY=0;document.querySelectorAll("[data-drag-person]").forEach(h=>{h.onpointerdown=e=>{draggedId=h.dataset.dragPerson;startY=e.clientY;h.setPointerCapture(e.pointerId);document.querySelector(`[data-person-card="${draggedId}"]`)?.classList.add("dragging")};h.onpointermove=e=>{if(!draggedId)return;const cards=[...document.querySelectorAll("[data-person-card]")];cards.forEach(c=>c.classList.remove("drop-target"));const target=cards.find(c=>{const r=c.getBoundingClientRect();return e.clientY>=r.top&&e.clientY<=r.bottom&&c.dataset.personCard!==draggedId});target?.classList.add("drop-target")};h.onpointerup=async e=>{if(!draggedId)return;const target=document.querySelector(".drop-target");document.querySelectorAll("[data-person-card]").forEach(c=>c.classList.remove("dragging","drop-target"));if(target){const from=people.findIndex(p=>p.id===draggedId),to=people.findIndex(p=>p.id===target.dataset.personCard);if(from!==to&&from>=0&&to>=0){const reordered=[...people],moved=reordered.splice(from,1)[0];reordered.splice(to,0,moved);const batch=writeBatch(db);reordered.forEach((p,i)=>batch.update(doc(db,"wccPeople",p.id),{sort:i}));await batch.commit()}}draggedId=null}})}
@@ -1463,7 +1490,7 @@ if(a==="add-check")openCheck(null,id);if(a==="edit-check")openCheck(checks.find(
 if(a==="new-person")openPerson();if(a==="edit-person")openPerson(people.find(x=>x.id===id));if(a==="delete-person"&&confirm("刪除此人員？"))await deleteDoc(doc(db,"wccPeople",id));if(a==="show-person"){const p=people.find(x=>x.id===id);if(p){currentUser=p.name;localStorage.setItem("wccUser",p.name);setView("mine")}}
 if(a==="new-category")openCategory();if(a==="edit-category")openCategory(categories.find(x=>x.id===id));if(a==="delete-category")await deletePreparationCategory(id);if(a==="move-category-up")await swapOrder(categories,"wccCategories",id,-1);if(a==="move-category-down")await swapOrder(categories,"wccCategories",id,1);
 if(a==="move-group-up")await swapOrder(groups,"wccFlowGroups",id,-1);if(a==="move-group-down")await swapOrder(groups,"wccFlowGroups",id,1);
-if(a==="move-flow-up"){const list=flows.filter(f=>f.groupId===(flow(id)?.groupId||""));await swapOrder(list,"wccFlows",id,-1)}if(a==="move-flow-down"){const list=flows.filter(f=>f.groupId===(flow(id)?.groupId||""));await swapOrder(list,"wccFlows",id,1)}
+if(a==="move-flow-up"){await moveFlowWithinGroup(id,-1);return;}if(a==="move-flow-down"){await moveFlowWithinGroup(id,1);return;}
 if(a==="save-settings")await setDoc(doc(db,"wccSettings","main"),{title:$("#settingTitle").value.trim(),weddingDate:$("#settingDate").value,initialized:true},{merge:true});if(a==="export-csv")csvExport();if(a==="print")window.print();
 });
 $("#fab").onclick=()=>{if(view==="banquet")return;view==="prepare"?openTask():view==="rosters"?openRoster():view==="timeline"?openFlow():view==="people"?openPerson():openTask()};
