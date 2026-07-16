@@ -6,7 +6,7 @@ import {getFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot
 
 const $=s=>document.querySelector(s), esc=(v="")=>String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 let prepareCategoryFilter=localStorage.getItem("wccPrepareFilter")||"all";
-let db,view="dashboard",tasks=[],taskItems=[],categories=[],groups=[],flows=[],checks=[],people=[],rosters=[],rosterMembers=[],settings={title:"駿瑋 & 忞靜 婚禮管家",weddingDate:"",initialized:false},taskFlowSelection=new Set(),taskOwnerSelection=new Set(),flowOwnerSelection=new Set(),rosterTableSelection=new Set();
+let db,view="dashboard",tasks=[],taskItems=[],categories=[],groups=[],flows=[],checks=[],people=[],rosters=[],rosterMembers=[],settings={title:"駿瑋 & 忞靜 婚禮管家",weddingDate:"",initialized:false},taskFlowSelection=new Set(),taskOwnerSelection=new Set(),flowOwnerSelection=new Set(),flowRosterSelection=new Set(),rosterTableSelection=new Set();
 
 let adminSetupShown=false;
 const ADMIN_DURATION_MS=30*60*1000;
@@ -223,6 +223,7 @@ function renderDashboard(){
      <div class="realtime-title">${esc(realtimeFlow.icon||"📍")} ${esc(realtimeFlow.name)}</div>
      <div class="meta">${realtimeFlow.location?`📍 ${esc(realtimeFlow.location)}`:"未設定地點"}</div>
      <div class="realtime-status">${esc(realtimeStatus)}</div>
+     ${flowRosters(realtimeFlow).length?`<div class="realtime-rosters">📋 ${flowRosters(realtimeFlow).map(r=>esc(r.name)).join("、")}</div>`:""}
      ${mapUrl(realtimeFlow)?`<a class="map-link" href="${esc(mapUrl(realtimeFlow))}" target="_blank" rel="noopener">🗺️ 開啟導航</a>`:""}
     </div>
     <button class="small" data-action="go-flow" data-id="${realtimeFlow.id}">查看流程</button>
@@ -863,6 +864,7 @@ function renderTimeline(){
        ${f.location?`<span>📍 ${esc(f.location)}</span>`:""}
        <span>👤 ${esc(flowOwnerText(f))}</span>
        <span>☑ ${done}/${list.length}</span>
+       ${flowRosters(f).length?`<span>📋 ${flowRosters(f).length} 份名單</span>`:""}
       </div>
      </button>
 
@@ -876,6 +878,29 @@ function renderTimeline(){
         ${ch.owner?`<small>${esc(ch.owner)}</small>`:""}
        </label>`).join("")}
       </div>`:""}
+
+      ${flowRosters(f).length?`<section class="flow-linked-rosters">
+       <div class="flow-linked-rosters-title">📋 工作名單（${flowRosters(f).length}）</div>
+       ${flowRosters(f).map(r=>{
+         const members=membersForRoster(r.id);
+         return `<details class="flow-roster-card">
+          <summary>
+           <span>${esc(r.icon||"📋")} ${esc(r.name)}</span>
+           <small>${members.length} 人</small>
+          </summary>
+          <div class="flow-roster-members">
+           ${members.map(m=>{
+             const p=personById(m.personId);
+             return `<div class="flow-roster-member">
+              <span class="flow-roster-order">${esc(m.order||"")}</span>
+              <span><strong>${esc(p?.name||"已刪除人員")}</strong>${m.duty?`<small>${esc(m.duty)}</small>`:""}</span>
+             </div>`;
+           }).join("")||'<div class="empty">尚未加入成員</div>'}
+          </div>
+         </details>`;
+       }).join("")}
+       <button class="small" data-action="go-rosters">前往工作名單</button>
+      </section>`:""}
 
       <div class="clean-timeline-admin">
        <button class="small" data-action="add-check" data-id="${f.id}">加確認項</button>
@@ -1215,6 +1240,31 @@ function renderFlowOwnerPicker(){
    renderFlowOwnerPicker();
  };
 }
+const flowRosterIds=f=>Array.isArray(f?.rosterIds)?f.rosterIds.filter(Boolean):[];
+const flowRosters=f=>flowRosterIds(f).map(id=>rosters.find(r=>r.id===id)).filter(Boolean);
+
+function renderFlowRosterPicker(){
+ const box=$("#flowRosterPicker");
+ if(!box)return;
+ box.innerHTML=rosters.map(r=>{
+   const selected=flowRosterSelection.has(r.id);
+   const count=membersForRoster(r.id).length;
+   return `<button type="button" class="flow-roster-chip ${selected?"selected":""}" data-flow-roster="${r.id}">
+    <span>${selected?"✓ ":""}${esc(r.icon||"📋")} ${esc(r.name)}</span>
+    <small>${count} 人${r.time?`・${esc(r.time)}`:""}</small>
+   </button>`;
+ }).join("")||'<div class="hint">尚未建立工作名單，請先到「工作名單」新增。</div>';
+
+ box.onclick=e=>{
+   const b=e.target.closest("[data-flow-roster]");
+   if(!b)return;
+   const id=b.dataset.flowRoster;
+   flowRosterSelection.has(id)?flowRosterSelection.delete(id):flowRosterSelection.add(id);
+   $("#flowRosterIds").value=[...flowRosterSelection].join(",");
+   renderFlowRosterPicker();
+ };
+}
+
 function openFlow(f=null){
  $("#flowDialogTitle").textContent=f?"修改流程":"新增流程";
  $("#flowId").value=f?.id||"";
@@ -1235,6 +1285,9 @@ function openFlow(f=null){
  );
  $("#flowOwner").value=[...flowOwnerSelection].join("、");
  renderFlowOwnerPicker();
+ flowRosterSelection=new Set(flowRosterIds(f));
+ $("#flowRosterIds").value=[...flowRosterSelection].join(",");
+ renderFlowRosterPicker();
  $("#flowLocation").value=f?.location||"";
  $("#flowAddress").value=f?.address||"";
  $("#flowMapUrl").value=f?.mapUrl||"";
@@ -1263,6 +1316,7 @@ $("#flowForm").onsubmit=async e=>{
   icon:$("#flowIcon").value.trim()||"📍",
   owners:[...flowOwnerSelection],
   owner:[...flowOwnerSelection][0]||"",
+  rosterIds:[...flowRosterSelection],
   location:$("#flowLocation").value.trim(),
   address:$("#flowAddress").value.trim(),
   mapUrl:$("#flowMapUrl").value.trim(),
@@ -1396,6 +1450,7 @@ if(a==="collapse-all-rosters"){
  renderRosters();
  return;
 }
+if(a==="go-rosters"){setView("rosters");return;}
 if(a==="new-roster")openRoster();
 if(a==="edit-roster")openRoster(rosters.find(x=>x.id===id));
 if(a==="delete-roster"&&confirm("刪除此名單與所有成員？")){const batch=writeBatch(db);membersForRoster(id).forEach(m=>batch.delete(doc(db,"wccRosterMembers",m.id)));batch.delete(doc(db,"wccRosters",id));await batch.commit()}

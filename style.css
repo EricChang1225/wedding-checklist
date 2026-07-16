@@ -1417,3 +1417,106 @@ body:not(.admin-mode) [data-action="delete-group"]{
   from{opacity:0;transform:translateY(-4px)}
   to{opacity:1;transform:translateY(0)}
 }
+
+
+/* V3.7：婚禮流程連結工作名單 */
+.flow-roster-picker{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:8px;
+  max-height:280px;
+  overflow:auto;
+  margin-top:8px;
+  padding:10px;
+  border:1px solid #eadedf;
+  border-radius:14px;
+  background:#fff;
+}
+.flow-roster-chip{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:3px;
+  padding:10px 12px;
+  border:1px solid #eadedf;
+  border-radius:12px;
+  background:#fff;
+  cursor:pointer;
+  text-align:left;
+  font-weight:850;
+}
+.flow-roster-chip small{
+  color:#8a777a;
+  font-weight:500;
+}
+.flow-roster-chip.selected{
+  border-color:#c97881;
+  background:#c97881;
+  color:#fff;
+}
+.flow-roster-chip.selected small{color:#fff4f5}
+
+.flow-linked-rosters{
+  margin-top:12px;
+  padding:12px;
+  border:1px solid #eadedf;
+  border-radius:14px;
+  background:#fffafa;
+}
+.flow-linked-rosters-title{
+  margin-bottom:8px;
+  font-weight:950;
+}
+.flow-roster-card{
+  margin-bottom:8px;
+  border:1px solid #eadedf;
+  border-radius:12px;
+  background:#fff;
+  overflow:hidden;
+}
+.flow-roster-card summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 12px;
+  cursor:pointer;
+  font-weight:900;
+}
+.flow-roster-card summary small{
+  color:#8b777a;
+}
+.flow-roster-members{
+  border-top:1px solid #eee5e6;
+}
+.flow-roster-member{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  gap:9px;
+  align-items:center;
+  padding:9px 12px;
+  border-bottom:1px solid #f0e8e8;
+}
+.flow-roster-member:last-child{border-bottom:0}
+.flow-roster-order{
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#f2dfe1;
+  font-weight:900;
+}
+.flow-roster-member small{
+  display:block;
+  margin-top:2px;
+  color:#8b777a;
+}
+.realtime-rosters{
+  margin-top:7px;
+  color:#7e696d;
+  font-weight:750;
+}
+@media(max-width:600px){
+  .flow-roster-picker{grid-template-columns:1fr}
+}
