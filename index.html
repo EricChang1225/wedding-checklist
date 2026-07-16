@@ -23,7 +23,7 @@
   <meta name="twitter:description" content="婚禮工作中心｜前置準備、婚禮流程與多人即時同步">
   <meta name="twitter:image" content="https://ericchang1225.github.io/wedding-checklist/og-card.png?v=110">
   <title>駿瑋 &amp; 忞靜｜婚禮 Checklist</title>
-  <link rel="stylesheet" href="./style.css?v=3600">
+  <link rel="stylesheet" href="./style.css?v=3610">
 </head>
 <body>
 <div class="app">
@@ -229,7 +229,7 @@
   <h2 id="checkDialogTitle">新增流程確認項目</h2>
   <input id="checkId" type="hidden"><input id="checkFlowId" type="hidden">
   <label>確認項目<input id="checkTitle" maxlength="60" required></label>
-  <label>負責人<input id="checkOwner" maxlength="30" list="peopleList"></label>
+  <label>負責人<select id="checkOwner"><option value="">未指定</option></select></label>
   <label>連結前置項目<select id="checkTaskLink"><option value="">不連結</option></select></label>
   <div class="sheet-actions"><button type="button" class="btn" data-close="checkDialog">取消</button><button class="btn primary">儲存</button></div>
 </form></dialog>
@@ -251,6 +251,6 @@
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app.js?v=3600"></script>
+<script type="module" src="./app.js?v=3610"></script>
 </body>
 </html>
