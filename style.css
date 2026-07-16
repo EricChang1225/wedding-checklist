@@ -1520,3 +1520,19 @@ body:not(.admin-mode) [data-action="delete-group"]{
 @media(max-width:600px){
   .flow-roster-picker{grid-template-columns:1fr}
 }
+
+
+/* V3.7.1：婚禮流程階段收合修正 */
+.clean-stage-body.collapsed{
+  display:none!important;
+}
+
+.clean-stage:has(.clean-stage-body.collapsed) .clean-stage-head{
+  margin-bottom:0;
+}
+
+.group-toggle{
+  min-width:38px;
+  min-height:38px;
+  cursor:pointer;
+}
