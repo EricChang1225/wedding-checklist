@@ -2067,3 +2067,26 @@ body:not(.admin-mode) [data-action="delete-group"]{
  .my-companion-roster-card>summary{align-items:flex-start}
  .my-companion-roster-main strong{font-size:17px}
 }
+
+/* V6.10：相同時間共用同一個時間節點與圓點 */
+.personal-timeline-stack{
+  grid-column:3;
+  min-width:0;
+  display:grid;
+  gap:12px;
+  padding:8px 0 14px 14px;
+}
+.personal-timeline-stack .personal-timeline-card{
+  grid-column:auto;
+  width:auto;
+  margin:0;
+}
+.personal-timeline-stack .personal-timeline-card.is-done{opacity:.72}
+.personal-timeline-group{min-height:116px}
+.personal-timeline-group .personal-timeline-rail:after{top:30px}
+@media(max-width:700px){
+  .personal-timeline-stack{padding-left:10px;gap:10px}
+}
+@media(max-width:420px){
+  .personal-timeline-stack{padding-left:8px;gap:8px}
+}

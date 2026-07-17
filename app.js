@@ -279,15 +279,12 @@ function personalScheduleEntries(name){
  const rank={flow:0,check:1,roster:2,task:3};
  return entries.sort((a,b)=>a.sort-b.sort||(rank[a.type]??9)-(rank[b.type]??9)||String(a.title).localeCompare(String(b.title),"zh-Hant"));
 }
-function personalScheduleCard(entry){
+function personalScheduleCardBody(entry){
  const source={flow:"婚禮流程",check:"流程確認項",roster:"工作名單",task:"工作"}[entry.type]||"行程";
  const url=entry.flowId?mapUrl(flow(entry.flowId)):entry.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(entry.address)}`:"";
  const ownedChecks=entry.checks||[];
  const subitems=entry.subitems||[];
- return `<article class="personal-timeline-item ${entry.done?"is-done":""}">
-  <div class="personal-timeline-time">${esc(entry.time||"未定")}</div>
-  <div class="personal-timeline-rail"><span></span></div>
-  <div class="personal-timeline-card">
+ return `<div class="personal-timeline-card ${entry.done?"is-done":""}">
    <div class="personal-timeline-source">${esc(source)}</div>
    <div class="personal-timeline-title">${esc(entry.icon)} ${esc(entry.title)}</div>
    ${entry.parent?`<div class="personal-timeline-parent">屬於：${esc(entry.parent)}</div>`:""}
@@ -300,8 +297,26 @@ function personalScheduleCard(entry){
     ${url?`<a class="small map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 導航</a>`:""}
     ${entry.flowId?`<button class="small" data-action="go-flow" data-id="${entry.flowId}">查看流程</button>`:""}
    </div>
+  </div>`;
+}
+function personalScheduleGroups(entries){
+ const groups=[];
+ entries.forEach(entry=>{
+  const key=entry.time||"未定";
+  const last=groups[groups.length-1];
+  if(last&&last.key===key)last.entries.push(entry);
+  else groups.push({key,time:key,entries:[entry]});
+ });
+ return groups;
+}
+function personalScheduleGroup(group){
+ return `<section class="personal-timeline-item personal-timeline-group ${group.entries.every(x=>x.done)?"is-done":""}">
+  <div class="personal-timeline-time">${esc(group.time)}</div>
+  <div class="personal-timeline-rail"><span></span></div>
+  <div class="personal-timeline-stack">
+   ${group.entries.map(personalScheduleCardBody).join("")}
   </div>
- </article>`;
+ </section>`;
 }
 function renderDashboard(){
  const myTasks=sortTasksBySchedule(tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="工作"));
@@ -321,8 +336,8 @@ function renderDashboard(){
   </div>
   ${currentUser?(personalEntries.length?`
    <div class="personal-timeline">
-    ${timedEntries.map(personalScheduleCard).join("")}
-    ${untimedEntries.length?`<div class="personal-untimed-title">尚未設定時間</div>${untimedEntries.map(personalScheduleCard).join("")}`:""}
+    ${personalScheduleGroups(timedEntries).map(personalScheduleGroup).join("")}
+    ${untimedEntries.length?`<div class="personal-untimed-title">尚未設定時間</div>${personalScheduleGroups(untimedEntries).map(personalScheduleGroup).join("")}`:""}
    </div>`:'<div class="empty">目前沒有指派給你的流程或工作</div>'):'<div class="empty">請先在上方選擇使用者，即可查看個人行程時間線</div>'}
  </section>`;
 
