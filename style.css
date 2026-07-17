@@ -2010,3 +2010,20 @@ body:not(.admin-mode) [data-action="delete-group"]{
   .personal-timeline-card{margin-left:8px;padding:12px}
   .personal-timeline-title{font-size:16px}
 }
+
+/* V6.7 confirmation item editing and notes */
+.clean-check-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:12px 0;border-bottom:1px solid #f0e5e6}
+.clean-check-row:last-child{border-bottom:0}
+.clean-check-content{border:0;background:transparent;text-align:left;padding:0;min-width:0;color:inherit;cursor:pointer;font:inherit}
+.clean-check-title{display:block;font-weight:700;line-height:1.45}
+.clean-check-content small{display:block;margin-top:4px;color:#75686b;line-height:1.4}
+.clean-check-note{white-space:pre-wrap;overflow-wrap:anywhere}
+.clean-check-actions{display:flex;gap:6px;align-items:center}
+.clean-check-row.done .clean-check-title{text-decoration:line-through;color:#819087}
+.check-note{margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.personal-check-note{display:block;margin-top:3px;color:#75686b;font-size:.9em;font-weight:400;white-space:pre-wrap}
+#checkNote{width:100%;resize:vertical;min-height:84px}
+@media(max-width:700px){
+ .clean-check-row{grid-template-columns:auto minmax(0,1fr)}
+ .clean-check-actions{grid-column:2;justify-content:flex-start;flex-wrap:wrap}
+}

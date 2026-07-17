@@ -272,7 +272,7 @@ function personalScheduleCard(entry){
    ${entry.parent?`<div class="personal-timeline-parent">屬於：${esc(entry.parent)}</div>`:""}
    ${entry.location?`<div class="meta">📍 ${esc(entry.location)}</div>`:""}
    ${entry.notes?`<div class="personal-timeline-note">${esc(entry.notes)}</div>`:""}
-   ${ownedChecks.length?`<div class="personal-timeline-checks">${ownedChecks.map(c=>`<label class="personal-check ${c.done?"done":""}"><input type="checkbox" data-action="toggle-check" data-id="${c.id}" ${c.done?"checked":""}> <span>${esc(c.title)}</span></label>`).join("")}</div>`:""}
+   ${ownedChecks.length?`<div class="personal-timeline-checks">${ownedChecks.map(c=>`<label class="personal-check ${c.done?"done":""}"><input type="checkbox" data-action="toggle-check" data-id="${c.id}" ${c.done?"checked":""}> <span>${esc(c.title)}${c.note?`<small class="personal-check-note">${esc(c.note)}</small>`:""}</span></label>`).join("")}</div>`:""}
    ${subitems.length?`<div class="personal-timeline-checks">${subitems.map(i=>`<label class="personal-check ${i.done?"done":""}"><input type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}> <span>${esc(i.title)}</span></label>`).join("")}</div>`:""}
    <div class="personal-timeline-actions">
     ${url?`<a class="small map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 導航</a>`:""}
@@ -831,6 +831,7 @@ function linkedPreparationCard(ch){
    <div class="main check-edit-target" data-action="edit-check" data-id="${ch.id}" role="button" tabindex="0" title="點一下修改確認項">
     <div class="name">${esc(ch.title)} <span class="inline-edit-hint">✏️</span></div>
     <div class="meta">負責：${esc(ch.owner||"未指定")}</div>
+    ${ch.note?`<div class="meta check-note">備註：${esc(ch.note)}</div>`:""}
    </div>
    <div class="actions check-actions"><button class="small check-edit-btn" data-action="edit-check" data-id="${ch.id}">✏️ 修改</button><button class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button></div>
   </div>`;
@@ -845,6 +846,7 @@ function linkedPreparationCard(ch){
    <div class="main check-edit-target" data-action="edit-check" data-id="${ch.id}" role="button" tabindex="0" title="點一下修改確認項">
     <div class="name">${esc(ch.title)} <span class="inline-edit-hint">✏️</span></div>
     <div class="meta">負責：${esc(ch.owner||taskOwnerText(t)||"未指定")}・前置狀態：${ready?"✅ 已準備":"⚠️ 尚未準備"}${p.total?`（${p.done}/${p.total}）`:""}</div>
+    ${ch.note?`<div class="meta check-note">備註：${esc(ch.note)}</div>`:""}
     ${p.total?`<div class="progress compact-progress"><span style="width:${Math.round(p.done/p.total*100)}%"></span></div>`:""}
    </div>
    <div class="actions check-actions">
@@ -1047,11 +1049,18 @@ function renderTimeline(){
       ${url?`<a class="map-link clean-map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 開啟 Google 地圖</a>`:""}
       ${f.notes?`<div class="clean-timeline-note">${esc(f.notes)}</div>`:""}
       ${list.length?`<div class="clean-check-list">
-       ${list.map(ch=>`<label class="clean-check-row ${ch.done?"done":""}">
+       ${list.map(ch=>`<div class="clean-check-row ${ch.done?"done":""}">
         <input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}>
-        <span>${esc(ch.title)}</span>
-        ${ch.owner?`<small>${esc(ch.owner)}</small>`:""}
-       </label>`).join("")}
+        <button type="button" class="clean-check-content" data-action="edit-check" data-id="${ch.id}" title="修改確認項">
+         <span class="clean-check-title">${esc(ch.title)}</span>
+         ${ch.owner?`<small>負責：${esc(ch.owner)}</small>`:""}
+         ${ch.note?`<small class="clean-check-note">備註：${esc(ch.note)}</small>`:""}
+        </button>
+        <div class="clean-check-actions">
+         <button type="button" class="small" data-action="edit-check" data-id="${ch.id}">修改</button>
+         <button type="button" class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button>
+        </div>
+       </div>`).join("")}
       </div>`:""}
 
       ${flowRosters(f).length?`<section class="flow-linked-rosters">
@@ -1589,13 +1598,13 @@ $("#flowForm").onsubmit=async e=>{
  else await addDoc(collection(db,"wccFlows"),{...p,sort:flows.filter(x=>x.groupId===p.groupId).length,createdAt:serverTimestamp()});
  close("flowDialog");
 };
-function openCheck(ch=null,flowId=""){$("#checkDialogTitle").textContent=ch?"修改流程確認項目":"新增流程確認項目";$("#checkId").value=ch?.id||"";$("#checkFlowId").value=ch?.flowId||flowId;$("#checkTitle").value=ch?.title||"";
+function openCheck(ch=null,flowId=""){$("#checkDialogTitle").textContent=ch?"修改流程確認項目":"新增流程確認項目";$("#checkId").value=ch?.id||"";$("#checkFlowId").value=ch?.flowId||flowId;$("#checkTitle").value=ch?.title||"";$("#checkNote").value=ch?.note||"";
 $("#checkOwner").innerHTML='<option value="">未指定</option>'+people.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}${p.role?`（${esc(p.role)}）`:""}</option>`).join("");
 if(ch?.owner&&!people.some(p=>p.name===ch.owner)){
  $("#checkOwner").insertAdjacentHTML("beforeend",`<option value="${esc(ch.owner)}">${esc(ch.owner)}（舊資料）</option>`);
 }
 $("#checkOwner").value=ch?.owner||"";
-$("#checkTaskLink").innerHTML='<option value="">不連結</option>'+tasks.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join("");$("#checkTaskLink").value=ch?.taskId||"";$("#checkDialog").showModal()}$("#checkForm").onsubmit=async e=>{e.preventDefault();const id=$("#checkId").value,p={flowId:$("#checkFlowId").value,title:$("#checkTitle").value.trim(),owner:$("#checkOwner").value,taskId:$("#checkTaskLink").value,autoFromTask:false,updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccFlowChecks",id),p):await addDoc(collection(db,"wccFlowChecks"),{...p,done:false,sort:checks.filter(x=>x.flowId===p.flowId).length,createdAt:serverTimestamp()});close("checkDialog")};
+$("#checkTaskLink").innerHTML='<option value="">不連結</option>'+tasks.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join("");$("#checkTaskLink").value=ch?.taskId||"";$("#checkDialog").showModal()}$("#checkForm").onsubmit=async e=>{e.preventDefault();const id=$("#checkId").value,p={flowId:$("#checkFlowId").value,title:$("#checkTitle").value.trim(),owner:$("#checkOwner").value,taskId:$("#checkTaskLink").value,note:$("#checkNote").value.trim(),autoFromTask:false,updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccFlowChecks",id),p):await addDoc(collection(db,"wccFlowChecks"),{...p,done:false,sort:checks.filter(x=>x.flowId===p.flowId).length,createdAt:serverTimestamp()});close("checkDialog")};
 function openPerson(p=null){$("#personDialogTitle").textContent=p?"修改人員":"新增人員";$("#personId").value=p?.id||"";$("#personName").value=p?.name||"";$("#personRole").value=p?.role||"";$("#personDialog").showModal()}$("#personForm").onsubmit=async e=>{e.preventDefault();const id=$("#personId").value,p={name:$("#personName").value.trim(),role:$("#personRole").value.trim(),updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccPeople",id),p):await addDoc(collection(db,"wccPeople"),{...p,sort:people.length,createdAt:serverTimestamp()});close("personDialog")};
 function openCategory(c=null){$("#categoryDialogTitle").textContent=c?"修改大項":"新增大項";$("#categoryId").value=c?.id||"";$("#categoryName").value=c?.name||"";$("#categoryIcon").value=c?.icon||"📂";$("#categoryDialog").showModal()}$("#categoryForm").onsubmit=async e=>{e.preventDefault();const id=$("#categoryId").value,p={name:$("#categoryName").value.trim(),icon:$("#categoryIcon").value.trim()||"📂",updatedAt:serverTimestamp()};id?await updateDoc(doc(db,"wccCategories",id),p):await addDoc(collection(db,"wccCategories"),{...p,sort:categories.length,createdAt:serverTimestamp()});close("categoryDialog")};
 
