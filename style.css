@@ -2068,25 +2068,37 @@ body:not(.admin-mode) [data-action="delete-group"]{
  .my-companion-roster-main strong{font-size:17px}
 }
 
-/* V6.10：相同時間共用同一個時間節點與圓點 */
+/* V6.11：同時間真正共用單一節點（資料層分組，不是只靠 CSS） */
+.personal-timeline-group{
+  position:relative;
+  display:grid;
+  grid-template-columns:var(--personal-time-column) var(--personal-rail-column) minmax(0,1fr);
+  align-items:stretch;
+  min-height:116px;
+  isolation:isolate;
+}
+.personal-timeline-group>.personal-timeline-time{grid-column:1}
+.personal-timeline-group>.personal-timeline-rail{grid-column:2}
 .personal-timeline-stack{
   grid-column:3;
   min-width:0;
   display:grid;
-  gap:12px;
+  gap:14px;
   padding:8px 0 14px 14px;
 }
-.personal-timeline-stack .personal-timeline-card{
+.personal-timeline-stack>.personal-timeline-card{
   grid-column:auto;
   width:auto;
   margin:0;
 }
-.personal-timeline-stack .personal-timeline-card.is-done{opacity:.72}
-.personal-timeline-group{min-height:116px}
-.personal-timeline-group .personal-timeline-rail:after{top:30px}
+.personal-timeline-group:first-of-type>.personal-timeline-rail:before{top:30px}
+.personal-timeline-group:last-child>.personal-timeline-rail:before{bottom:calc(100% - 31px)}
+.personal-timeline-group.is-done>.personal-timeline-stack>.personal-timeline-card{opacity:.72}
+/* 舊版單筆 wrapper 不再參與新的個人時間線排版 */
+.personal-timeline>.personal-timeline-item{display:none}
 @media(max-width:700px){
-  .personal-timeline-stack{padding-left:10px;gap:10px}
+  .personal-timeline-stack{padding-left:10px}
 }
 @media(max-width:420px){
-  .personal-timeline-stack{padding-left:8px;gap:8px}
+  .personal-timeline-stack{padding-left:8px}
 }
