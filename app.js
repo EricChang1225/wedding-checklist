@@ -1113,18 +1113,14 @@ function renderTimeline(){
  const orderedGroups=[...groups].sort((a,b)=>(a.sort??0)-(b.sort??0));
  const ungrouped=orderedFlows(flows.filter(f=>!f.groupId||!group(f.groupId)));
 
- const timelineItem=f=>{
+ const timelineCard=f=>{
    const list=checks.filter(x=>x.flowId===f.id);
    const done=list.filter(x=>x.done).length;
    const collapsed=collapsedFlows.has(f.id);
    const url=mapUrl(f);
-   const time=formatFlowTime(f)||"未定";
    const hasDetails=Boolean(list.length||f.notes||url||f.address);
 
-   return `<article class="clean-timeline-item ${collapsed?"is-collapsed":""}">
-    <div class="clean-timeline-time">${esc(time)}</div>
-    <div class="clean-timeline-rail"><span></span></div>
-    <div class="clean-timeline-card">
+   return `<div class="clean-timeline-card ${collapsed?"is-collapsed":""}">
      <button class="clean-timeline-main" data-action="toggle-flow" data-id="${f.id}" aria-expanded="${!collapsed}">
       <div class="clean-timeline-title-row">
        <div class="clean-timeline-title">${esc(f.icon||"📍")} ${esc(f.name)}</div>
@@ -1187,9 +1183,29 @@ function renderTimeline(){
        <button class="small danger" data-action="delete-flow" data-id="${f.id}">刪除</button>
       </div>
      </div>
-    </div>
-   </article>`;
+    </div>`;
  };
+
+ const groupTimelineFlows=list=>{
+   const grouped=[];
+   const byTime=new Map();
+   list.forEach(f=>{
+     const time=formatFlowTime(f)||"未定";
+     if(!byTime.has(time)){
+       const node={time,flows:[]};
+       byTime.set(time,node);
+       grouped.push(node);
+     }
+     byTime.get(time).flows.push(f);
+   });
+   return grouped;
+ };
+
+ const timelineNode=node=>`<article class="clean-timeline-item clean-timeline-node">
+   <div class="clean-timeline-time">${esc(node.time)}</div>
+   <div class="clean-timeline-rail"><span></span></div>
+   <div class="clean-timeline-stack">${node.flows.map(timelineCard).join("")}</div>
+  </article>`;
 
  const stageBlock=g=>{
    const list=orderedFlows(flows.filter(f=>f.groupId===g.id));
@@ -1213,7 +1229,7 @@ function renderTimeline(){
      </details>
     </header>
     <div class="clean-stage-body ${collapsed?"collapsed":""}">
-     ${list.map(timelineItem).join("")||'<div class="empty">此階段尚無流程</div>'}
+     ${groupTimelineFlows(list).map(timelineNode).join("")||'<div class="empty">此階段尚無流程</div>'}
     </div>
    </section>`;
  };
@@ -1227,7 +1243,7 @@ function renderTimeline(){
    ${orderedGroups.map(stageBlock).join("")}
    ${ungrouped.length?`<section class="clean-stage">
     <header class="clean-stage-head"><div><h2>📌 其他流程</h2><div class="meta">${ungrouped.length} 個流程</div></div></header>
-    <div class="clean-stage-body">${ungrouped.map(timelineItem).join("")}</div>
+    <div class="clean-stage-body">${groupTimelineFlows(ungrouped).map(timelineNode).join("")}</div>
    </section>`:""}
   </div>`;
 }

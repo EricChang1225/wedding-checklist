@@ -2102,3 +2102,20 @@ body:not(.admin-mode) [data-action="delete-group"]{
 @media(max-width:420px){
   .personal-timeline-stack{padding-left:8px}
 }
+
+/* V6.12: 婚禮流程同時段真正共用單一時間節點 */
+.clean-timeline-stack{
+  min-width:0;
+  display:grid;
+  gap:12px;
+  padding:6px 0 12px;
+}
+.clean-timeline-stack .clean-timeline-card{
+  margin:0;
+}
+.clean-timeline-node .clean-timeline-rail:before{
+  bottom:0;
+}
+.clean-stage-body > .clean-timeline-node:last-child .clean-timeline-rail:before{
+  bottom:45%;
+}
