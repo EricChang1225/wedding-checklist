@@ -134,6 +134,17 @@ const myRosterEntries=()=>{
    .filter(m=>m.personId===person.id)
    .map(m=>({roster:r,member:m,flow:flow(r.flowId)})));
 };
+const isChiefUsherUser=()=>{
+ const person=currentPerson();
+ const role=String(person?.role||"");
+ return currentUser==="爐叔"||/總招待|招待長|總召/.test(role);
+};
+const managedUsherRosters=()=>{
+ const explicitlyManaged=rosters.filter(r=>r.chiefUsher===currentUser);
+ if(explicitlyManaged.length)return explicitlyManaged;
+ if(!isChiefUsherUser())return [];
+ return rosters.filter(r=>/招待/.test(String(r.name||"")));
+};
 const scheduleTimeValue=value=>{
  if(!value||!/^\d{2}:\d{2}$/.test(value))return 9999;
  const [h,m]=value.split(":").map(Number);return h*60+m;
@@ -296,64 +307,78 @@ function renderDashboard(){
  })()}
 
  ${(()=>{
-  const managed=rosters.filter(r=>r.chiefUsher===currentUser);
+  const managed=managedUsherRosters();
   if(!managed.length)return "";
-  return `<section class="card chief-usher-card">
-   <div class="card-head">
+  const totalMembers=managed.reduce((sum,r)=>sum+membersForRoster(r.id).length,0);
+  return `<section class="card chief-command-card">
+   <div class="chief-command-head">
     <div>
-     <div class="card-title">👥 我的招待</div>
-     <div class="meta">展開招待即可查看工作、桌次與賓客</div>
+     <div class="card-title">👥 總招待管理</div>
+     <div class="meta">爐叔專屬・點招待查看工作與負責桌次</div>
     </div>
-    <div class="pill">${managed.reduce((sum,r)=>sum+membersForRoster(r.id).length,0)} 人</div>
+    <div class="chief-command-count"><strong>${totalMembers}</strong><span>位招待</span></div>
    </div>
-   <div class="chief-usher-rosters">
+   <div class="chief-command-rosters">
     ${managed.map(r=>{
       const members=membersForRoster(r.id);
-      return `<details class="chief-usher-roster" open>
-       <summary>
+      return `<section class="chief-command-roster">
+       <div class="chief-command-roster-title">
         <span>${esc(r.icon||"📋")} ${esc(r.name)}</span>
-        <small>${members.length} 位招待</small>
-       </summary>
-       <div class="chief-usher-members">
+        <small>${members.length} 人</small>
+       </div>
+       <div class="chief-command-members">
         ${members.map(m=>{
           const p=personById(m.personId);
           const tables=memberTables(m);
-          return `<details class="chief-usher-member">
+          return `<details class="chief-command-member">
            <summary>
-            <span>
+            <span class="chief-command-person">
              <strong>${esc(p?.name||"已刪除人員")}</strong>
-             ${m.duty?`<small>${esc(m.duty)}</small>`:""}
+             <small>${m.duty?esc(m.duty):"尚未填寫工作內容"}</small>
             </span>
-            <span class="chief-table-count">${tables.length?`${tables.length} 桌`:"未分桌"}</span>
+            <span class="chief-command-summary-right">
+             <span class="chief-command-table-total">${tables.length?`${tables.length}桌`:"未分桌"}</span>
+             <span class="chief-command-chevron">⌄</span>
+            </span>
            </summary>
-           <div class="chief-member-detail">
-            ${m.duty?`<div><b>工作：</b>${esc(m.duty)}</div>`:""}
-            ${m.notes?`<div><b>備註：</b>${esc(m.notes)}</div>`:""}
-            ${tables.length?`<div class="chief-table-badges">${tables.map(no=>`<span>${esc(no)}桌</span>`).join("")}</div>`:'<div class="meta">尚未指定負責桌次</div>'}
-            ${tables.length?`<div class="chief-member-tables">
-             ${tables.map(no=>{
-               const info=tableInfo(no);
-               const guests=guestListForTable(no);
-               return `<details class="chief-table-detail">
-                <summary>
-                 <span><strong>${esc(no)}桌</strong><small>${esc(info?.tableName||"未設定桌名")}</small></span>
-                 <span class="chief-table-people">👥 ${esc(info?.count??guests.length)}人</span>
-                </summary>
-                <div class="chief-table-body">
-                 ${info?.relation?`<div class="chief-table-relation">關係：${esc(info.relation)}</div>`:""}
-                 ${info?.notes?`<div class="chief-table-note">⚠️ ${esc(info.notes)}</div>`:""}
-                 <div class="chief-table-guests">
-                  ${guests.map(g=>`<div class="chief-guest-row">👤 ${esc(g)}</div>`).join("")||'<div class="empty">尚未建立賓客名單</div>'}
+           <div class="chief-command-member-body">
+            <div class="chief-command-work-grid">
+             <div class="chief-command-info-block">
+              <span>工作內容</span>
+              <strong>${m.duty?esc(m.duty):"尚未填寫"}</strong>
+             </div>
+             <div class="chief-command-info-block">
+              <span>備註</span>
+              <strong>${m.notes?esc(m.notes):"無"}</strong>
+             </div>
+            </div>
+            ${tables.length?`
+             <div class="chief-command-section-label">負責桌次</div>
+             <div class="chief-command-badges">${tables.map(no=>`<span>${esc(no)}桌</span>`).join("")}</div>
+             <div class="chief-command-tables">
+              ${tables.map(no=>{
+                const info=tableInfo(no);
+                const guests=guestListForTable(no);
+                return `<details class="chief-command-table">
+                 <summary>
+                  <span><strong>${esc(no)}桌</strong><small>${esc(info?.tableName||"未設定桌名")}</small></span>
+                  <span class="chief-command-guest-count">👥 ${esc(info?.count??guests.length)}人</span>
+                 </summary>
+                 <div class="chief-command-table-body">
+                  ${info?.relation?`<div class="chief-command-relation">關係：${esc(info.relation)}</div>`:""}
+                  ${info?.notes?`<div class="chief-command-note">⚠️ ${esc(info.notes)}</div>`:""}
+                  <div class="chief-command-guests">
+                   ${guests.map(g=>`<div>👤 ${esc(g)}</div>`).join("")||'<div class="empty">尚未建立賓客名單</div>'}
+                  </div>
                  </div>
-                </div>
-               </details>`;
-             }).join("")}
-            </div>`:""}
+                </details>`;
+              }).join("")}
+             </div>`:'<div class="empty chief-command-empty">尚未指定負責桌次</div>'}
            </div>
           </details>`;
         }).join("")||'<div class="empty">此名單尚未加入招待</div>'}
        </div>
-      </details>`;
+      </section>`;
     }).join("")}
    </div>
   </section>`;

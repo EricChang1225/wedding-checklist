@@ -1798,3 +1798,31 @@ body:not(.admin-mode) [data-action="delete-group"]{
   .chief-table-guests{grid-template-columns:1fr}
   .chief-usher-member>summary{align-items:flex-start}
 }
+
+
+/* V6.0：總招待管理重構（一般招待介面維持不變） */
+.chief-command-card{padding:0;overflow:hidden;border:1px solid #eadbdd;background:linear-gradient(180deg,#fff 0%,#fffafa 100%)}
+.chief-command-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px;background:linear-gradient(135deg,#fff4f5,#fff)}
+.chief-command-count{min-width:70px;text-align:center;padding:9px 12px;border-radius:15px;background:#fff;border:1px solid #ecdfe1;box-shadow:0 6px 18px rgba(126,65,72,.07)}
+.chief-command-count strong{display:block;font-size:22px;color:#b85f69}.chief-command-count span{display:block;font-size:11px;color:#7c6b6e;font-weight:800}
+.chief-command-rosters{display:grid;gap:14px;padding:14px}
+.chief-command-roster{overflow:hidden;border:1px solid #ece2e3;border-radius:16px;background:#fff}
+.chief-command-roster-title{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#fbf5f6;font-weight:900;color:#55484a}
+.chief-command-roster-title small{padding:4px 8px;border-radius:999px;background:#fff;color:#a55b64}
+.chief-command-members{display:grid}
+.chief-command-member{border-top:1px solid #f0e7e8}.chief-command-member:first-child{border-top:0}
+.chief-command-member>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;cursor:pointer;list-style:none}
+.chief-command-member>summary::-webkit-details-marker,.chief-command-table>summary::-webkit-details-marker{display:none}
+.chief-command-person{min-width:0}.chief-command-person strong,.chief-command-person small{display:block}.chief-command-person strong{font-size:17px;color:#403739}.chief-command-person small{margin-top:3px;color:#89787b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chief-command-summary-right{display:flex;align-items:center;gap:8px;flex:none}.chief-command-table-total{padding:5px 9px;border-radius:999px;background:#f6e5e8;color:#a9535e;font-size:12px;font-weight:900}.chief-command-chevron{font-size:18px;transition:transform .2s ease}.chief-command-member[open] .chief-command-chevron{transform:rotate(180deg)}
+.chief-command-member-body{padding:0 14px 15px;border-top:1px solid #f2e9ea;background:#fffdfd}
+.chief-command-work-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px 0}
+.chief-command-info-block{padding:10px;border-radius:12px;background:#faf5f6;border:1px solid #eee3e5}.chief-command-info-block span,.chief-command-info-block strong{display:block}.chief-command-info-block span{font-size:11px;color:#9a777d;font-weight:900}.chief-command-info-block strong{margin-top:4px;color:#55474a;font-size:14px}
+.chief-command-section-label{margin:2px 0 8px;font-size:12px;color:#8e7478;font-weight:900}
+.chief-command-badges{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px}.chief-command-badges span{padding:6px 10px;border-radius:999px;background:#b9626c;color:#fff;font-size:12px;font-weight:900}
+.chief-command-tables{display:grid;gap:8px}.chief-command-table{overflow:hidden;border:1px solid #eadfe1;border-radius:13px;background:#fff}
+.chief-command-table>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;cursor:pointer;list-style:none}.chief-command-table>summary span:first-child strong,.chief-command-table>summary span:first-child small{display:block}.chief-command-table>summary strong{color:#b85f69;font-size:17px}.chief-command-table>summary small{margin-top:2px;color:#625457;font-weight:800}
+.chief-command-guest-count{flex:none;font-size:12px;font-weight:900;color:#8c6e73}
+.chief-command-table-body{padding:10px 12px 12px;border-top:1px solid #f0e6e7}.chief-command-relation{margin-bottom:6px;color:#78696c}.chief-command-note{margin:7px 0;padding:8px 10px;border-radius:10px;background:#fff4dc;color:#735c31}
+.chief-command-guests{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:7px;margin-top:9px}.chief-command-guests>div{padding:8px 9px;border-radius:9px;background:#fff7f8;border:1px solid #f0e4e6}.chief-command-empty{margin-top:12px}
+@media(max-width:560px){.chief-command-head{align-items:flex-start}.chief-command-work-grid{grid-template-columns:1fr}.chief-command-guests{grid-template-columns:1fr}.chief-command-member>summary{align-items:flex-start}.chief-command-person small{white-space:normal}}
