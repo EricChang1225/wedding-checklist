@@ -209,24 +209,37 @@ const checkHasOwner=(c,name)=>Boolean(name&&checkOwnerNames(c).includes(name));
 function personalScheduleEntries(name){
  if(!name)return [];
  const entries=[];
- const assignedTasks=tasks.filter(t=>taskHasOwner(t,name));
+ const person=people.find(p=>p.name===name);
+ const assignedTasks=tasks.filter(t=>t.type!=="物品"&&taskHasOwner(t,name));
  const assignedTaskIds=new Set(assignedTasks.map(t=>t.id));
 
  flows.forEach(f=>{
   const ownedChecks=checks.filter(c=>c.flowId===f.id&&checkHasOwner(c,name));
   const ownsFlow=flowHasOwner(f,name);
+  const linkedRosters=[
+   ...flowRosters(f),
+   ...rosters.filter(r=>r.flowId===f.id)
+  ].filter((r,i,list)=>r&&list.findIndex(x=>x.id===r.id)===i);
+  const memberRosters=person?linkedRosters.filter(r=>membersForRoster(r.id).some(m=>m.personId===person.id)):[];
+
   if(ownsFlow){
    entries.push({
     key:`flow-${f.id}`,type:"flow",time:formatFlowTime(f),sort:scheduleTimeValue((formatFlowTime(f)||"").slice(0,5)),
     icon:f.icon||"🎬",title:f.name,parent:"婚禮流程",location:f.location||"",address:f.address||"",notes:f.notes||"",
     flowId:f.id,checks:ownedChecks,done:ownedChecks.length>0&&ownedChecks.every(c=>c.done)
    });
-  }else{
+  }else if(ownedChecks.length){
    ownedChecks.filter(c=>!(c.autoFromTask&&assignedTaskIds.has(c.taskId))).forEach(c=>entries.push({
     key:`check-${c.id}`,type:"check",time:formatFlowTime(f),sort:scheduleTimeValue((formatFlowTime(f)||"").slice(0,5)),
     icon:"☑️",title:c.title,parent:f.name,location:f.location||"",address:f.address||"",notes:f.notes||"",
     flowId:f.id,checkId:c.id,done:Boolean(c.done)
    }));
+  }else if(memberRosters.length){
+   entries.push({
+    key:`roster-flow-${f.id}`,type:"roster",time:formatFlowTime(f),sort:scheduleTimeValue((formatFlowTime(f)||"").slice(0,5)),
+    icon:f.icon||"📋",title:f.name,parent:`工作名單：${memberRosters.map(r=>r.name).join("、")}`,
+    location:f.location||"",address:f.address||"",notes:f.notes||"",flowId:f.id,done:false
+   });
   }
  });
 
@@ -235,18 +248,18 @@ function personalScheduleEntries(name){
   const time=t.startTime?(t.endTime?`${t.startTime}－${t.endTime}`:t.startTime):(linked[0]?formatFlowTime(linked[0]):"");
   const progress=taskProgress(t);
   entries.push({
-   key:`task-${t.id}`,type:t.type==="物品"?"item":"task",time,sort:scheduleTimeValue((time||"").slice(0,5)),
-   icon:t.type==="物品"?"📦":workKindIcon(t.workKind),title:t.title,parent:linked.length?linked.map(f=>f.name).join("、"):(t.categoryId?category(t.categoryId)?.name||t.type:t.type),
+   key:`task-${t.id}`,type:"task",time,sort:scheduleTimeValue((time||"").slice(0,5)),
+   icon:workKindIcon(t.workKind),title:t.title,parent:linked.length?linked.map(f=>f.name).join("、"):(t.categoryId?category(t.categoryId)?.name||t.type:t.type),
    location:t.location||"",address:t.address||"",notes:t.notes||"",taskId:t.id,
    done:progress.total?progress.complete:Boolean(t.done),subitems:progress.list
   });
  });
 
- const rank={flow:0,check:1,task:2,item:3};
+ const rank={flow:0,check:1,roster:2,task:3};
  return entries.sort((a,b)=>a.sort-b.sort||(rank[a.type]??9)-(rank[b.type]??9)||String(a.title).localeCompare(String(b.title),"zh-Hant"));
 }
 function personalScheduleCard(entry){
- const source={flow:"婚禮流程",check:"流程確認項",task:"工作",item:"準備物品"}[entry.type]||"行程";
+ const source={flow:"婚禮流程",check:"流程確認項",roster:"工作名單",task:"工作"}[entry.type]||"行程";
  const url=entry.flowId?mapUrl(flow(entry.flowId)):entry.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(entry.address)}`:"";
  const ownedChecks=entry.checks||[];
  const subitems=entry.subitems||[];
@@ -280,7 +293,7 @@ function renderDashboard(){
   <div class="card-head">
    <div>
     <div class="card-title">📅 ${esc(currentUser||"我的")}的行程時間線</div>
-    <div class="meta">自動整合婚禮流程、流程確認項、工作與準備物品</div>
+    <div class="meta">自動整合婚禮流程、流程確認項、工作名單與工作</div>
    </div>
    <div class="pill">${personalEntries.length} 項</div>
   </div>
