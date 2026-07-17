@@ -1826,3 +1826,7 @@ body:not(.admin-mode) [data-action="delete-group"]{
 .chief-command-table-body{padding:10px 12px 12px;border-top:1px solid #f0e6e7}.chief-command-relation{margin-bottom:6px;color:#78696c}.chief-command-note{margin:7px 0;padding:8px 10px;border-radius:10px;background:#fff4dc;color:#735c31}
 .chief-command-guests{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:7px;margin-top:9px}.chief-command-guests>div{padding:8px 9px;border-radius:9px;background:#fff7f8;border:1px solid #f0e4e6}.chief-command-empty{margin-top:12px}
 @media(max-width:560px){.chief-command-head{align-items:flex-start}.chief-command-work-grid{grid-template-columns:1fr}.chief-command-guests{grid-template-columns:1fr}.chief-command-member>summary{align-items:flex-start}.chief-command-person small{white-space:normal}}
+
+/* V6.1 categorized icon selector */
+.sheet select[id$="Icon"]{font-size:17px;min-height:48px;background:#fff}
+.icon-picker-hint{display:block;margin-top:6px;font-size:12px}

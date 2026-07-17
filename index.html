@@ -112,7 +112,38 @@
   <h2 id="rosterDialogTitle">新增名單</h2>
   <input id="rosterId" type="hidden">
   <label>名單名稱<input id="rosterName" maxlength="50" required placeholder="例如：喝茶名單、招待名單"></label>
-  <label>圖示<input id="rosterIcon" maxlength="4" value="📋"></label>
+  <label>圖示<select id="rosterIcon">
+      <optgroup label="常用">
+        <option value="📍">📍 地點</option><option value="📌">📌 標記</option><option value="📋">📋 清單</option><option value="✅">✅ 完成</option><option value="⭐">⭐ 重點</option><option value="⚠️">⚠️ 注意</option>
+      </optgroup>
+      <optgroup label="婚禮與儀式">
+        <option value="💒">💒 婚禮</option><option value="💍">💍 戒指</option><option value="👰">👰 新娘</option><option value="🤵">🤵 新郎</option><option value="💐">💐 捧花</option><option value="❤️">❤️ 愛心</option><option value="💕">💕 雙心</option><option value="🎎">🎎 新人</option><option value="🧧">🧧 紅包</option><option value="🙏">🙏 儀式</option><option value="🕯️">🕯️ 點燭</option><option value="🫖">🫖 奉茶</option>
+      </optgroup>
+      <optgroup label="宴會與餐飲">
+        <option value="🍽️">🍽️ 宴席</option><option value="🥂">🥂 敬酒</option><option value="🍾">🍾 開香檳</option><option value="🎂">🎂 蛋糕</option><option value="🍰">🍰 甜點</option><option value="☕">☕ 茶飲</option><option value="🍵">🍵 茶</option><option value="🍷">🍷 紅酒</option><option value="🍴">🍴 用餐</option><option value="🍬">🍬 喜糖</option><option value="🍭">🍭 糖果</option><option value="🥡">🥡 打包</option>
+      </optgroup>
+      <optgroup label="舞台與表演">
+        <option value="🎤">🎤 麥克風</option><option value="🎙️">🎙️ 主持</option><option value="🎵">🎵 音樂</option><option value="🎶">🎶 樂曲</option><option value="🔊">🔊 音響</option><option value="🎭">🎭 表演</option><option value="💃">💃 舞蹈</option><option value="🕺">🕺 舞蹈</option><option value="🎹">🎹 鋼琴</option><option value="🎻">🎻 樂器</option><option value="🥁">🥁 鼓</option><option value="🎬">🎬 開場</option>
+      </optgroup>
+      <optgroup label="攝影與紀錄">
+        <option value="📷">📷 相機</option><option value="📸">📸 拍照</option><option value="🎥">🎥 錄影</option><option value="📹">📹 攝影機</option><option value="🤳">🤳 自拍</option><option value="🖼️">🖼️ 照片</option><option value="📱">📱 手機</option><option value="💡">💡 燈光</option>
+      </optgroup>
+      <optgroup label="人員與接待">
+        <option value="👥">👥 團隊</option><option value="👤">👤 人員</option><option value="🤝">🤝 接待</option><option value="🙋">🙋 招呼</option><option value="🧑‍🤝‍🧑">🧑‍🤝‍🧑 賓客</option><option value="🪑">🪑 座位</option><option value="🎫">🎫 報到</option><option value="🛎️">🛎️ 服務</option><option value="🚪">🚪 入口</option><option value="🧭">🧭 帶位</option>
+      </optgroup>
+      <optgroup label="交通與移動">
+        <option value="🚗">🚗 汽車</option><option value="🚕">🚕 計程車</option><option value="🚌">🚌 巴士</option><option value="🚐">🚐 接駁車</option><option value="🚆">🚆 火車</option><option value="🚄">🚄 高鐵</option><option value="✈️">✈️ 飛機</option><option value="🏨">🏨 飯店</option><option value="🏠">🏠 住家</option><option value="🏛️">🏛️ 會場</option><option value="🗺️">🗺️ 地圖</option><option value="➡️">➡️ 移動</option>
+      </optgroup>
+      <optgroup label="工作與準備">
+        <option value="🛠️">🛠️ 施工</option><option value="🔧">🔧 設備</option><option value="⚙️">⚙️ 設定</option><option value="📦">📦 物品</option><option value="🗂️">🗂️ 分類</option><option value="📝">📝 記錄</option><option value="✏️">✏️ 編輯</option><option value="🔍">🔍 確認</option><option value="📞">📞 聯絡</option><option value="💬">💬 溝通</option><option value="🔑">🔑 鑰匙</option><option value="🧹">🧹 整理</option>
+      </optgroup>
+      <optgroup label="活動與驚喜">
+        <option value="🎁">🎁 禮物</option><option value="🎉">🎉 慶祝</option><option value="🎊">🎊 彩帶</option><option value="🎈">🎈 氣球</option><option value="🎲">🎲 遊戲</option><option value="🏆">🏆 頒獎</option><option value="🎯">🎯 活動</option><option value="✨">✨ 亮點</option><option value="🌟">🌟 特別</option><option value="💌">💌 卡片</option><option value="🎀">🎀 裝飾</option><option value="🪄">🪄 驚喜</option>
+      </optgroup>
+      <optgroup label="提醒與狀態">
+        <option value="⏰">⏰ 時間</option><option value="🕒">🕒 時鐘</option><option value="⏳">⏳ 等待</option><option value="🔔">🔔 提醒</option><option value="❗">❗ 重要</option><option value="🚨">🚨 緊急</option><option value="🔥">🔥 優先</option><option value="❓">❓ 待確認</option><option value="⭕">⭕ 進行中</option><option value="❌">❌ 取消</option><option value="☑️">☑️ 已確認</option><option value="🔒">🔒 保密</option>
+      </optgroup>
+    </select></label>
   <label>集合時間<input id="rosterTime" type="time"></label>
   <label>集合地點<input id="rosterLocation" maxlength="100"></label>
   <label>關聯流程<select id="rosterFlow"><option value="">不連結流程</option></select></label>
@@ -191,7 +222,38 @@
   <h2 id="groupDialogTitle">新增流程群組</h2>
   <input id="groupId" type="hidden">
   <label>群組名稱<input id="groupName" maxlength="40" required placeholder="例如：文定、迎娶、婚宴"></label>
-  <label>圖示<input id="groupIcon" maxlength="4" value="🗂️"></label>
+  <label>圖示<select id="groupIcon">
+      <optgroup label="常用">
+        <option value="📍">📍 地點</option><option value="📌">📌 標記</option><option value="📋">📋 清單</option><option value="✅">✅ 完成</option><option value="⭐">⭐ 重點</option><option value="⚠️">⚠️ 注意</option>
+      </optgroup>
+      <optgroup label="婚禮與儀式">
+        <option value="💒">💒 婚禮</option><option value="💍">💍 戒指</option><option value="👰">👰 新娘</option><option value="🤵">🤵 新郎</option><option value="💐">💐 捧花</option><option value="❤️">❤️ 愛心</option><option value="💕">💕 雙心</option><option value="🎎">🎎 新人</option><option value="🧧">🧧 紅包</option><option value="🙏">🙏 儀式</option><option value="🕯️">🕯️ 點燭</option><option value="🫖">🫖 奉茶</option>
+      </optgroup>
+      <optgroup label="宴會與餐飲">
+        <option value="🍽️">🍽️ 宴席</option><option value="🥂">🥂 敬酒</option><option value="🍾">🍾 開香檳</option><option value="🎂">🎂 蛋糕</option><option value="🍰">🍰 甜點</option><option value="☕">☕ 茶飲</option><option value="🍵">🍵 茶</option><option value="🍷">🍷 紅酒</option><option value="🍴">🍴 用餐</option><option value="🍬">🍬 喜糖</option><option value="🍭">🍭 糖果</option><option value="🥡">🥡 打包</option>
+      </optgroup>
+      <optgroup label="舞台與表演">
+        <option value="🎤">🎤 麥克風</option><option value="🎙️">🎙️ 主持</option><option value="🎵">🎵 音樂</option><option value="🎶">🎶 樂曲</option><option value="🔊">🔊 音響</option><option value="🎭">🎭 表演</option><option value="💃">💃 舞蹈</option><option value="🕺">🕺 舞蹈</option><option value="🎹">🎹 鋼琴</option><option value="🎻">🎻 樂器</option><option value="🥁">🥁 鼓</option><option value="🎬">🎬 開場</option>
+      </optgroup>
+      <optgroup label="攝影與紀錄">
+        <option value="📷">📷 相機</option><option value="📸">📸 拍照</option><option value="🎥">🎥 錄影</option><option value="📹">📹 攝影機</option><option value="🤳">🤳 自拍</option><option value="🖼️">🖼️ 照片</option><option value="📱">📱 手機</option><option value="💡">💡 燈光</option>
+      </optgroup>
+      <optgroup label="人員與接待">
+        <option value="👥">👥 團隊</option><option value="👤">👤 人員</option><option value="🤝">🤝 接待</option><option value="🙋">🙋 招呼</option><option value="🧑‍🤝‍🧑">🧑‍🤝‍🧑 賓客</option><option value="🪑">🪑 座位</option><option value="🎫">🎫 報到</option><option value="🛎️">🛎️ 服務</option><option value="🚪">🚪 入口</option><option value="🧭">🧭 帶位</option>
+      </optgroup>
+      <optgroup label="交通與移動">
+        <option value="🚗">🚗 汽車</option><option value="🚕">🚕 計程車</option><option value="🚌">🚌 巴士</option><option value="🚐">🚐 接駁車</option><option value="🚆">🚆 火車</option><option value="🚄">🚄 高鐵</option><option value="✈️">✈️ 飛機</option><option value="🏨">🏨 飯店</option><option value="🏠">🏠 住家</option><option value="🏛️">🏛️ 會場</option><option value="🗺️">🗺️ 地圖</option><option value="➡️">➡️ 移動</option>
+      </optgroup>
+      <optgroup label="工作與準備">
+        <option value="🛠️">🛠️ 施工</option><option value="🔧">🔧 設備</option><option value="⚙️">⚙️ 設定</option><option value="📦">📦 物品</option><option value="🗂️">🗂️ 分類</option><option value="📝">📝 記錄</option><option value="✏️">✏️ 編輯</option><option value="🔍">🔍 確認</option><option value="📞">📞 聯絡</option><option value="💬">💬 溝通</option><option value="🔑">🔑 鑰匙</option><option value="🧹">🧹 整理</option>
+      </optgroup>
+      <optgroup label="活動與驚喜">
+        <option value="🎁">🎁 禮物</option><option value="🎉">🎉 慶祝</option><option value="🎊">🎊 彩帶</option><option value="🎈">🎈 氣球</option><option value="🎲">🎲 遊戲</option><option value="🏆">🏆 頒獎</option><option value="🎯">🎯 活動</option><option value="✨">✨ 亮點</option><option value="🌟">🌟 特別</option><option value="💌">💌 卡片</option><option value="🎀">🎀 裝飾</option><option value="🪄">🪄 驚喜</option>
+      </optgroup>
+      <optgroup label="提醒與狀態">
+        <option value="⏰">⏰ 時間</option><option value="🕒">🕒 時鐘</option><option value="⏳">⏳ 等待</option><option value="🔔">🔔 提醒</option><option value="❗">❗ 重要</option><option value="🚨">🚨 緊急</option><option value="🔥">🔥 優先</option><option value="❓">❓ 待確認</option><option value="⭕">⭕ 進行中</option><option value="❌">❌ 取消</option><option value="☑️">☑️ 已確認</option><option value="🔒">🔒 保密</option>
+      </optgroup>
+    </select></label>
   <div class="sheet-actions"><button type="button" class="btn" data-close="groupDialog">取消</button><button class="btn primary">儲存</button></div>
 </form></dialog>
 
@@ -214,7 +276,38 @@
     <label>結束時間<input id="flowEndTime" type="time"></label>
   </div>
   <label>流程名稱<input id="flowName" maxlength="50" required></label>
-  <label>圖示<input id="flowIcon" maxlength="4" value="📍"></label>
+  <label>圖示<select id="flowIcon">
+      <optgroup label="常用">
+        <option value="📍">📍 地點</option><option value="📌">📌 標記</option><option value="📋">📋 清單</option><option value="✅">✅ 完成</option><option value="⭐">⭐ 重點</option><option value="⚠️">⚠️ 注意</option>
+      </optgroup>
+      <optgroup label="婚禮與儀式">
+        <option value="💒">💒 婚禮</option><option value="💍">💍 戒指</option><option value="👰">👰 新娘</option><option value="🤵">🤵 新郎</option><option value="💐">💐 捧花</option><option value="❤️">❤️ 愛心</option><option value="💕">💕 雙心</option><option value="🎎">🎎 新人</option><option value="🧧">🧧 紅包</option><option value="🙏">🙏 儀式</option><option value="🕯️">🕯️ 點燭</option><option value="🫖">🫖 奉茶</option>
+      </optgroup>
+      <optgroup label="宴會與餐飲">
+        <option value="🍽️">🍽️ 宴席</option><option value="🥂">🥂 敬酒</option><option value="🍾">🍾 開香檳</option><option value="🎂">🎂 蛋糕</option><option value="🍰">🍰 甜點</option><option value="☕">☕ 茶飲</option><option value="🍵">🍵 茶</option><option value="🍷">🍷 紅酒</option><option value="🍴">🍴 用餐</option><option value="🍬">🍬 喜糖</option><option value="🍭">🍭 糖果</option><option value="🥡">🥡 打包</option>
+      </optgroup>
+      <optgroup label="舞台與表演">
+        <option value="🎤">🎤 麥克風</option><option value="🎙️">🎙️ 主持</option><option value="🎵">🎵 音樂</option><option value="🎶">🎶 樂曲</option><option value="🔊">🔊 音響</option><option value="🎭">🎭 表演</option><option value="💃">💃 舞蹈</option><option value="🕺">🕺 舞蹈</option><option value="🎹">🎹 鋼琴</option><option value="🎻">🎻 樂器</option><option value="🥁">🥁 鼓</option><option value="🎬">🎬 開場</option>
+      </optgroup>
+      <optgroup label="攝影與紀錄">
+        <option value="📷">📷 相機</option><option value="📸">📸 拍照</option><option value="🎥">🎥 錄影</option><option value="📹">📹 攝影機</option><option value="🤳">🤳 自拍</option><option value="🖼️">🖼️ 照片</option><option value="📱">📱 手機</option><option value="💡">💡 燈光</option>
+      </optgroup>
+      <optgroup label="人員與接待">
+        <option value="👥">👥 團隊</option><option value="👤">👤 人員</option><option value="🤝">🤝 接待</option><option value="🙋">🙋 招呼</option><option value="🧑‍🤝‍🧑">🧑‍🤝‍🧑 賓客</option><option value="🪑">🪑 座位</option><option value="🎫">🎫 報到</option><option value="🛎️">🛎️ 服務</option><option value="🚪">🚪 入口</option><option value="🧭">🧭 帶位</option>
+      </optgroup>
+      <optgroup label="交通與移動">
+        <option value="🚗">🚗 汽車</option><option value="🚕">🚕 計程車</option><option value="🚌">🚌 巴士</option><option value="🚐">🚐 接駁車</option><option value="🚆">🚆 火車</option><option value="🚄">🚄 高鐵</option><option value="✈️">✈️ 飛機</option><option value="🏨">🏨 飯店</option><option value="🏠">🏠 住家</option><option value="🏛️">🏛️ 會場</option><option value="🗺️">🗺️ 地圖</option><option value="➡️">➡️ 移動</option>
+      </optgroup>
+      <optgroup label="工作與準備">
+        <option value="🛠️">🛠️ 施工</option><option value="🔧">🔧 設備</option><option value="⚙️">⚙️ 設定</option><option value="📦">📦 物品</option><option value="🗂️">🗂️ 分類</option><option value="📝">📝 記錄</option><option value="✏️">✏️ 編輯</option><option value="🔍">🔍 確認</option><option value="📞">📞 聯絡</option><option value="💬">💬 溝通</option><option value="🔑">🔑 鑰匙</option><option value="🧹">🧹 整理</option>
+      </optgroup>
+      <optgroup label="活動與驚喜">
+        <option value="🎁">🎁 禮物</option><option value="🎉">🎉 慶祝</option><option value="🎊">🎊 彩帶</option><option value="🎈">🎈 氣球</option><option value="🎲">🎲 遊戲</option><option value="🏆">🏆 頒獎</option><option value="🎯">🎯 活動</option><option value="✨">✨ 亮點</option><option value="🌟">🌟 特別</option><option value="💌">💌 卡片</option><option value="🎀">🎀 裝飾</option><option value="🪄">🪄 驚喜</option>
+      </optgroup>
+      <optgroup label="提醒與狀態">
+        <option value="⏰">⏰ 時間</option><option value="🕒">🕒 時鐘</option><option value="⏳">⏳ 等待</option><option value="🔔">🔔 提醒</option><option value="❗">❗ 重要</option><option value="🚨">🚨 緊急</option><option value="🔥">🔥 優先</option><option value="❓">❓ 待確認</option><option value="⭕">⭕ 進行中</option><option value="❌">❌ 取消</option><option value="☑️">☑️ 已確認</option><option value="🔒">🔒 保密</option>
+      </optgroup>
+    </select><span class="hint icon-picker-hint">依分類挑選，共 100+ 個常用婚禮圖示。</span></label>
   <label>負責人（可複選）
     <div id="flowOwnerPicker" class="owner-picker"></div>
     <input id="flowOwner" type="hidden">
@@ -251,11 +344,42 @@
   <h2 id="categoryDialogTitle">新增大項</h2>
   <input id="categoryId" type="hidden">
   <label>大項名稱<input id="categoryName" maxlength="40" required></label>
-  <label>圖示<input id="categoryIcon" maxlength="4" value="📂"></label>
+  <label>圖示<select id="categoryIcon">
+      <optgroup label="常用">
+        <option value="📍">📍 地點</option><option value="📌">📌 標記</option><option value="📋">📋 清單</option><option value="✅">✅ 完成</option><option value="⭐">⭐ 重點</option><option value="⚠️">⚠️ 注意</option>
+      </optgroup>
+      <optgroup label="婚禮與儀式">
+        <option value="💒">💒 婚禮</option><option value="💍">💍 戒指</option><option value="👰">👰 新娘</option><option value="🤵">🤵 新郎</option><option value="💐">💐 捧花</option><option value="❤️">❤️ 愛心</option><option value="💕">💕 雙心</option><option value="🎎">🎎 新人</option><option value="🧧">🧧 紅包</option><option value="🙏">🙏 儀式</option><option value="🕯️">🕯️ 點燭</option><option value="🫖">🫖 奉茶</option>
+      </optgroup>
+      <optgroup label="宴會與餐飲">
+        <option value="🍽️">🍽️ 宴席</option><option value="🥂">🥂 敬酒</option><option value="🍾">🍾 開香檳</option><option value="🎂">🎂 蛋糕</option><option value="🍰">🍰 甜點</option><option value="☕">☕ 茶飲</option><option value="🍵">🍵 茶</option><option value="🍷">🍷 紅酒</option><option value="🍴">🍴 用餐</option><option value="🍬">🍬 喜糖</option><option value="🍭">🍭 糖果</option><option value="🥡">🥡 打包</option>
+      </optgroup>
+      <optgroup label="舞台與表演">
+        <option value="🎤">🎤 麥克風</option><option value="🎙️">🎙️ 主持</option><option value="🎵">🎵 音樂</option><option value="🎶">🎶 樂曲</option><option value="🔊">🔊 音響</option><option value="🎭">🎭 表演</option><option value="💃">💃 舞蹈</option><option value="🕺">🕺 舞蹈</option><option value="🎹">🎹 鋼琴</option><option value="🎻">🎻 樂器</option><option value="🥁">🥁 鼓</option><option value="🎬">🎬 開場</option>
+      </optgroup>
+      <optgroup label="攝影與紀錄">
+        <option value="📷">📷 相機</option><option value="📸">📸 拍照</option><option value="🎥">🎥 錄影</option><option value="📹">📹 攝影機</option><option value="🤳">🤳 自拍</option><option value="🖼️">🖼️ 照片</option><option value="📱">📱 手機</option><option value="💡">💡 燈光</option>
+      </optgroup>
+      <optgroup label="人員與接待">
+        <option value="👥">👥 團隊</option><option value="👤">👤 人員</option><option value="🤝">🤝 接待</option><option value="🙋">🙋 招呼</option><option value="🧑‍🤝‍🧑">🧑‍🤝‍🧑 賓客</option><option value="🪑">🪑 座位</option><option value="🎫">🎫 報到</option><option value="🛎️">🛎️ 服務</option><option value="🚪">🚪 入口</option><option value="🧭">🧭 帶位</option>
+      </optgroup>
+      <optgroup label="交通與移動">
+        <option value="🚗">🚗 汽車</option><option value="🚕">🚕 計程車</option><option value="🚌">🚌 巴士</option><option value="🚐">🚐 接駁車</option><option value="🚆">🚆 火車</option><option value="🚄">🚄 高鐵</option><option value="✈️">✈️ 飛機</option><option value="🏨">🏨 飯店</option><option value="🏠">🏠 住家</option><option value="🏛️">🏛️ 會場</option><option value="🗺️">🗺️ 地圖</option><option value="➡️">➡️ 移動</option>
+      </optgroup>
+      <optgroup label="工作與準備">
+        <option value="🛠️">🛠️ 施工</option><option value="🔧">🔧 設備</option><option value="⚙️">⚙️ 設定</option><option value="📦">📦 物品</option><option value="🗂️">🗂️ 分類</option><option value="📝">📝 記錄</option><option value="✏️">✏️ 編輯</option><option value="🔍">🔍 確認</option><option value="📞">📞 聯絡</option><option value="💬">💬 溝通</option><option value="🔑">🔑 鑰匙</option><option value="🧹">🧹 整理</option>
+      </optgroup>
+      <optgroup label="活動與驚喜">
+        <option value="🎁">🎁 禮物</option><option value="🎉">🎉 慶祝</option><option value="🎊">🎊 彩帶</option><option value="🎈">🎈 氣球</option><option value="🎲">🎲 遊戲</option><option value="🏆">🏆 頒獎</option><option value="🎯">🎯 活動</option><option value="✨">✨ 亮點</option><option value="🌟">🌟 特別</option><option value="💌">💌 卡片</option><option value="🎀">🎀 裝飾</option><option value="🪄">🪄 驚喜</option>
+      </optgroup>
+      <optgroup label="提醒與狀態">
+        <option value="⏰">⏰ 時間</option><option value="🕒">🕒 時鐘</option><option value="⏳">⏳ 等待</option><option value="🔔">🔔 提醒</option><option value="❗">❗ 重要</option><option value="🚨">🚨 緊急</option><option value="🔥">🔥 優先</option><option value="❓">❓ 待確認</option><option value="⭕">⭕ 進行中</option><option value="❌">❌ 取消</option><option value="☑️">☑️ 已確認</option><option value="🔒">🔒 保密</option>
+      </optgroup>
+    </select></label>
   <div class="sheet-actions"><button type="button" class="btn" data-close="categoryDialog">取消</button><button class="btn primary">儲存</button></div>
 </form></dialog>
 
 <datalist id="peopleList"></datalist>
-<script type="module" src="./app.js?v=6000"></script>
+<script type="module" src="./app.js?v=6100"></script>
 </body>
 </html>
