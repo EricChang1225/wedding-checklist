@@ -277,6 +277,9 @@
   </div>
   <label>流程名稱<input id="flowName" maxlength="50" required></label>
   <label>圖示<select id="flowIcon">
+      <optgroup label="婚禮流程專用">
+        <option value="❤️">❤️ 下聘</option><option value="🎁">🎁 回聘／禮物</option><option value="🪑">🪑 坐高矮椅／帶位</option><option value="💍">💍 戴戒指／交換戒指</option><option value="🧧">🧧 見面禮／紅包</option><option value="💎">💎 添妝／金飾</option><option value="🙇">🙇 拜別父母</option><option value="🍵">🍵 奉茶／喝茶</option><option value="👰">👰 新娘／新娘出門</option><option value="🤵">🤵 新郎</option><option value="🚗">🚗 禮車／上禮車</option><option value="🏠">🏠 抵達住家</option><option value="🚪">🚪 出門／進場</option><option value="🎆">🎆 鳴炮</option><option value="🤝">🤝 迎賓／接待</option><option value="💵">💵 收禮金</option><option value="🍽️">🍽️ 賓客入席／開席</option><option value="🎤">🎤 主持／致詞</option><option value="🎬">🎬 開場影片</option><option value="🥂">🥂 香檳塔／敬酒</option><option value="🎂">🎂 切蛋糕</option><option value="📷">📷 合照</option><option value="💐">💐 抽捧花</option><option value="🎮">🎮 婚禮遊戲</option><option value="🎉">🎉 開場／慶祝</option><option value="👋">👋 送客</option><option value="📦">📦 收場／撤場</option>
+      </optgroup>
       <optgroup label="常用">
         <option value="📍">📍 地點</option><option value="📌">📌 標記</option><option value="📋">📋 清單</option><option value="✅">✅ 完成</option><option value="⭐">⭐ 重點</option><option value="⚠️">⚠️ 注意</option>
       </optgroup>
@@ -307,7 +310,7 @@
       <optgroup label="提醒與狀態">
         <option value="⏰">⏰ 時間</option><option value="🕒">🕒 時鐘</option><option value="⏳">⏳ 等待</option><option value="🔔">🔔 提醒</option><option value="❗">❗ 重要</option><option value="🚨">🚨 緊急</option><option value="🔥">🔥 優先</option><option value="❓">❓ 待確認</option><option value="⭕">⭕ 進行中</option><option value="❌">❌ 取消</option><option value="☑️">☑️ 已確認</option><option value="🔒">🔒 保密</option>
       </optgroup>
-    </select><span class="hint icon-picker-hint">依分類挑選，共 100+ 個常用婚禮圖示。</span></label>
+    </select><span id="flowIconHint" class="hint icon-picker-hint">輸入流程名稱時，系統會自動建議圖示；也可自行從分類選單修改。</span></label>
   <label>負責人（可複選）
     <div id="flowOwnerPicker" class="owner-picker"></div>
     <input id="flowOwner" type="hidden">

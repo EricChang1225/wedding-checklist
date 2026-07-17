@@ -1396,7 +1396,80 @@ function renderFlowRosterPicker(){
  };
 }
 
+
+const weddingFlowIconRules=[
+ [/(戴|交換|套).*戒指|戒指/,"💍","戴戒指／交換戒指"],
+ [/坐.*高矮椅|高矮椅/,"🪑","坐高矮椅"],
+ [/見面禮/,"🧧","見面禮"],
+ [/添妝|金飾|戴金飾/,"💎","添妝／金飾"],
+ [/下聘|納采/,"❤️","下聘"],
+ [/回聘/,"🎁","回聘"],
+ [/拜別|拜別父母/,"🙇","拜別父母"],
+ [/奉茶|敬茶|喝茶|茶禮/,"🍵","奉茶／喝茶"],
+ [/新娘.*出門|出閣/,"👰","新娘出門"],
+ [/新郎.*出發|迎娶/,"🤵","迎娶／新郎"],
+ [/上禮車|禮車|車隊/,"🚗","禮車"],
+ [/鳴炮|放炮|鞭炮/,"🎆","鳴炮"],
+ [/迎賓|接待|招待/,"🤝","迎賓／接待"],
+ [/帶位|入座|座位引導/,"🪑","帶位"],
+ [/收禮金|禮金|收禮/,"💵","收禮金"],
+ [/賓客入席|入席|開席|用餐/,"🍽️","入席／開席"],
+ [/開場影片|成長影片|影片播放|婚紗影片/,"🎬","影片播放"],
+ [/主持|致詞|致辭|證婚人/,"🎤","主持／致詞"],
+ [/新人進場|第一次進場|二次進場|第二次進場|進場/,"🚪","新人進場"],
+ [/香檳塔|開香檳|倒香檳/,"🥂","香檳塔"],
+ [/敬酒|逐桌敬酒/,"🍷","敬酒"],
+ [/切蛋糕|蛋糕儀式/,"🎂","切蛋糕"],
+ [/合照|大合照|團體照|拍照/,"📷","合照"],
+ [/抽捧花|丟捧花|捧花/,"💐","捧花"],
+ [/婚禮遊戲|互動遊戲|遊戲/,"🎮","婚禮遊戲"],
+ [/抽獎|摸彩/,"🎁","抽獎"],
+ [/送客|歡送/,"👋","送客"],
+ [/撤場|收場|場復|打包/,"📦","收場／撤場"],
+ [/佈置|布置|會場架設|場佈|場布/,"🛠️","會場佈置"],
+ [/音控|音響|試音/,"🔊","音控／音響"],
+ [/攝影|錄影/,"🎥","攝影／錄影"],
+ [/報到|簽到/,"🎫","報到"],
+ [/抵達.*飯店|抵達.*會場|抵達/,"📍","抵達"],
+ [/新娘/,"👰","新娘"],
+ [/新郎/,"🤵","新郎"],
+ [/婚禮|儀式/,"💒","婚禮儀式"]
+];
+let flowIconManuallyChanged=false;
+function suggestWeddingFlowIcon(name){
+ const text=String(name||"").replace(/\s+/g,"");
+ if(!text)return null;
+ for(const [pattern,icon,label] of weddingFlowIconRules){
+  if(pattern.test(text))return {icon,label};
+ }
+ return null;
+}
+function ensureFlowIconOption(icon,label){
+ const select=$("#flowIcon");
+ if(!select||[...select.options].some(o=>o.value===icon))return;
+ const option=document.createElement("option");
+ option.value=icon;
+ option.textContent=`${icon} ${label||"婚禮流程"}`;
+ select.prepend(option);
+}
+function applySuggestedFlowIcon(force=false){
+ const suggestion=suggestWeddingFlowIcon($("#flowName")?.value);
+ const hint=$("#flowIconHint");
+ if(!suggestion){
+  if(hint)hint.textContent="尚未找到對應圖示，可自行從分類選單挑選。";
+  return;
+ }
+ if(force||!flowIconManuallyChanged){
+  ensureFlowIconOption(suggestion.icon,suggestion.label);
+  $("#flowIcon").value=suggestion.icon;
+  if(hint)hint.textContent=`已依流程名稱建議：${suggestion.icon} ${suggestion.label}（仍可手動修改）`;
+ }else if(hint){
+  hint.textContent=`名稱建議 ${suggestion.icon} ${suggestion.label}；目前保留你手動選擇的圖示。`;
+ }
+}
+
 function openFlow(f=null){
+ flowIconManuallyChanged=Boolean(f);
  $("#flowDialogTitle").textContent=f?"修改流程":"新增流程";
  $("#flowId").value=f?.id||"";
  $("#flowGroup").innerHTML='<option value="">未分組</option>'+groups.map(g=>`<option value="${g.id}">${esc(g.icon)} ${esc(g.name)}</option>`).join("");
@@ -1408,7 +1481,10 @@ function openFlow(f=null){
  $("#flowEndTime").value=mode==="range"?(f?.endTime||""):"";
  updateFlowTimeFields();
  $("#flowName").value=f?.name||"";
+ ensureFlowIconOption(f?.icon||"📍",f?.name||"流程");
  $("#flowIcon").value=f?.icon||"📍";
+ const iconHint=$("#flowIconHint");
+ if(iconHint)iconHint.textContent=f?"目前保留原有圖示；修改流程名稱時不會蓋掉你的選擇。":"輸入流程名稱時，系統會自動建議圖示；也可自行修改。";
  flowOwnerSelection=new Set(
    Array.isArray(f?.owners)&&f.owners.length
      ? f.owners
@@ -1426,6 +1502,13 @@ function openFlow(f=null){
  $("#flowDialog").showModal();
 }
 $("#flowTimeMode").onchange=updateFlowTimeFields;
+$("#flowName").addEventListener("input",()=>applySuggestedFlowIcon(false));
+$("#flowName").addEventListener("blur",()=>applySuggestedFlowIcon(false));
+$("#flowIcon").addEventListener("change",()=>{
+ flowIconManuallyChanged=true;
+ const hint=$("#flowIconHint");
+ if(hint)hint.textContent=`已手動選擇：${$("#flowIcon").value}（系統不會再自動覆蓋）`;
+});
 $("#flowForm").onsubmit=async e=>{
  e.preventDefault();
  const id=$("#flowId").value;
