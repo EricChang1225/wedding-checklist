@@ -204,66 +204,94 @@ function sortTasksBySchedule(list){
 }
 function pct(list){return list.length?Math.round(list.filter(x=>x.done).length/list.length*100):0}
 function daysLeft(){if(!settings.weddingDate)return "未設定";const n=new Date();n.setHours(0,0,0,0);return Math.ceil((new Date(settings.weddingDate+"T00:00:00")-n)/86400000)}
+const checkOwnerNames=c=>String(c?.owner||"").split(/[、,，；;\/]+/).map(x=>x.trim()).filter(Boolean);
+const checkHasOwner=(c,name)=>Boolean(name&&checkOwnerNames(c).includes(name));
+function personalScheduleEntries(name){
+ if(!name)return [];
+ const entries=[];
+ const assignedTasks=tasks.filter(t=>taskHasOwner(t,name));
+ const assignedTaskIds=new Set(assignedTasks.map(t=>t.id));
+
+ flows.forEach(f=>{
+  const ownedChecks=checks.filter(c=>c.flowId===f.id&&checkHasOwner(c,name));
+  const ownsFlow=flowHasOwner(f,name);
+  if(ownsFlow){
+   entries.push({
+    key:`flow-${f.id}`,type:"flow",time:formatFlowTime(f),sort:scheduleTimeValue((formatFlowTime(f)||"").slice(0,5)),
+    icon:f.icon||"🎬",title:f.name,parent:"婚禮流程",location:f.location||"",address:f.address||"",notes:f.notes||"",
+    flowId:f.id,checks:ownedChecks,done:ownedChecks.length>0&&ownedChecks.every(c=>c.done)
+   });
+  }else{
+   ownedChecks.filter(c=>!(c.autoFromTask&&assignedTaskIds.has(c.taskId))).forEach(c=>entries.push({
+    key:`check-${c.id}`,type:"check",time:formatFlowTime(f),sort:scheduleTimeValue((formatFlowTime(f)||"").slice(0,5)),
+    icon:"☑️",title:c.title,parent:f.name,location:f.location||"",address:f.address||"",notes:f.notes||"",
+    flowId:f.id,checkId:c.id,done:Boolean(c.done)
+   }));
+  }
+ });
+
+ assignedTasks.forEach(t=>{
+  const linked=(t.flowIds||[]).map(id=>flow(id)).filter(Boolean).sort((a,b)=>scheduleTimeValue((formatFlowTime(a)||"").slice(0,5))-scheduleTimeValue((formatFlowTime(b)||"").slice(0,5)));
+  const time=t.startTime?(t.endTime?`${t.startTime}－${t.endTime}`:t.startTime):(linked[0]?formatFlowTime(linked[0]):"");
+  const progress=taskProgress(t);
+  entries.push({
+   key:`task-${t.id}`,type:t.type==="物品"?"item":"task",time,sort:scheduleTimeValue((time||"").slice(0,5)),
+   icon:t.type==="物品"?"📦":workKindIcon(t.workKind),title:t.title,parent:linked.length?linked.map(f=>f.name).join("、"):(t.categoryId?category(t.categoryId)?.name||t.type:t.type),
+   location:t.location||"",address:t.address||"",notes:t.notes||"",taskId:t.id,
+   done:progress.total?progress.complete:Boolean(t.done),subitems:progress.list
+  });
+ });
+
+ const rank={flow:0,check:1,task:2,item:3};
+ return entries.sort((a,b)=>a.sort-b.sort||(rank[a.type]??9)-(rank[b.type]??9)||String(a.title).localeCompare(String(b.title),"zh-Hant"));
+}
+function personalScheduleCard(entry){
+ const source={flow:"婚禮流程",check:"流程確認項",task:"工作",item:"準備物品"}[entry.type]||"行程";
+ const url=entry.flowId?mapUrl(flow(entry.flowId)):entry.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(entry.address)}`:"";
+ const ownedChecks=entry.checks||[];
+ const subitems=entry.subitems||[];
+ return `<article class="personal-timeline-item ${entry.done?"is-done":""}">
+  <div class="personal-timeline-time">${esc(entry.time||"未定")}</div>
+  <div class="personal-timeline-rail"><span></span></div>
+  <div class="personal-timeline-card">
+   <div class="personal-timeline-source">${esc(source)}</div>
+   <div class="personal-timeline-title">${esc(entry.icon)} ${esc(entry.title)}</div>
+   ${entry.parent?`<div class="personal-timeline-parent">屬於：${esc(entry.parent)}</div>`:""}
+   ${entry.location?`<div class="meta">📍 ${esc(entry.location)}</div>`:""}
+   ${entry.notes?`<div class="personal-timeline-note">${esc(entry.notes)}</div>`:""}
+   ${ownedChecks.length?`<div class="personal-timeline-checks">${ownedChecks.map(c=>`<label class="personal-check ${c.done?"done":""}"><input type="checkbox" data-action="toggle-check" data-id="${c.id}" ${c.done?"checked":""}> <span>${esc(c.title)}</span></label>`).join("")}</div>`:""}
+   ${subitems.length?`<div class="personal-timeline-checks">${subitems.map(i=>`<label class="personal-check ${i.done?"done":""}"><input type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}> <span>${esc(i.title)}</span></label>`).join("")}</div>`:""}
+   <div class="personal-timeline-actions">
+    ${url?`<a class="small map-link" href="${esc(url)}" target="_blank" rel="noopener">🗺️ 導航</a>`:""}
+    ${entry.flowId?`<button class="small" data-action="go-flow" data-id="${entry.flowId}">查看流程</button>`:""}
+   </div>
+  </div>
+ </article>`;
+}
 function renderDashboard(){
  const myTasks=sortTasksBySchedule(tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="工作"));
  const myItems=sortTasksBySchedule(tasks.filter(x=>taskHasOwner(x,currentUser)&&x.type==="物品"));
-
- const relatedFlows=flows
-  .filter(f=>flowHasOwner(f,currentUser)||checks.some(c=>c.flowId===f.id&&c.owner===currentUser))
-  .sort((a,b)=>scheduleTimeValue(formatFlowTime(a))-scheduleTimeValue(formatFlowTime(b)));
-
- const today=new Date();
- const todayKey=[
-  today.getFullYear(),
-  String(today.getMonth()+1).padStart(2,"0"),
-  String(today.getDate()).padStart(2,"0")
- ].join("-");
- const weddingDate=settings.weddingDate||"";
- const isWeddingDay=Boolean(weddingDate&&todayKey===weddingDate);
-
- let realtimeFlow=null;
- let realtimeStatus="";
- let realtimeMinutes=null;
-
- if(isWeddingDay){
-  const candidates=relatedFlows
-   .map(f=>({f,min:minutesFromNowForFlow(f)}))
-   .filter(x=>x.min!==null)
-   .sort((a,b)=>a.min-b.min);
-
-  realtimeFlow=candidates.find(x=>x.min>=0)?.f||relatedFlows[relatedFlows.length-1]||null;
-  const matched=candidates.find(x=>x.f?.id===realtimeFlow?.id);
-  realtimeMinutes=matched?.min??null;
-
-  if(realtimeMinutes===0)realtimeStatus="🔴 進行中";
-  else if(realtimeMinutes>0)realtimeStatus=`⏱️ 還有 ${realtimeMinutes} 分鐘`;
-  else realtimeStatus="✅ 今日流程已結束";
- }
+ const personalEntries=personalScheduleEntries(currentUser);
+ const timedEntries=personalEntries.filter(x=>x.time);
+ const untimedEntries=personalEntries.filter(x=>!x.time);
 
  $("#dashboard").innerHTML=`
- <section class="card realtime-card">
+ <section class="card personal-schedule-card">
   <div class="card-head">
    <div>
-    <div class="card-title">📍 7/18 即時行程</div>
-    <div class="meta">婚禮當天自動顯示目前或下一個流程</div>
+    <div class="card-title">📅 ${esc(currentUser||"我的")}的行程時間線</div>
+    <div class="meta">自動整合婚禮流程、流程確認項、工作與準備物品</div>
    </div>
+   <div class="pill">${personalEntries.length} 項</div>
   </div>
+  ${currentUser?(personalEntries.length?`
+   <div class="personal-timeline">
+    ${timedEntries.map(personalScheduleCard).join("")}
+    ${untimedEntries.length?`<div class="personal-untimed-title">尚未設定時間</div>${untimedEntries.map(personalScheduleCard).join("")}`:""}
+   </div>`:'<div class="empty">目前沒有指派給你的流程或工作</div>'):'<div class="empty">請先在上方選擇使用者，即可查看個人行程時間線</div>'}
+ </section>`;
 
-  ${isWeddingDay&&realtimeFlow?`
-   <div class="realtime-main">
-    <div class="realtime-time">${esc(formatFlowTime(realtimeFlow)||"未定")}</div>
-    <div class="main">
-     <div class="realtime-title">${esc(realtimeFlow.icon||"📍")} ${esc(realtimeFlow.name)}</div>
-     <div class="meta">${realtimeFlow.location?`📍 ${esc(realtimeFlow.location)}`:"未設定地點"}</div>
-     <div class="realtime-status">${esc(realtimeStatus)}</div>
-     ${flowRosters(realtimeFlow).length?`<div class="realtime-rosters">📋 ${flowRosters(realtimeFlow).map(r=>esc(r.name)).join("、")}</div>`:""}
-     ${mapUrl(realtimeFlow)?`<a class="map-link" href="${esc(mapUrl(realtimeFlow))}" target="_blank" rel="noopener">🗺️ 開啟導航</a>`:""}
-    </div>
-    <button class="small" data-action="go-flow" data-id="${realtimeFlow.id}">查看流程</button>
-   </div>
-  `:`<div class="empty">婚禮當天將自動顯示即時行程</div>`}
- </section>
-
+ $("#dashboard").innerHTML += `
  ${(()=>{
   const person=people.find(p=>p.name===currentUser);
   const assignments=person?rosterMembers.filter(m=>m.personId===person.id&&memberTables(m).length):[];

@@ -1839,3 +1839,30 @@ body:not(.admin-mode) [data-action="delete-group"]{
  .flow-package-body .sub-row .main{flex:1 1 calc(100% - 42px)}
  .flow-package-body .subitem-actions{width:100%;justify-content:flex-end;padding-left:32px}
 }
+
+/* V6.3 個人行程時間線 */
+.personal-schedule-card{overflow:hidden}
+.personal-timeline{position:relative;padding:8px 0 4px}
+.personal-timeline-item{display:grid;grid-template-columns:78px 24px minmax(0,1fr);align-items:stretch;min-height:116px}
+.personal-timeline-time{padding:18px 10px 0 0;text-align:right;font-weight:800;color:var(--primary,#a83f56);font-variant-numeric:tabular-nums;white-space:nowrap}
+.personal-timeline-rail{position:relative;display:flex;justify-content:center}
+.personal-timeline-rail:before{content:"";position:absolute;top:0;bottom:0;width:2px;background:#ead8dc}
+.personal-timeline-rail span{position:relative;margin-top:24px;width:13px;height:13px;border:3px solid var(--primary,#a83f56);border-radius:50%;background:#fff;z-index:1}
+.personal-timeline-card{margin:8px 0 14px 10px;padding:16px 18px;border:1px solid #eadde0;border-radius:18px;background:#fff;box-shadow:0 4px 14px rgba(90,45,55,.06)}
+.personal-timeline-source{display:inline-flex;margin-bottom:7px;padding:3px 9px;border-radius:999px;background:#f7edf0;color:#8f4052;font-size:12px;font-weight:700}
+.personal-timeline-title{font-size:18px;font-weight:850;line-height:1.4}
+.personal-timeline-parent{margin-top:4px;color:#75686c;font-size:13px}
+.personal-timeline-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff7e8;color:#6d5931}
+.personal-timeline-checks{display:grid;gap:7px;margin-top:12px;padding-top:10px;border-top:1px dashed #eadde0}
+.personal-check{display:flex;align-items:flex-start;gap:9px;line-height:1.45}
+.personal-check input{width:20px;height:20px;accent-color:var(--primary,#a83f56)}
+.personal-check.done span{text-decoration:line-through;opacity:.55}
+.personal-timeline-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.personal-timeline-item.is-done .personal-timeline-card{opacity:.72}
+.personal-untimed-title{margin:16px 0 8px 102px;padding:8px 12px;border-radius:10px;background:#f5f1f2;font-weight:800;color:#695d61}
+@media(max-width:700px){
+ .personal-timeline-item{grid-template-columns:58px 18px minmax(0,1fr)}
+ .personal-timeline-time{font-size:13px;padding-right:6px}
+ .personal-timeline-card{margin-left:7px;padding:14px}
+ .personal-untimed-title{margin-left:76px}
+}
