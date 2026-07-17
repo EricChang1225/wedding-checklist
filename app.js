@@ -370,6 +370,55 @@ function renderDashboard(){
  })()}
 
  ${(()=>{
+  const person=people.find(p=>p.name===currentUser);
+  if(!person)return "";
+  const companionRosters=rosters.filter(r=>/陪嫁車隊/.test(String(r.name||""))&&membersForRoster(r.id).some(m=>m.personId===person.id));
+  if(!companionRosters.length)return "";
+  return `<section class="card my-companion-rosters-card">
+   <div class="card-head">
+    <div>
+     <div class="card-title">🚗 我的陪嫁車隊</div>
+     <div class="meta">只有名單成員會看到・點名單查看集合與同行人員</div>
+    </div>
+    <div class="pill">${companionRosters.length} 組</div>
+   </div>
+   <div class="my-companion-rosters-list">
+    ${companionRosters.map(r=>{
+      const members=membersForRoster(r.id);
+      const linkedFlow=r.flowId?flow(r.flowId):null;
+      const displayTime=r.time|| (linkedFlow?formatFlowTime(linkedFlow):"");
+      const displayLocation=r.location||linkedFlow?.location||"";
+      return `<details class="my-companion-roster-card">
+       <summary>
+        <span class="my-companion-roster-main">
+         <strong>${esc(r.icon||"🚗")} ${esc(r.name)}</strong>
+         <small>${displayTime?`🕒 ${esc(displayTime)}`:"尚未設定時間"}${displayLocation?`・📍 ${esc(displayLocation)}`:""}</small>
+        </span>
+        <span class="my-companion-roster-count">👥 ${members.length}人</span>
+       </summary>
+       <div class="my-companion-roster-body">
+        ${r.duty?`<div class="my-companion-info"><span>工作內容</span><strong>${esc(r.duty)}</strong></div>`:""}
+        ${r.notes?`<div class="my-companion-note">備註：${esc(r.notes)}</div>`:""}
+        ${linkedFlow?`<button class="small" data-action="go-flow" data-id="${linkedFlow.id}">查看相關流程</button>`:""}
+        <div class="my-companion-member-title">同行人員</div>
+        <div class="my-companion-members">
+         ${members.map(m=>{
+           const p=personById(m.personId);
+           const isMe=p?.id===person.id;
+           return `<div class="my-companion-member ${isMe?"is-me":""}">
+            <span class="my-companion-order">${esc(m.order||"")}</span>
+            <span class="my-companion-person"><strong>${esc(p?.name||"已刪除人員")}${isMe?"（我）":""}</strong>${m.duty?`<small>${esc(m.duty)}</small>`:""}${m.notes?`<small>備註：${esc(m.notes)}</small>`:""}</span>
+           </div>`;
+         }).join("")}
+        </div>
+       </div>
+      </details>`;
+    }).join("")}
+   </div>
+  </section>`;
+ })()}
+
+ ${(()=>{
   const managed=managedUsherRosters();
   if(!managed.length)return "";
   const totalMembers=managed.reduce((sum,r)=>sum+membersForRoster(r.id).length,0);
