@@ -1830,3 +1830,12 @@ body:not(.admin-mode) [data-action="delete-group"]{
 /* V6.1 categorized icon selector */
 .sheet select[id$="Icon"]{font-size:17px;min-height:48px;background:#fff}
 .icon-picker-hint{display:block;margin-top:6px;font-size:12px}
+
+/* V6.2.1：流程內的準備小項可直接修改與刪除 */
+.flow-package-body .sub-row .main{min-width:0;flex:1}
+.flow-package-body .subitem-actions{display:flex;gap:6px;flex:0 0 auto}
+@media (max-width:640px){
+ .flow-package-body .sub-row{align-items:center;flex-wrap:wrap}
+ .flow-package-body .sub-row .main{flex:1 1 calc(100% - 42px)}
+ .flow-package-body .subitem-actions{width:100%;justify-content:flex-end;padding-left:32px}
+}

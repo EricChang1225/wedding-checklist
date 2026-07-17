@@ -812,6 +812,10 @@ function linkedPreparationCard(ch){
    ${p.total?p.list.map(i=>`<div class="sub-row ${i.done?"done":""}">
     <input class="check" type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}>
     <div class="main"><div class="name">${esc(i.title)}</div>${i.notes?`<div class="meta">${esc(i.notes)}</div>`:""}</div>
+    <div class="actions subitem-actions">
+     <button class="small" data-action="edit-subitem" data-id="${i.id}">修改</button>
+     <button class="small danger" data-action="delete-subitem" data-id="${i.id}">刪除</button>
+    </div>
    </div>`).join(""):`<div class="empty small-empty">此準備項目沒有細項</div>`}
   </div>
  </div>`;
