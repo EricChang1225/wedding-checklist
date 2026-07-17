@@ -828,8 +828,11 @@ function linkedPreparationCard(ch){
  if(!t){
   return `<div class="row ${ch.done?"done":""}">
    <input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}>
-   <div class="main"><div class="name">${esc(ch.title)}</div><div class="meta">負責：${esc(ch.owner||"未指定")}</div></div>
-   <div class="actions"><button class="small" data-action="edit-check" data-id="${ch.id}">修改</button><button class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button></div>
+   <div class="main check-edit-target" data-action="edit-check" data-id="${ch.id}" role="button" tabindex="0" title="點一下修改確認項">
+    <div class="name">${esc(ch.title)} <span class="inline-edit-hint">✏️</span></div>
+    <div class="meta">負責：${esc(ch.owner||"未指定")}</div>
+   </div>
+   <div class="actions check-actions"><button class="small check-edit-btn" data-action="edit-check" data-id="${ch.id}">✏️ 修改</button><button class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button></div>
   </div>`;
  }
  const p=taskProgress(t),ready=p.total?p.complete:t.done;
@@ -839,13 +842,13 @@ function linkedPreparationCard(ch){
   <div class="flow-package-head">
    <button class="package-toggle" data-action="toggle-flow-package" data-id="${packageKey}">${collapsed?"▶":"▼"}</button>
    <input class="check" type="checkbox" data-action="toggle-check" data-id="${ch.id}" ${ch.done?"checked":""}>
-   <div class="main">
-    <div class="name">${esc(ch.title)}</div>
+   <div class="main check-edit-target" data-action="edit-check" data-id="${ch.id}" role="button" tabindex="0" title="點一下修改確認項">
+    <div class="name">${esc(ch.title)} <span class="inline-edit-hint">✏️</span></div>
     <div class="meta">負責：${esc(ch.owner||taskOwnerText(t)||"未指定")}・前置狀態：${ready?"✅ 已準備":"⚠️ 尚未準備"}${p.total?`（${p.done}/${p.total}）`:""}</div>
     ${p.total?`<div class="progress compact-progress"><span style="width:${Math.round(p.done/p.total*100)}%"></span></div>`:""}
    </div>
-   <div class="actions">
-    <button class="small" data-action="edit-check" data-id="${ch.id}">修改</button>
+   <div class="actions check-actions">
+    <button class="small check-edit-btn" data-action="edit-check" data-id="${ch.id}">✏️ 修改</button>
     <button class="small danger" data-action="delete-check" data-id="${ch.id}">刪除</button>
    </div>
   </div>
@@ -1747,7 +1750,14 @@ if(a==="edit-roster-member")openRosterMember(rosterMembers.find(x=>x.id===id));
 if(a==="delete-roster-member"&&confirm("從名單移除此人？"))await deleteDoc(doc(db,"wccRosterMembers",id));
 if(a==="new-group")openGroup();if(a==="edit-group")openGroup(groups.find(x=>x.id===id));if(a==="delete-group"&&confirm("刪除此群組？流程會移到未分組。")){const batch=writeBatch(db);flows.filter(f=>f.groupId===id).forEach(f=>batch.update(doc(db,"wccFlows",f.id),{groupId:""}));batch.delete(doc(db,"wccFlowGroups",id));await batch.commit()}if(a==="toggle-group"){collapsedGroups.has(id)?collapsedGroups.delete(id):collapsedGroups.add(id);localStorage.setItem("wccCollapsedGroups",JSON.stringify([...collapsedGroups]));renderTimeline();return;}
 if(a==="new-flow")openFlow();if(a==="edit-flow")openFlow(flows.find(x=>x.id===id));if(a==="delete-flow"&&confirm("刪除此流程與確認項目？")){const batch=writeBatch(db);checks.filter(x=>x.flowId===id).forEach(x=>batch.delete(doc(db,"wccFlowChecks",x.id)));tasks.filter(t=>(t.flowIds||[]).includes(id)).forEach(t=>batch.update(doc(db,"wccTasks",t.id),{flowIds:(t.flowIds||[]).filter(x=>x!==id)}));batch.delete(doc(db,"wccFlows",id));await batch.commit()}
-if(a==="add-check")openCheck(null,id);if(a==="edit-check")openCheck(checks.find(x=>x.id===id));if(a==="delete-check"&&confirm("刪除此確認項目？"))await deleteDoc(doc(db,"wccFlowChecks",id));if(a==="toggle-check")await updateDoc(doc(db,"wccFlowChecks",id),{done:b.checked,updatedAt:serverTimestamp(),checkedBy:currentUser});
+if(a==="add-check")openCheck(null,id);
+if(a==="edit-check"){
+ const checkItem=checks.find(x=>x.id===id);
+ if(!checkItem){alert("找不到這筆確認項目，請重新整理後再試一次。");return;}
+ openCheck(checkItem);
+}
+if(a==="delete-check"&&confirm("刪除此確認項目？"))await deleteDoc(doc(db,"wccFlowChecks",id));
+if(a==="toggle-check")await updateDoc(doc(db,"wccFlowChecks",id),{done:b.checked,updatedAt:serverTimestamp(),checkedBy:currentUser});
 if(a==="new-person")openPerson();if(a==="edit-person")openPerson(people.find(x=>x.id===id));if(a==="delete-person"&&confirm("刪除此人員？"))await deleteDoc(doc(db,"wccPeople",id));if(a==="show-person"){const p=people.find(x=>x.id===id);if(p){currentUser=p.name;localStorage.setItem("wccUser",p.name);setView("mine")}}
 if(a==="new-category")openCategory();if(a==="edit-category")openCategory(categories.find(x=>x.id===id));if(a==="delete-category")await deletePreparationCategory(id);if(a==="move-category-up")await swapOrder(categories,"wccCategories",id,-1);if(a==="move-category-down")await swapOrder(categories,"wccCategories",id,1);
 if(a==="move-group-up")await swapOrder(groups,"wccFlowGroups",id,-1);if(a==="move-group-down")await swapOrder(groups,"wccFlowGroups",id,1);

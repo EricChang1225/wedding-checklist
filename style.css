@@ -1866,3 +1866,21 @@ body:not(.admin-mode) [data-action="delete-group"]{
  .personal-timeline-card{margin-left:7px;padding:14px}
  .personal-untimed-title{margin-left:76px}
 }
+
+/* V6.5：確認項可明確修改＋穿透式時間線修正 */
+.check-edit-target{cursor:pointer;min-width:0;border-radius:10px;padding:2px 4px;margin:-2px -4px;transition:background .15s ease}
+.check-edit-target:hover{background:#fff3f5}
+.inline-edit-hint{font-size:12px;opacity:.48;margin-left:4px}
+.check-actions{flex:0 0 auto;align-items:center}
+.check-edit-btn{white-space:nowrap;background:#fff6f7!important;color:#9f4658!important;border:1px solid #ead2d7!important}
+@media(max-width:640px){
+ .flow-package-head{flex-wrap:wrap}
+ .flow-package-head>.main{flex:1 1 calc(100% - 52px)}
+ .flow-package-head>.check-actions{width:100%;padding-left:42px;justify-content:flex-end;flex-direction:row}
+}
+/* 保留垂直線貫穿感，但提高線與節點層級，避免被卡片遮住 */
+.personal-timeline-item{position:relative}
+.personal-timeline-rail{z-index:4;overflow:visible}
+.personal-timeline-rail:before{z-index:1;top:-8px;bottom:-14px;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+.personal-timeline-rail span{z-index:3}
+.personal-timeline-card{position:relative;z-index:1}
