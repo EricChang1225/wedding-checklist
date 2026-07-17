@@ -1884,3 +1884,129 @@ body:not(.admin-mode) [data-action="delete-group"]{
 .personal-timeline-rail:before{z-index:1;top:-8px;bottom:-14px;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
 .personal-timeline-rail span{z-index:3}
 .personal-timeline-card{position:relative;z-index:1}
+
+/* V6.6：個人行程時間線三欄重構
+   時間／貫穿線／內容卡片各自固定欄位，卡片永遠不會覆蓋時間線。 */
+.personal-timeline{
+  --personal-time-column: 132px;
+  --personal-rail-column: 38px;
+  position:relative;
+  padding:8px 0 4px;
+  overflow:visible;
+}
+.personal-timeline-item{
+  position:relative;
+  display:grid;
+  grid-template-columns:var(--personal-time-column) var(--personal-rail-column) minmax(0,1fr);
+  column-gap:0;
+  align-items:stretch;
+  min-height:116px;
+  isolation:isolate;
+}
+.personal-timeline-time{
+  grid-column:1;
+  min-width:0;
+  padding:18px 14px 0 4px;
+  text-align:right;
+  font-weight:800;
+  color:var(--primary,#a83f56);
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  position:relative;
+  z-index:3;
+}
+.personal-timeline-rail{
+  grid-column:2;
+  position:relative;
+  display:flex;
+  justify-content:center;
+  min-width:var(--personal-rail-column);
+  overflow:visible;
+  z-index:5;
+}
+.personal-timeline-rail:before{
+  content:"";
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:-16px;
+  bottom:-16px;
+  width:3px;
+  border-radius:99px;
+  background:#d9b9c0;
+  box-shadow:none;
+  z-index:1;
+}
+.personal-timeline-rail:after{
+  content:"";
+  position:absolute;
+  top:30px;
+  left:50%;
+  right:-14px;
+  height:2px;
+  background:#d9b9c0;
+  z-index:1;
+}
+.personal-timeline-rail span{
+  position:relative;
+  flex:0 0 auto;
+  margin-top:23px;
+  width:15px;
+  height:15px;
+  box-sizing:border-box;
+  border:3px solid var(--primary,#a83f56);
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 0 0 3px #fff;
+  z-index:3;
+}
+.personal-timeline-card{
+  grid-column:3;
+  min-width:0;
+  width:auto;
+  margin:8px 0 14px 14px;
+  padding:16px 18px;
+  border:1px solid #eadde0;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 4px 14px rgba(90,45,55,.06);
+  position:relative;
+  z-index:2;
+  overflow:hidden;
+}
+.personal-timeline-item:first-child .personal-timeline-rail:before{top:30px}
+.personal-timeline-item:last-child .personal-timeline-rail:before{bottom:calc(100% - 31px)}
+.personal-untimed-title{
+  margin:16px 0 8px calc(var(--personal-time-column) + var(--personal-rail-column) + 14px);
+}
+@media(max-width:700px){
+  .personal-timeline{
+    --personal-time-column:76px;
+    --personal-rail-column:30px;
+  }
+  .personal-timeline-time{
+    padding:17px 8px 0 0;
+    font-size:13px;
+    line-height:1.25;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  .personal-timeline-rail:after{right:-10px}
+  .personal-timeline-card{
+    margin-left:10px;
+    padding:14px;
+    border-radius:15px;
+  }
+  .personal-untimed-title{
+    margin-left:calc(var(--personal-time-column) + var(--personal-rail-column) + 10px);
+  }
+}
+@media(max-width:420px){
+  .personal-timeline{
+    --personal-time-column:66px;
+    --personal-rail-column:26px;
+  }
+  .personal-timeline-time{font-size:12px;padding-right:6px}
+  .personal-timeline-card{margin-left:8px;padding:12px}
+  .personal-timeline-title{font-size:16px}
+}
