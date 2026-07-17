@@ -1713,3 +1713,88 @@ body:not(.admin-mode) [data-action="delete-group"]{
     grid-template-columns:1fr;
   }
 }
+
+
+/* V5.4：總招待內嵌桌次與賓客 */
+.chief-table-badges span{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#c97881;
+  color:#fff;
+  font-weight:900;
+}
+.chief-member-tables{
+  display:grid;
+  gap:8px;
+  margin-top:12px;
+}
+.chief-table-detail{
+  overflow:hidden;
+  border:1px solid #eadedf;
+  border-radius:12px;
+  background:#fff;
+}
+.chief-table-detail>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px 12px;
+  cursor:pointer;
+  list-style:none;
+}
+.chief-table-detail>summary::-webkit-details-marker{display:none}
+.chief-table-detail>summary strong{
+  display:block;
+  color:#b75d67;
+  font-size:17px;
+}
+.chief-table-detail>summary small{
+  display:block;
+  margin-top:2px;
+  color:#65575a;
+  font-size:13px;
+  font-weight:800;
+}
+.chief-table-people{
+  flex:none;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#f7e8ea;
+  color:#a95761;
+  font-size:12px;
+  font-weight:900;
+}
+.chief-table-body{
+  padding:0 12px 12px;
+  border-top:1px solid #eee6e7;
+}
+.chief-table-relation{
+  margin:9px 0 5px;
+  color:#796a6d;
+}
+.chief-table-note{
+  margin:8px 0;
+  padding:8px 10px;
+  border-radius:10px;
+  background:#fff5df;
+  color:#755d31;
+}
+.chief-table-guests{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(145px,1fr));
+  gap:6px;
+  margin-top:9px;
+}
+.chief-guest-row{
+  padding:7px 9px;
+  border:1px solid #f0e4e5;
+  border-radius:9px;
+  background:#fff8f8;
+}
+@media(max-width:560px){
+  .chief-table-guests{grid-template-columns:1fr}
+  .chief-usher-member>summary{align-items:flex-start}
+}

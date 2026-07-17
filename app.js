@@ -302,7 +302,7 @@ function renderDashboard(){
    <div class="card-head">
     <div>
      <div class="card-title">👥 我的招待</div>
-     <div class="meta">查看每位招待的分工與負責桌次</div>
+     <div class="meta">展開招待即可查看工作、桌次與賓客</div>
     </div>
     <div class="pill">${managed.reduce((sum,r)=>sum+membersForRoster(r.id).length,0)} 人</div>
    </div>
@@ -329,7 +329,26 @@ function renderDashboard(){
            <div class="chief-member-detail">
             ${m.duty?`<div><b>工作：</b>${esc(m.duty)}</div>`:""}
             ${m.notes?`<div><b>備註：</b>${esc(m.notes)}</div>`:""}
-            ${tables.length?`<div class="chief-table-badges">${tables.map(no=>`<a href="./banquet.html#table-${encodeURIComponent(no)}" target="_blank" rel="noopener">${esc(no)}桌</a>`).join("")}</div>`:'<div class="meta">尚未指定負責桌次</div>'}
+            ${tables.length?`<div class="chief-table-badges">${tables.map(no=>`<span>${esc(no)}桌</span>`).join("")}</div>`:'<div class="meta">尚未指定負責桌次</div>'}
+            ${tables.length?`<div class="chief-member-tables">
+             ${tables.map(no=>{
+               const info=tableInfo(no);
+               const guests=guestListForTable(no);
+               return `<details class="chief-table-detail">
+                <summary>
+                 <span><strong>${esc(no)}桌</strong><small>${esc(info?.tableName||"未設定桌名")}</small></span>
+                 <span class="chief-table-people">👥 ${esc(info?.count??guests.length)}人</span>
+                </summary>
+                <div class="chief-table-body">
+                 ${info?.relation?`<div class="chief-table-relation">關係：${esc(info.relation)}</div>`:""}
+                 ${info?.notes?`<div class="chief-table-note">⚠️ ${esc(info.notes)}</div>`:""}
+                 <div class="chief-table-guests">
+                  ${guests.map(g=>`<div class="chief-guest-row">👤 ${esc(g)}</div>`).join("")||'<div class="empty">尚未建立賓客名單</div>'}
+                 </div>
+                </div>
+               </details>`;
+             }).join("")}
+            </div>`:""}
            </div>
           </details>`;
         }).join("")||'<div class="empty">此名單尚未加入招待</div>'}
