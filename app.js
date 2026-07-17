@@ -299,23 +299,29 @@ function personalScheduleCardBody(entry){
    </div>
   </div>`;
 }
-function personalScheduleGroups(entries){
+function normalizePersonalTimeKey(value){
+ return String(value||"").trim().replace(/\s+/g,"").replace(/[–—~～-]/g,"－");
+}
+function groupPersonalTimedEntries(entries){
  const groups=[];
+ const index=new Map();
  entries.forEach(entry=>{
-  const key=entry.time||"未定";
-  const last=groups[groups.length-1];
-  if(last&&last.key===key)last.entries.push(entry);
-  else groups.push({key,time:key,entries:[entry]});
+  const key=normalizePersonalTimeKey(entry.time);
+  if(!index.has(key)){
+   const group={key,time:entry.time,entries:[]};
+   index.set(key,group);
+   groups.push(group);
+  }
+  index.get(key).entries.push(entry);
  });
  return groups;
 }
 function personalScheduleGroup(group){
- return `<section class="personal-timeline-item personal-timeline-group ${group.entries.every(x=>x.done)?"is-done":""}">
-  <div class="personal-timeline-time">${esc(group.time)}</div>
+ const allDone=group.entries.length>0&&group.entries.every(entry=>entry.done);
+ return `<section class="personal-timeline-group ${allDone?"is-done":""}">
+  <div class="personal-timeline-time">${esc(group.time||"未定")}</div>
   <div class="personal-timeline-rail"><span></span></div>
-  <div class="personal-timeline-stack">
-   ${group.entries.map(personalScheduleCardBody).join("")}
-  </div>
+  <div class="personal-timeline-stack">${group.entries.map(personalScheduleCardBody).join("")}</div>
  </section>`;
 }
 function renderDashboard(){
@@ -324,6 +330,7 @@ function renderDashboard(){
  const personalEntries=personalScheduleEntries(currentUser);
  const timedEntries=personalEntries.filter(x=>x.time);
  const untimedEntries=personalEntries.filter(x=>!x.time);
+ const timedGroups=groupPersonalTimedEntries(timedEntries);
 
  $("#dashboard").innerHTML=`
  <section class="card personal-schedule-card">
@@ -336,8 +343,8 @@ function renderDashboard(){
   </div>
   ${currentUser?(personalEntries.length?`
    <div class="personal-timeline">
-    ${personalScheduleGroups(timedEntries).map(personalScheduleGroup).join("")}
-    ${untimedEntries.length?`<div class="personal-untimed-title">尚未設定時間</div>${personalScheduleGroups(untimedEntries).map(personalScheduleGroup).join("")}`:""}
+    ${timedGroups.map(personalScheduleGroup).join("")}
+    ${untimedEntries.length?`<div class="personal-untimed-title">尚未設定時間</div>${untimedEntries.map(entry=>personalScheduleGroup({time:"未定",entries:[entry]})).join("")}`:""}
    </div>`:'<div class="empty">目前沒有指派給你的流程或工作</div>'):'<div class="empty">請先在上方選擇使用者，即可查看個人行程時間線</div>'}
  </section>`;
 
