@@ -206,12 +206,22 @@ function pct(list){return list.length?Math.round(list.filter(x=>x.done).length/l
 function daysLeft(){if(!settings.weddingDate)return "未設定";const n=new Date();n.setHours(0,0,0,0);return Math.ceil((new Date(settings.weddingDate+"T00:00:00")-n)/86400000)}
 const checkOwnerNames=c=>String(c?.owner||"").split(/[、,，；;\/]+/).map(x=>x.trim()).filter(Boolean);
 const checkHasOwner=(c,name)=>Boolean(name&&checkOwnerNames(c).includes(name));
+function mergedFlowTime(flowItem,linkedTasks=[]){
+ const flowTime=formatFlowTime(flowItem)||"";
+ const starts=linkedTasks.map(t=>t.startTime).filter(x=>/^\d{2}:\d{2}$/.test(x));
+ const ends=linkedTasks.map(t=>t.endTime).filter(x=>/^\d{2}:\d{2}$/.test(x));
+ const points=[...starts,...ends,flowTime].filter(x=>/^\d{2}:\d{2}$/.test(x));
+ if(!points.length)return "";
+ const sorted=[...new Set(points)].sort((a,b)=>scheduleTimeValue(a)-scheduleTimeValue(b));
+ return sorted.length>1?`${sorted[0]}－${sorted[sorted.length-1]}`:sorted[0];
+}
 function personalScheduleEntries(name){
  if(!name)return [];
  const entries=[];
  const person=people.find(p=>p.name===name);
  const assignedTasks=tasks.filter(t=>t.type!=="物品"&&taskHasOwner(t,name));
  const assignedTaskIds=new Set(assignedTasks.map(t=>t.id));
+ const mergedTaskIds=new Set();
 
  flows.forEach(f=>{
   const ownedChecks=checks.filter(c=>c.flowId===f.id&&checkHasOwner(c,name));
@@ -221,29 +231,40 @@ function personalScheduleEntries(name){
    ...rosters.filter(r=>r.flowId===f.id)
   ].filter((r,i,list)=>r&&list.findIndex(x=>x.id===r.id)===i);
   const memberRosters=person?linkedRosters.filter(r=>membersForRoster(r.id).some(m=>m.personId===person.id)):[];
+  const linkedAssignedTasks=assignedTasks.filter(t=>(t.flowIds||[]).includes(f.id));
+  linkedAssignedTasks.forEach(t=>mergedTaskIds.add(t.id));
 
-  if(ownsFlow){
-   entries.push({
-    key:`flow-${f.id}`,type:"flow",time:formatFlowTime(f),sort:scheduleTimeValue((formatFlowTime(f)||"").slice(0,5)),
-    icon:f.icon||"🎬",title:f.name,parent:"婚禮流程",location:f.location||"",address:f.address||"",notes:f.notes||"",
-    flowId:f.id,checks:ownedChecks,done:ownedChecks.length>0&&ownedChecks.every(c=>c.done)
-   });
-  }else if(ownedChecks.length){
-   ownedChecks.filter(c=>!(c.autoFromTask&&assignedTaskIds.has(c.taskId))).forEach(c=>entries.push({
-    key:`check-${c.id}`,type:"check",time:formatFlowTime(f),sort:scheduleTimeValue((formatFlowTime(f)||"").slice(0,5)),
-    icon:"☑️",title:c.title,parent:f.name,location:f.location||"",address:f.address||"",notes:f.notes||"",
-    flowId:f.id,checkId:c.id,done:Boolean(c.done)
-   }));
-  }else if(memberRosters.length){
-   entries.push({
-    key:`roster-flow-${f.id}`,type:"roster",time:formatFlowTime(f),sort:scheduleTimeValue((formatFlowTime(f)||"").slice(0,5)),
-    icon:f.icon||"📋",title:f.name,parent:`工作名單：${memberRosters.map(r=>r.name).join("、")}`,
-    location:f.location||"",address:f.address||"",notes:f.notes||"",flowId:f.id,done:false
-   });
-  }
+  const hasFlowEntry=ownsFlow||ownedChecks.length||memberRosters.length||linkedAssignedTasks.length;
+  if(!hasFlowEntry)return;
+
+  const visibleChecks=ownsFlow
+   ? ownedChecks
+   : ownedChecks.filter(c=>!(c.autoFromTask&&assignedTaskIds.has(c.taskId)));
+  const taskDetails=linkedAssignedTasks.map(t=>{
+   const progress=taskProgress(t);
+   return {
+    id:t.id,title:t.title,icon:workKindIcon(t.workKind),notes:t.notes||"",
+    location:t.location||"",address:t.address||"",time:taskTimeLabel(t),
+    done:progress.total?progress.complete:Boolean(t.done),subitems:progress.list
+   };
+  });
+  const entryTime=mergedFlowTime(f,linkedAssignedTasks);
+  const sourceParts=[];
+  if(ownsFlow||ownedChecks.length)sourceParts.push("婚禮流程");
+  if(memberRosters.length)sourceParts.push(`工作名單：${memberRosters.map(r=>r.name).join("、")}`);
+  if(linkedAssignedTasks.length)sourceParts.push("已連結工作");
+
+  entries.push({
+   key:`flow-${f.id}`,type:"flow",time:entryTime,sort:scheduleTimeValue((entryTime||"").slice(0,5)),
+   icon:f.icon||"🎬",title:f.name,parent:sourceParts.join("・")||"婚禮流程",
+   location:f.location||linkedAssignedTasks.find(t=>t.location)?.location||"",
+   address:f.address||linkedAssignedTasks.find(t=>t.address)?.address||"",notes:f.notes||"",
+   flowId:f.id,checks:visibleChecks,linkedTasks:taskDetails,
+   done:Boolean((visibleChecks.length||taskDetails.length)&&visibleChecks.every(c=>c.done)&&taskDetails.every(t=>t.done))
+  });
  });
 
- assignedTasks.forEach(t=>{
+ assignedTasks.filter(t=>!mergedTaskIds.has(t.id)).forEach(t=>{
   const linked=(t.flowIds||[]).map(id=>flow(id)).filter(Boolean).sort((a,b)=>scheduleTimeValue((formatFlowTime(a)||"").slice(0,5))-scheduleTimeValue((formatFlowTime(b)||"").slice(0,5)));
   const time=t.startTime?(t.endTime?`${t.startTime}－${t.endTime}`:t.startTime):(linked[0]?formatFlowTime(linked[0]):"");
   const progress=taskProgress(t);
@@ -272,6 +293,7 @@ function personalScheduleCard(entry){
    ${entry.parent?`<div class="personal-timeline-parent">屬於：${esc(entry.parent)}</div>`:""}
    ${entry.location?`<div class="meta">📍 ${esc(entry.location)}</div>`:""}
    ${entry.notes?`<div class="personal-timeline-note">${esc(entry.notes)}</div>`:""}
+   ${(entry.linkedTasks||[]).length?`<div class="personal-linked-tasks">${entry.linkedTasks.map(t=>`<div class="personal-linked-task ${t.done?"is-done":""}"><div class="personal-linked-task-head"><strong>${esc(t.icon)} ${esc(t.title)}</strong>${t.time&&t.time!==entry.time?`<span>${esc(t.time)}</span>`:""}</div>${t.location&&t.location!==entry.location?`<div class="meta">📍 ${esc(t.location)}</div>`:""}${t.notes?`<div class="personal-linked-task-note">${esc(t.notes)}</div>`:""}${(t.subitems||[]).length?`<div class="personal-timeline-checks">${t.subitems.map(i=>`<label class="personal-check ${i.done?"done":""}"><input type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}> <span>${esc(i.title)}</span></label>`).join("")}</div>`:""}</div>`).join("")}</div>`:""}
    ${ownedChecks.length?`<div class="personal-timeline-checks">${ownedChecks.map(c=>`<label class="personal-check ${c.done?"done":""}"><input type="checkbox" data-action="toggle-check" data-id="${c.id}" ${c.done?"checked":""}> <span>${esc(c.title)}${c.note?`<small class="personal-check-note">${esc(c.note)}</small>`:""}</span></label>`).join("")}</div>`:""}
    ${subitems.length?`<div class="personal-timeline-checks">${subitems.map(i=>`<label class="personal-check ${i.done?"done":""}"><input type="checkbox" data-action="toggle-subitem" data-id="${i.id}" ${i.done?"checked":""}> <span>${esc(i.title)}</span></label>`).join("")}</div>`:""}
    <div class="personal-timeline-actions">
