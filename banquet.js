@@ -90,19 +90,31 @@ function renderMap(){
    <div class="map-overlay">
     ${tables.map((t,i)=>{
       const p=tablePositions[String(t.tableNo)]||defaultPos(i,tables.length);
-      return `<button class="map-table-pin" data-map-table="${esc(t.tableNo)}" style="left:${Number(p.x)||10}%;top:${Number(p.y)||10}%">
-       ${esc(t.tableNo)}
+      return `<button class="map-table-pin${mapEditMode?" is-editing":""}" data-map-table="${esc(t.tableNo)}" aria-label="查看第 ${esc(t.tableNo)} 桌" title="第 ${esc(t.tableNo)} 桌" style="left:${Number(p.x)||10}%;top:${Number(p.y)||10}%">
+       <span>${esc(t.tableNo)}</span>
       </button>`;
     }).join("")}
    </div>
   </div>
-  <div class="map-hint">${mapEditMode?"拖曳桌號到正確位置，放開後自動儲存。":"點桌號可查看該桌賓客名單。"}</div>`;
+  <div class="map-hint">${mapEditMode?"拖曳桌號到正確位置，放開後自動儲存。":"直接點圖面上的桌號，即可查看該桌賓客名單。"}</div>`;
 
  document.querySelectorAll("[data-map-table]").forEach(pin=>{
   pin.onclick=e=>{
    if(mapEditMode)return;
    const no=e.currentTarget.dataset.mapTable;
-   document.getElementById(`table-${no}`)?.scrollIntoView({behavior:"smooth",block:"start"});
+   const table=tables.find(x=>String(x.tableNo)===String(no));
+   if(!table)return;
+   const body=document.getElementById(`body-${table.id}`);
+   const toggle=document.querySelector(`[data-toggle-table="${CSS.escape(table.id)}"]`);
+   if(body){body.classList.remove("collapsed");if(toggle)toggle.textContent="收合";}
+   const card=document.getElementById(`table-${no}`);
+   if(card){
+    card.classList.remove("map-selected");
+    void card.offsetWidth;
+    card.classList.add("map-selected");
+    card.scrollIntoView({behavior:"smooth",block:"start"});
+    setTimeout(()=>card.classList.remove("map-selected"),1800);
+   }
   };
   if(mapEditMode)enablePinDrag(pin);
  });

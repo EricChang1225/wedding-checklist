@@ -59,20 +59,42 @@ body:not(.banquet-admin) .banquet-admin-only{display:none!important}
 .map-table-pin{
   position:absolute;
   transform:translate(-50%,-50%);
+  width:46px;
+  height:46px;
+  border:0;
+  border-radius:50%;
+  background:transparent;
+  color:transparent;
+  box-shadow:none;
+  cursor:pointer;
+  touch-action:manipulation;
+  padding:0;
+}
+.map-table-pin span{
+  opacity:0;
+  pointer-events:none;
+}
+.map-table-pin:hover,
+.map-table-pin:focus-visible{
+  outline:3px solid rgba(255,255,255,.95);
+  background:rgba(201,120,129,.18);
+  box-shadow:0 0 0 4px rgba(201,120,129,.45);
+}
+.interactive-map.editing .map-table-pin{
   width:42px;
   height:42px;
   border:3px solid #fff;
-  border-radius:50%;
   background:#c97881;
   color:#fff;
-  font-weight:950;
   box-shadow:0 4px 14px rgba(80,40,50,.3);
-  cursor:pointer;
-  touch-action:none;
-}
-.interactive-map.editing .map-table-pin{
   cursor:grab;
+  touch-action:none;
   animation:mapPinPulse 1.5s infinite;
+}
+.interactive-map.editing .map-table-pin span{opacity:1;}
+.table-card.map-selected{
+  outline:3px solid #d68d95;
+  box-shadow:0 0 0 6px rgba(214,141,149,.18),var(--shadow);
 }
 .map-hint{
   margin-top:8px;
@@ -88,7 +110,8 @@ body:not(.banquet-admin) .banquet-admin-only{display:none!important}
   scroll-margin-top:90px;
 }
 @media(max-width:600px){
-  .map-table-pin{
+  .map-table-pin{width:40px;height:40px;}
+  .interactive-map.editing .map-table-pin{
     width:36px;
     height:36px;
     font-size:13px;
